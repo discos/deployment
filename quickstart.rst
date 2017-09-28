@@ -49,7 +49,7 @@ virtual machine delpoyed with everything we need.
 
 Get a DISCOS branch
 ===================
-Login via SSH to the ``manager`` (the password is *bigbang*):
+Login via SSH to the ``manager``:
 
 .. code-block:: shell
 
