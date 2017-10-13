@@ -32,8 +32,23 @@ Verify if Alsible is already installed:
    ansible --version
    ansible 2.3.2.0
 
-If the command ``ansible --version`` fails, than install Ansible by
-executing the following command:
+If the command ``ansible --version`` fails, than you have to install Ansible.
+
+Ansible requires the package ``sshpass`` to be installed properly. You can install it with the following command:
+
+.. code-block:: shell
+
+    $ sudo yum install sshpass
+
+...if you are using a Red-Hat based distro or:
+
+.. code-block:: shell
+
+    $ sudo apt-get install sshpass
+
+...if you are using a Debian based one.
+
+Then you can install Ansible by executing the following command:
 
 .. code-block:: shell
 
