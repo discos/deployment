@@ -30,17 +30,18 @@ Verify if Alsible is already installed:
 .. code-block:: shell
 
    ansible --version
-   ansible 2.3.0.0
+   ansible 2.3.2.0
 
 If the command ``ansible --version`` fails, than install Ansible by
 executing the following command:
 
 .. code-block:: shell
 
-    $ pip install "ansible>==2.3"
+    $ pip install "ansible==2.3.2"
 
 In case the ``pip install`` command fails, try to install Ansible
-(greather than 2.0) as explained in the `official ansible website
+(greater than 2.0, lesser than 2.4, otherwise the provisioning procedure could fail)
+as explained in the `official ansible website
 <http://docs.ansible.com/ansible/intro_installation.html#installation>`_.
 
 
