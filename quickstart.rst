@@ -7,28 +7,38 @@ Quick start
 If you have installed the four dependencies, as explained in
 section :ref:`dependencies`, then you are ready to download the
 `DISCOS deployment repository <https://github.com/discos/deployment.git>`_
-and move on it:
+and install it:
 
 .. code-block:: shell
 
    $ git clone https://github.com/discos/deployment.git
    Cloning into 'deployment'...
    $ cd deployment
+   $ python setup.py install
+
+The last executed command will install three useful scripts that will become
+available as soon as you open a new terminal.
+The scripts are:
+
+- :file:`discos-deploy`: a script used to perform the deployment procedure
+- :file:`discos-vms`: a script used to manage DISCOS virtual machines
+- :file:`discos-login`: a simple script that performs SSH login to the specified virtual machine
 
 
 Provision the system
 ====================
-To provision the whole system you just have to execute the :file:`build` script.
-That is all. For instance, the following command will create the
+To provision the whole system you just have to execute the
+:file:`discos-deploy` command. That is all.
+For instance, the following command will create the
 ``manager`` virtual machine, and will install all
 dependencies and configuration files on it:
 
 .. code-block:: shell
 
-   $ ./build manager:development
+   $ discos-deploy manager:development
 
-In this case we give the :file:`build` script the ``manager:development``
-argument.  It means we want to deploy only the ``manager``, in the
+In this case we give the :file:`discos-deploy` script the ``manager:development``
+argument.  It means we want to deploy only the ``manager`` machine, in the
 ``development`` environment.  We will see more about the environments in
 sections :ref:`deploy_development` and :ref:`deploy_production`.
 
@@ -47,13 +57,69 @@ When the deployment is done, we will have the ``manager``
 virtual machine delpoyed with everything we need.
 
 
-Get a DISCOS branch
-===================
-Login via SSH to the ``manager``:
+Start and stop DISCOS virtual machines
+======================================
+To start or stop a DISCOS virtual machine, you have to run the
+:file:`discos-vms` script specifying a machine and an action.
+The machine argument is the name of an already deployed virtual machine,
+the action is one among `start` and `stop`.
+For instance, if you want to start the ``manager`` machine, all you have to do
+is execute the following command:
 
 .. code-block:: shell
 
-    $ ssh discos@192.168.10.200
+    $ discos-vms -m manager start
+    Starting machine manager..............done.
+
+As you can see from the example above, the machine name must be preceded by the
+``-m`` flag. You can also use the flag ``--machine`` with the same result:
+
+.. code-block:: shell
+
+    $ discos-vms --machine manager start
+    Starting machine manager..............done.
+
+As you may have noticed from the previous examples, the ``discos-vms -m <machine> start``
+command will block and wait until the machine is booted up and ready.
+Executing this command when the selected machine is already powered on will just
+print a warning:
+
+.. code-block:: shell
+
+    $ discos-vms -m manager start
+    Machine manager is already running.
+
+If you want to stop a running machine you can just execute the same command as
+above, but with the ``stop`` action:
+
+.. code-block:: shell
+
+    $ discos-vms -m manager stop
+    Powering off machine manager......done.
+
+Just like the ``start`` command, the ``stop`` command will block and wait
+until the selected machine has been completely powered off. Trying to stop
+a powered off machine will print a warning just like the ``start`` command:
+
+.. code-block:: shell
+
+    $ discos-vms -m manager stop
+    Machine manager is not running.
+
+
+.. note:: Just after the deployment procedure is completed, the
+   deployed virtual machine will be already running, so starting it
+   with the appropriate command will just output
+   ``Machine ... already running``.
+
+
+Get a DISCOS branch
+===================
+Use the :file:`discos-login` script to login via ssh to ``manager``:
+
+.. code-block:: shell
+
+    $ discos-login manager
     (branch?) discos@manager ~ $
 
 Currently we have no branch active, that is why there is the ``(branch?)`` text

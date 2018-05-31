@@ -9,7 +9,7 @@ and the name of the station:
 
 .. code-block:: shell
 
-  $ ./build discos:srt
+  $ discos-deploy discos:srt
 
 As seen in the :ref:`deploy_development`, you can choose a station
 among ``medicina``, ``noto``, ``srt``.
@@ -18,13 +18,13 @@ the ``--deploy`` argument followed by the desired branch:
 
 .. code-block:: shell
 
-  $ ./build discos:srt --deploy latest64
+  $ discos-deploy discos:srt --deploy latest64
 
 In this case, where the station is already specified,
 you can omit the ``--station`` argument. If you decide to specify the
 ``--station`` argument anyway, if the given argument does not match the
 correct station you will receive an error.
-The first command, ``./build discos:srt``, provisions the complete *discos* system,
+The first command, ``discos-deploy discos:srt``, provisions the complete *discos* system,
 composed of all the selected station machines
 (in case of ``srt`` station, ``manager``, ``as`` and ``ms``).
 The second command also uses the ``--deploy`` argument
@@ -36,5 +36,5 @@ case we are deploying only the ``ms`` (minor servo) machine:
 
 .. code-block:: shell
 
-  $ ./build ms:srt
-  $ ./build ms:srt --deploy latest64
+  $ discos-deploy ms:srt
+  $ discos-deploy ms:srt --deploy latest64
