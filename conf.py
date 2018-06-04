@@ -50,8 +50,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'DISCOS deployment'
-copyright = '2017, Marco Buttu'
-author = 'Marco Buttu'
+copyright = '2017, Marco Buttu, Giuseppe Carboni'
+author = 'Marco Buttu, Giuseppe Carboni'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -131,7 +131,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'DISCOSdeployment.tex', 'DISCOS deployment Documentation',
-     'Marco Buttu', 'manual'),
+     'Marco Buttu, Giuseppe Carboni', 'manual'),
 ]
 
 
