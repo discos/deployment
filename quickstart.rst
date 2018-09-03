@@ -14,15 +14,16 @@ and install it:
    $ git clone https://github.com/discos/deployment.git
    Cloning into 'deployment'...
    $ cd deployment
-   $ python setup.py install
+   $ python setup.py
 
-The last executed command will install three useful scripts that will become
-available as soon as you open a new terminal.
+The last executed command will install some useful scripts that will become
+immediately available.
 The scripts are:
 
 - :file:`discos-deploy`: a script used to perform the deployment procedure
-- :file:`discos-vms`: a script used to manage DISCOS virtual machines
 - :file:`discos-login`: a simple script that performs SSH login to the specified virtual machine
+- :file:`discos-vms`: a script used to manage DISCOS virtual machines
+- :file:`discos-vnc`: a simple script that opens a VNC viewer to the specified virtual machine
 
 
 Provision the system

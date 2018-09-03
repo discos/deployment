@@ -10,6 +10,12 @@ To automatically deploy DISCOS, you need to install four dependencies:
 <https://www.virtualbox.org/>`_.  It usually takes about 15 minutes.
 
 
+.. note:: If you are accustomed to python virtual environments
+   (like `pyenv` or similar), you can install the required pip packages
+   mentioned in the procedure below in your preferred environment,
+   without the need of administrator permissions.
+
+
 Install Git
 ===========
 Before installing Git, verify if it is already installed:
@@ -25,39 +31,23 @@ website <https://git-scm.com/book/en/v1/Getting-Started-Installing-Git>`_.
 
 Install Ansible
 ===============
-Verify if Alsible is already installed:
+Verify if Ansible is already installed:
 
 .. code-block:: shell
 
    ansible --version
-   ansible 2.3.2.0
+   ansible 2.6.3
 
 If the command ``ansible --version`` fails, than you have to install Ansible.
 
-Ansible requires the package ``sshpass`` to be installed properly. You can install it with the following command:
+The suggested way to do this is via `pip`:
 
 .. code-block:: shell
 
-    $ sudo yum install sshpass
+    $ sudo pip install ansible
 
-...if you are using a Red-Hat based distro or:
-
-.. code-block:: shell
-
-    $ sudo apt-get install sshpass
-
-...if you are using a Debian based one.
-
-Then you can install Ansible by executing the following command:
-
-.. code-block:: shell
-
-    $ pip install "ansible==2.3.2"
-
-In case the ``pip install`` command fails, try to install Ansible
-(greater than 2.0, lesser than 2.4, otherwise the provisioning procedure could fail)
-as explained in the `official ansible website
-<http://docs.ansible.com/ansible/intro_installation.html#installation>`_.
+In case the last command fails, try to install Ansible as explained in the `official
+ansible website <http://docs.ansible.com/ansible/intro_installation.html#installation>`_.
 
 
 Install VirtualBox and Vagrant
@@ -84,5 +74,17 @@ Now verify if Vagrant is already installed:
 If it is not, download the binary file from
 the `vagrant official website <https://www.vagrantup.com/downloads.html>`_
 and install it.
+
+
+Install the required python packages
+====================================
+In order to deploy the virtual machines correctly, you need to install the
+`paramiko` python package. You can install it by typing:
+
+.. code-block:: shell
+
+    $ sudo pip install paramiko
+
+
 At this point you are ready to deploy DISCOS.  The :ref:`deploy_quickstart`
 section is a good starting point, because it covers a typical scenario.
