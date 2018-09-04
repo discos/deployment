@@ -46,8 +46,9 @@ The suggested way to do this is via `pip`:
 
     $ sudo pip install ansible
 
-In case the last command fails, try to install Ansible as explained in the `official
-ansible website <http://docs.ansible.com/ansible/intro_installation.html#installation>`_.
+In case the last command fails, or if you want to install Ansible in a different way,
+check out the `official ansible website
+<http://docs.ansible.com/ansible/intro_installation.html#installation>`_.
 
 
 Install VirtualBox and Vagrant
@@ -74,16 +75,6 @@ Now verify if Vagrant is already installed:
 If it is not, download the binary file from
 the `vagrant official website <https://www.vagrantup.com/downloads.html>`_
 and install it.
-
-
-Install the required python packages
-====================================
-In order to deploy the virtual machines correctly, you need to install the
-`paramiko` python package. You can install it by typing:
-
-.. code-block:: shell
-
-    $ sudo pip install paramiko
 
 
 At this point you are ready to deploy DISCOS.  The :ref:`deploy_quickstart`
