@@ -29,6 +29,7 @@ You do not need a particular version of Git, but if the command ``git --version`
 fails, than you have to install Git by following the instructions at the `official Git
 website <https://git-scm.com/book/en/v1/Getting-Started-Installing-Git>`_.
 
+
 Install Ansible
 ===============
 Verify if Ansible is already installed:
@@ -44,11 +45,16 @@ The suggested way to do this is via `pip`:
 
 .. code-block:: shell
 
-    $ sudo pip install ansible
+    $ sudo pip install ansible==2.6.3
 
-In case the last command fails, or if you want to install Ansible in a different way,
-check out the `official ansible website
+In case the last command fails, or if you want to install Ansible in a
+different way, check out the `official ansible website
 <http://docs.ansible.com/ansible/intro_installation.html#installation>`_.
+
+.. note:: WARNING: as of today (10/10/2018), Ansible version 2.7.0 is somehow
+   not capable of completing the deployment procedure. As you may have noticed
+   from the command above, the suggested Ansible version is the 2.6.3, with
+   which the deployment procedure has been thoroughly tested.
 
 
 Install VirtualBox and Vagrant

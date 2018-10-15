@@ -27,5 +27,5 @@ Contents:
    quickstart.rst
    development.rst
    production.rst
-
+   scripts.rst
 

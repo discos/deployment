@@ -18,23 +18,23 @@ the ``--deploy`` argument followed by the desired branch:
 
 .. code-block:: shell
 
-  $ discos-deploy discos:srt --deploy latest64
+  $ discos-deploy discos:srt --deploy stable
 
 In this case, where the station is already specified,
 you can omit the ``--station`` argument. If you decide to specify the
 ``--station`` argument anyway, if the given argument does not match the
-correct station you will receive an error.
+correct station you will receive an error and the procedure will stop.
 The first command, ``discos-deploy discos:srt``, provisions the complete *discos* system,
 composed of all the selected station machines
-(in case of ``srt`` station, ``manager``, ``as`` and ``ms``).
+(in case of ``srt`` station, ``manager``, ``console`` and ``storage``).
 The second command also uses the ``--deploy`` argument
-in order to deploy the ``latest64`` branch.
+in order to deploy the ``stable`` branch.
 
 If you only want to provision or deploy one single machine, change the cluster
 from ``discos`` to the related machine name. For instance, in the following
-case we are deploying only the ``ms`` (minor servo) machine:
+case we are deploying only the ``console`` machine:
 
 .. code-block:: shell
 
-  $ discos-deploy ms:srt
-  $ discos-deploy ms:srt --deploy latest64
+  $ discos-deploy console:srt
+  $ discos-deploy console:srt --deploy stable
