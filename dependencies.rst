@@ -4,16 +4,28 @@
 Dependencies
 ************
 
-To automatically deploy DISCOS, you need to install four dependencies:
+To automatically deploy DISCOS, you need to install some dependencies:
+`Python 2.7 <https://www.python.org/download/releases/2.7/>`_,
 `Git <https://git-scm.com/>`_, `Ansible <https://www.ansible.com/>`_,
 `Vagrant <https://www.vagrantup.com/>`_ and `VirtualBox
 <https://www.virtualbox.org/>`_.  It usually takes about 15 minutes.
 
 
-.. note:: If you are accustomed to python virtual environments
-   (like `pyenv` or similar), you can install the required pip packages
-   mentioned in the procedure below in your preferred environment,
-   without the need of administrator permissions.
+Install Python 2.7
+==================
+Verify if Python 2.7 is already installed on your system:
+
+.. code-block:: shell
+
+   $ python --version
+   Python 2.7.15rc1
+
+If your system comes bundled with a different Python version, you may want to
+consider installing a Python 2.7 environment such as
+`Anaconda <https://www.anaconda.com/download/#linux>`_,
+`Miniconda <https://conda.io/miniconda.html>`_ or
+`Pyenv <https://github.com/pyenv/pyenv>`_ and its
+`Virtualenv <https://github.com/pyenv/pyenv-virtualenv>`_ plugin.
 
 
 Install Git
@@ -23,7 +35,7 @@ Before installing Git, verify if it is already installed:
 .. code-block:: shell
 
    $ git --version
-   git version 1.9.1
+   git version 2.17.1
 
 You do not need a particular version of Git, but if the command ``git --version``
 fails, than you have to install Git by following the instructions at the `official Git
@@ -37,7 +49,7 @@ Verify if Ansible is already installed:
 .. code-block:: shell
 
    ansible --version
-   ansible 2.6.3
+   ansible 2.7.2
 
 If the command ``ansible --version`` fails, than you have to install Ansible.
 
@@ -45,23 +57,21 @@ The suggested way to do this is via `pip`:
 
 .. code-block:: shell
 
-    $ sudo pip install ansible==2.6.3
+    $ sudo pip install ansible
 
-In case the last command fails, or if you want to install Ansible in a
-different way, check out the `official ansible website
+.. note:: If you are using a Python virtual environment, you do not need
+   administration permissions to install Ansible.
+
+In case the command fails, or if you want to install Ansible in a different
+way, check out the `official ansible website
 <http://docs.ansible.com/ansible/intro_installation.html#installation>`_.
-
-.. note:: WARNING: as of today (10/10/2018), Ansible version 2.7.0 is somehow
-   not capable of completing the deployment procedure. As you may have noticed
-   from the command above, the suggested Ansible version is the 2.6.3, with
-   which the deployment procedure has been thoroughly tested.
 
 
 Install VirtualBox and Vagrant
 ==============================
 You need to install VirtualBox and Vagrant only if you want to
-deploy DISCOS on VMs, as in the case of a development environment.
-As a first step, check if VirtualBox is already installed:
+deploy DISCOS on virtual machines, as in the case of a development
+environment. As a first step, check if VirtualBox is already installed:
 
 .. code-block:: shell
 
@@ -71,12 +81,20 @@ As a first step, check if VirtualBox is already installed:
 In case it is not, download the binary file from the
 `official website <https://www.virtualbox.org/wiki/Downloads>`_
 and install it.
-Now verify if Vagrant is already installed:
+
+
+.. note:: The suggested VirtualBox version to install is the 5.1. As of today,
+   the latest release of VirtualBox, version 5.2, seems to introduce some lag
+   in SSH sessions to the deployed virtual machines. Version 5.1 also matches
+   the VirtualBox guest additions already installed in the virtual machines.
+
+
+Now verify if Vagrant is installed:
 
 .. code-block:: shell
 
    $ vagrant --version
-   Vagrant 1.8.6
+   Vagrant 2.2.1
 
 If it is not, download the binary file from
 the `vagrant official website <https://www.vagrantup.com/downloads.html>`_

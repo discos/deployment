@@ -4,31 +4,73 @@
 Development
 ***********
 
-In the :ref:`deploy_quickstart` section we have seen how
-to deploy a ``manager`` virtual machine.  You can also deploy
-the whole system.  For instance, to deploy a development system
-composed of three virtual machines (``manager``, ``as`` and ``ms``),
-pass ``discos:development`` to the ``discos-deploy`` script:
+Machines deployment
+===================
+In the :ref:`deploy_quickstart` section we have seen how to deploy a
+``manager`` virtual machine. You can also deploy the whole control system.
+For instance, to deploy a development system composed of three virtual machines
+(``manager``, ``console`` and ``storage``), pass the ``discos`` *cluster*,
+followed by the ``development`` system, to the ``discos-deploy`` script:
 
 .. code-block:: shell
 
   $ discos-deploy discos:development
 
-This command will connect via SSH to all development machines
-and provision the whole system (create users, configure networking,
-install yum packages, ACS and its dependencies, utilities, and
-eventually the DISCOS dependencies).  To install DISCOS on the deployed
-machines, you have two options: you can manually execute the ``discos-get``
-command, as we did in the :ref:`deploy_quickstart` section, or you can let
-the deplpoyment procedure do it automatically for you by passing the
-``--deploy`` argument, followed by the branch you want to deploy, and, in case
-you are deploying in a development environment, the ``--station`` argument,
-followed by the name of the station, to the ``discos-deploy`` script.
+This command will connect via SSH to all development machines and provision the
+whole system (create users, configure networking, install yum packages,
+configure NIS, Lustre, ACS and its dependencies, install some utilities, and
+finally the DISCOS dependencies).
+
+
+Working without Vagrant
+-----------------------
+If you wish to deploy a development environment on physical machines, or you
+simply want to install the virtual machines by yourself using VirtualBox or
+another virtual machine provider, you can still use the ``discos-deploy``
+script to perform the automatic deployment procedure. You first have to setup
+the machines' network interfaces, in order to enable Ansible access to them via
+the correct IP address, and then start the deployment procedure by passing the
+``--no-vagrant``, ``-n`` flag to the ``discos-deploy`` script:
 
 .. code-block:: shell
 
-  $ discos-deploy discos:development --deploy stable --station noto
+   $ discos-deploy discos:development --no-vagrant
+
+This will let the script know that you do not want to create any (other)
+virtual machine on your system, and that you want to apply the whole
+configuration onto an existing, physical or virtual, set of machines.
+
+
+DISCOS setup
+============
+
+Manual setup
+------------
+To download the DISCOS control software, you can use the ``discos-get`` command,
+covered in the :ref:`get_a_discos_branch` section.
+
+.. figure:: images/discos-get.png
+   :figwidth: 100%
+   :align: center
+
+Once the download of the repository is completed, you have to perform the setup
+procedure like we have seen in the :ref:`install_discos` section.
+
+.. figure:: images/make.png
+
+Automatic setup
+---------------
+You can let the deployment procedure perform the DISCOS control system setup
+for you by specifying the ``--branch`` argument to the ``discos-deploy``
+script, followed by the branch name you want to deploy and install. Since the
+procedure will internally call the ``discos-get`` script for you, if you are
+deploying in a development environment, you also have to provide to the script
+the ``--station`` argument, followed by the name of the desired station.
+
+.. code-block:: shell
+
+  $ discos-deploy discos:development --tag discos1.0-rc02 --station noto
 
 You can choose a station among ``medicina``, ``noto`` and ``srt``.
-This command executes the ``discos-get -s noto stable`` command on
-all machines of the system, in parallel.
+The ``discos-get`` command gets executed on all machines of the system at the
+same time.
