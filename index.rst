@@ -4,7 +4,7 @@
 DISCOS deployment
 #################
 
-.. sectionauthor:: :ref:`mbuttu`
+.. sectionauthor:: :ref:`mbuttu`, :ref:`gcarboni`
 
 
 .. topic:: Abstract
