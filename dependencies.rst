@@ -5,27 +5,10 @@ Dependencies
 ************
 
 To automatically deploy DISCOS, you need to install some dependencies:
-`Python 2.7 <https://www.python.org/download/releases/2.7/>`_,
 `Git <https://git-scm.com/>`_, `Ansible <https://www.ansible.com/>`_,
+`Python 2.7 <https://www.python.org/download/releases/2.7/>`_,
 `Vagrant <https://www.vagrantup.com/>`_ and `VirtualBox
 <https://www.virtualbox.org/>`_.  It usually takes about 15 minutes.
-
-
-Install Python 2.7
-==================
-Verify if Python 2.7 is already installed on your system:
-
-.. code-block:: shell
-
-   $ python --version
-   Python 2.7.15rc1
-
-If your system comes bundled with a different Python version, you may want to
-consider installing a Python 2.7 environment such as
-`Anaconda <https://www.anaconda.com/download/#linux>`_,
-`Miniconda <https://conda.io/miniconda.html>`_ or
-`Pyenv <https://github.com/pyenv/pyenv>`_ and its
-`Virtualenv <https://github.com/pyenv/pyenv-virtualenv>`_ plugin.
 
 
 Install Git
@@ -42,29 +25,22 @@ fails, than you have to install Git by following the instructions at the `offici
 website <https://git-scm.com/book/en/v1/Getting-Started-Installing-Git>`_.
 
 
-Install Ansible
-===============
-Verify if Ansible is already installed:
+Install a Python 2.7 environment
+================================
+The whole DISCOS deployment procedure relies on Python 2.7. Verify if Python 2.7 is already
+installed on your system:
 
 .. code-block:: shell
 
-   ansible --version
-   ansible 2.7.2
+   $ python --version
+   Python 2.7.15rc1
 
-If the command ``ansible --version`` fails, than you have to install Ansible.
-
-The suggested way to do this is via `pip`:
-
-.. code-block:: shell
-
-    $ sudo pip install ansible
-
-.. note:: If you are using a Python virtual environment, you do not need
-   administration permissions to install Ansible.
-
-In case the command fails, or if you want to install Ansible in a different
-way, check out the `official ansible website
-<http://docs.ansible.com/ansible/intro_installation.html#installation>`_.
+If your system comes bundled with a different Python version, you may want to
+consider installing a Python 2.7 environment such as
+`Anaconda <https://www.anaconda.com/download/#linux>`_,
+`Miniconda <https://conda.io/miniconda.html>`_ or
+`Pyenv <https://github.com/pyenv/pyenv>`_ and its
+`Virtualenv <https://github.com/pyenv/pyenv-virtualenv>`_ plugin.
 
 
 Install VirtualBox and Vagrant

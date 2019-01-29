@@ -4,7 +4,7 @@
 Useful scripts
 **************
 
-If you executed the ``setup.py`` script as mentioned in the
+If you installed the `deployment` Python package  as mentioned in the
 :ref:`deploy_quickstart` section, you will have access via terminal to the
 following useful scripts, along with the :file:`discos_deploy` one (described
 in the :ref:`deploy_quickstart` section):

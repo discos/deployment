@@ -6,41 +6,59 @@ Quick start
 
 If you have installed the dependencies, as explained in section
 :ref:`dependencies`, then you are ready to download the
-`DISCOS deployment repository <https://github.com/discos/deployment.git>`_
-and install it:
+`DISCOS deployment repository <https://github.com/discos/deployment.git>`_:
 
 .. code-block:: shell
 
    $ git clone https://github.com/discos/deployment.git
    Cloning into 'deployment'...
+
+
+Before installing the package, you have to install some additional Python 2.7 requirements.
+Move inside the `deployment` directory and type the following command:
+
+.. code-block:: shell
+
    $ cd deployment
-   $ python setup.py
-   Would you like to automatically install the requirements? [Y/n]:
-   Installing 'pexpect' package...done.
-   Would you like to add the scripts to your ~/.bashrc file? [Y/n]:
-   The file that sources the scripts has been added to your ~/.bashrc file.
-   They will be available as soon as you open a new terminal. Have fun!
-
-As you may have noticed from the above command output, the ``setup.py`` script
-can handle the python required packages setup procedure automatically. It can
-also add some useful scripts by sourcing them via your .bashrc file.
-You can read additional information about these scripts in the section
-:ref:`deploy_scripts`.
+   $ pip install -r requirements.txt
 
 
-.. note:: You can decide not to add the provided scripts to your .bashrc file,
-   but you can still execute them directly from the ``scripts`` directory
-   inside the repository directory.
+.. note:: The last executed command will also install the most important tool on which
+   the whole package relies: it is called `Ansible <https://www.ansible.com/>`_.
+   Ansible is a very powerful tool, able to perform a machine configuration
+   applying a series of pre-defined tasks. It can also work in parallel when you
+   need to configure multiple machines.
+
+
+Now you are ready to install the package. The recommended way to do so is to
+install it inside a Python 2.7 custom environment. In order to do so, type the
+following command:
+
+.. code-block:: shell
+
+   $ python setup.py install
+
+
+If you want to install the package inside the system Python 2.7 environment instead,
+you have to execute the following command:
+
+.. code-block:: shell
+
+   $ python setup.py install --user
+
+
+Now that the package setup procedure is completed, you are ready to start deploying a
+DISCOS environment. In order to do so, keep reading the guide below.
 
 
 Provision the system
 ====================
 The provisioning procedure is entirely handled by the :file:`discos-deploy`
-script, that we installed in the previous step. Below you can find an
-explanation of how the script works, along with some command line examples that
-show you how to deploy the environment you want. For instance, the following
-command will create the ``manager`` virtual machine, and will install all
-dependencies and configuration files on it:
+script, that has been installed in your system in the previous step.
+Below you can find an explanation of how the script works, along with some
+command line examples that show you how to deploy the DISCOS environment you want.
+For instance, the following command will create the ``manager`` virtual machine,
+and will install all dependencies and configuration files on it:
 
 .. code-block:: shell
 

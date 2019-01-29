@@ -13,11 +13,10 @@ DISCOS deployment
    process is automatic and hides the underline technologies, before
    starting you have to spend 15 minutes to install some dependencies:
    `Python 2.7 <https://www.python.org/download/releases/2.7/>`_,
-   `Git <https://git-scm.com/>`_, `Ansible <https://www.ansible.com/>`_,
-   `Vagrant <https://www.vagrantup.com/>`_ and `VirtualBox
-   <https://www.virtualbox.org/>`_.  Look at the section :ref:`dependencies`
-   to see how to install them, then go ahead and read the
-   :ref:`deploy_quickstart` section.
+   `Git <https://git-scm.com/>`_, `Vagrant <https://www.vagrantup.com/>`_
+   and `VirtualBox <https://www.virtualbox.org/>`_.
+   Look at the section :ref:`dependencies` to see how to install them,
+   then go ahead and read the :ref:`deploy_quickstart` section.
 
 
 Contents:
