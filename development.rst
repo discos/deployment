@@ -7,10 +7,13 @@ Development
 Machines deployment
 ===================
 In the :ref:`deploy_quickstart` section we have seen how to deploy a
-``manager`` virtual machine. You can also deploy the whole control system.
-For instance, to deploy a development system composed of three virtual machines
-(``manager``, ``console`` and ``storage``), pass the ``discos`` *cluster*,
-followed by the ``development`` system, to the ``discos-deploy`` script:
+``manager`` virtual machine. The development system is currently made
+of only the ``manager`` virtual machine. In the future some machines could
+be added to the deployment procedure. To deploy all of them, it is sufficient
+to pass to the ``discos-deploy`` script the ``discos`` *cluster* instead of
+a single machine name, the ``discos`` keyword always identify the whole
+environment, so it will install all the machines found in the correspondent
+Ansible inventory.
 
 .. code-block:: shell
 
@@ -34,7 +37,7 @@ the correct IP address, and then start the deployment procedure by passing the
 
 .. code-block:: shell
 
-   $ discos-deploy discos:development --no-vagrant
+   $ discos-deploy manager:development --no-vagrant
 
 This will let the script know that you do not want to create any (other)
 virtual machine on your system, and that you want to apply the whole

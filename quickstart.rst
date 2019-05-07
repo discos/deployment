@@ -70,11 +70,10 @@ In this case we gave the :file:`discos-deploy` script the
 about the environments in sections :ref:`deploy_development` and
 :ref:`deploy_production`.
 
-The deployment of a single machine can take between 30 minutes and one hour,
-depending of your machine, because it has to download and install the operating
-system, all the dependencies (ACS, DISCOS libraries, etc.), create users and
-groups, configure the network, and create a complete working environment, as we
-will see in a few moments.
+The deployment of a single machine takes about one hour, it has to download and
+install the operating system, all the dependencies (ACS, DISCOS libraries, etc.),
+create users and groups, configure the network, and create a complete working
+environment, as we will see in a few moments.
 
 
 .. note:: You can run the deployment more than once, because the process is
