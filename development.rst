@@ -11,8 +11,8 @@ In the :ref:`deploy_quickstart` section we have seen how to deploy a
 of only the ``manager`` virtual machine. In the future some machines could
 be added to the deployment procedure. To deploy all of them, it is sufficient
 to pass to the ``discos-deploy`` script the ``discos`` *cluster* instead of
-a single machine name, the ``discos`` keyword always identify the whole
-environment, so it will install all the machines found in the correspondent
+a single machine name, the ``discos`` keyword always identifies the whole
+environment, so it will install all the machines found in the corresponding
 Ansible inventory.
 
 .. code-block:: shell
