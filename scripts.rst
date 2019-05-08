@@ -96,11 +96,12 @@ The script :file:`discos-login` acts as a wrapper to `ssh`, and is useful to
 easily perform login on a deployed virtual machine. To login into a DISCOS
 virtual machine with this script, you can simply execute the following code:
 
-.. code-block:: shell
+.. code-block:: console
 
-   $ discos-login manager
-   discos@manager's password:
-   (branch?) discos@manager ~ $
+  $ discos-login manager
+  discos@manager's password:
+  (branch?) discos@manager ~ $
+
 
 The `discos-login` command handles the login procedure by internally executing
 the following command:
@@ -113,7 +114,7 @@ You can specify the user with which you want to login to the virtual machine,
 by appending the ``-u``, or ``--user``, argument, followed by the desired user
 name, to the `discos-login` script, just as follows:
 
-.. code-block:: shell
+.. code-block:: console
 
    $ discos-login -u observer console
    observer@console's password:
@@ -158,7 +159,7 @@ Once you installed the ``vncviewer``, you can correctly execute the
 means of it, you can simply execute the following code and insert type desired
 user's login password:
 
-.. code-block:: shell
+.. code-block:: console
 
    $ discos-vnc manager
    discos@manager's password:
