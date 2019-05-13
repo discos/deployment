@@ -45,6 +45,7 @@ you have to execute the following command:
 .. code-block:: shell
 
    $ python setup.py install --user
+   $ source ~/.bashrc  # Refresh the shell environment
 
 
 Now that the package setup procedure is completed, you are ready to start deploying a
@@ -62,7 +63,6 @@ and will install all dependencies and configuration files on it:
 
 .. code-block:: shell
 
-   $ source ~/.bashrc  # Refresh the shell environment
    $ discos-deploy manager:development
 
 In this case we gave the :file:`discos-deploy` script the
