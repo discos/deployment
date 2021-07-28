@@ -1,6 +1,6 @@
 ---
 
-lustre_network_interface: eth2
+lustre_network_interface: eth0
 
 quicklook_directories:
   - "/archive/data"
