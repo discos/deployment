@@ -23,7 +23,7 @@ if deployment.isRunning(args.machine):
     try:
         subprocess.call([
             'ssh',
-            '-CX',
+            '-X',
             '-l',
             args.user,
             deployment.getIp(args.machine)

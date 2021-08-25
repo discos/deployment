@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """Some command line examples:
 
-  $ discos-vms --start manager
-  $ discos-vms --restart console storage
-  $ discos-vms --stop storage
-  $ discos-vms --status
+  $ discos-vms start -m manager
+  $ discos-vms restart -m console storage
+  $ discos-vms stop -m storage
+  $ discos-vms status
 """
 from __future__ import print_function
 import sys
@@ -24,32 +24,15 @@ def check_machine(machine):
         return machine
 
 parser = ArgumentParser()
-action = parser.add_mutually_exclusive_group(required=True)
-action.add_argument(
-    '--status',
-    action='store_true',
-    help='Display the selected machine(s) status.'
-)
-action.add_argument(
-    '--start',
-    action='store_true',
-    help='Start the selected machine(s).'
-)
-action.add_argument(
-    '--stop',
-    action='store_true',
-    help='Stop the selected machine(s).'
-)
-action.add_argument(
-    '--restart',
-    action='store_true',
-    help='Restart the selected machine(s).'
+parser.add_argument(
+    'action',
+    choices=['status', 'start', 'stop', 'restart'],
 )
 parser.add_argument(
-    'machine',
+    '-m', '--machine',
     nargs='*',
     type=check_machine,
-    help='The machine(s) you want to control. \
+    help='The machine you want to control. \
          Choose among "%s". \
          Leave this field empty to select all \
          available machines.' % '", "'.join(machines)
@@ -67,20 +50,20 @@ if not args.machine:
 if 'storage' in args.machine and len(args.machine) > 1:
     args.machine.insert(0, args.machine.pop(args.machine.index('storage')))
 
-if args.stop:
+if args.action == 'stop':
     args.machine.reverse()
 
 for machine in args.machine:
-    if args.status:
+    if args.action == 'status':
         status_msg = 'Machine {} status: '.format(machine)
         if deployment.isRunning(machine):
             status_msg += 'running.'
         else:
             status_msg += 'powered off.'
         print(status_msg)
-    elif args.start:
+    elif args.action == 'start':
         deployment.startVm(machine)
-    elif args.stop:
+    elif args.action == 'stop':
         deployment.stopVm(machine)
-    elif args.restart:
+    elif args.action == 'restart':
         deployment.restartVm(machine)
