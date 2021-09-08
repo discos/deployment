@@ -131,3 +131,13 @@
     insertafter: '^IGNORE_PROCS ='
     line: 'IGNORE_PROCS += ["panel"]'
     backup: True
+
+
+- name: Patch maciManagerJ
+  template:
+    src: "patches/ACS-FEB2017/maciManagerJ"
+    dest: "{{ acssw }}/bin/maciManagerJ"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: 0755
+    backup: True
