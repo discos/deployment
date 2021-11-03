@@ -20,16 +20,10 @@
       dest: "{{ local_repository_path }}"
       headers:
         Authorization: "token {{ repository_token }}"
-        #no_log: True
+        no_log: True
     when: CA_file_exists.stat.exists == False
     delegate_to: localhost
     run_once: True
-
-
-#- name: Copy CA package to the remote
-#  copy:
-#    src: "{{ local_repository_path }}/{{ certificates_package }}"
-#    dest: "/tmp/"
 
 
 - name: Copy CA package to the remote
@@ -38,10 +32,7 @@
 
 
 - name: Install CA yum package
-  yum:
-    name: "/tmp/{{ certificates_package }}"
-    state: present
-    validate_certs: no
+  command: "rpm -iU /tmp/{{ certificates_package }}"
 
 
 - name: Delete CA package from the remote
