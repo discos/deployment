@@ -1,8 +1,44 @@
 ---
 
 - name: Replace CentOS-Base repo sources
-  command: scp roles/yum_patch/templates/CentOS-Base.repo root@{{ ansible_host }}:/etc/yum.repos.d/
+  template:
+    src: "CentOS-Base.repo"
+    dest: "/etc/yum.repos.d"
+    mode: 0644
+    force: yes
+
+
+- name: Eventually download the certificate authorities package
+  block:
+  - name: Check if CA package exists in the local repository
+    stat:
+      path: "{{ local_repository_path }}/{{ certificates_package }}"
+    register: CA_file_exists
+  - name: Download CA package
+    get_url:
+      url: "{{ remote_repository_download_url }}/{{ certificates_package }}"
+      dest: "{{ local_repository_path }}"
+      headers:
+        Authorization: "token {{ repository_token }}"
+        no_log: True
+    when: CA_file_exists.stat.exists == False
+    delegate_to: localhost
+    run_once: True
+
+
+- name: Copy CA package to the remote
+  command: "scp {{ local_repository_path }}/{{ certificates_package }} root@{{ ansible_host }}:/tmp/"
   delegate_to: localhost
+
+
+- name: Install CA yum package
+  command: "rpm -iU /tmp/{{ certificates_package }}"
+
+
+- name: Delete CA package from the remote
+  file:
+    path: "/tmp/{{ certificates_package }}"
+    state: absent
 
 
 - name: Clean yum cache
