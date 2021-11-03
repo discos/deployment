@@ -33,6 +33,10 @@
 
 - name: Install CA yum package
   command: "rpm -iU /tmp/{{ certificates_package }}"
+  register: command_result
+  failed_when:
+    - command_result.rc != 0
+    - not command_result.stderr is search("already installed")
 
 
 - name: Delete CA package from the remote
