@@ -73,6 +73,7 @@
     - astropy
     - numpy
     - scipy
+    - Pillow==8.3.2
     - matplotlib
     - pyyaml
     - h5py
