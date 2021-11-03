@@ -26,10 +26,15 @@
     run_once: True
 
 
+#- name: Copy CA package to the remote
+#  copy:
+#    src: "{{ local_repository_path }}/{{ certificates_package }}"
+#    dest: "/tmp/"
+
+
 - name: Copy CA package to the remote
-  copy:
-    src: "{{ local_repository_path }}/{{ certificates_package }}"
-    dest: "/tmp/"
+  command: "scp {{ local_repository_path }}/{{ certificates_package }} root@{{ ansible_host }}:/tmp/"
+  delegate_to: localhost
 
 
 - name: Install CA yum package
