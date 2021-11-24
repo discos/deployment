@@ -17,7 +17,7 @@
 - name: Configure VNCSERVERARGS
   lineinfile:
     path: /etc/sysconfig/vncservers
-    line: 'VNCSERVERARGS[{{ item.value.vnc_port_offset }}]="-name {{ inventory_hostname_short }}-{{ item.value.name }} -localhost -SecurityTypes None -geometry {{ vnc_resolution }} -depth 32 -AlwaysShared -nolisten tcp -rfbport {{ vnc_starting_port+item.value.vnc_port_offset|int }}"'
+    line: 'VNCSERVERARGS[{{ item.value.vnc_port_offset }}]="-name {{ inventory_hostname_short }}-{{ item.value.name }} -SecurityTypes None -geometry {{ vnc_resolution }} -depth 32 -AlwaysShared -nolisten tcp -rfbport {{ vnc_starting_port+item.value.vnc_port_offset|int }}"'
     state: present
   no_log: True
   with_dict: "{{ users }}"
