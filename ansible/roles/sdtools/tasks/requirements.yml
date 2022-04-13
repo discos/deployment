@@ -64,7 +64,7 @@
 
 
 - name: Upgrade pip3.6 to latest version
-  command: "easy_install-3.6 -U pip"
+  command: "python3.6 -m ensurepip --upgrade"
 
 
 - name: Install SDTools python dependencies
@@ -81,5 +81,4 @@
     - numba==0.50.1
     - watchdog
     - extension_helpers 
-    - wheel
     - sunpy
