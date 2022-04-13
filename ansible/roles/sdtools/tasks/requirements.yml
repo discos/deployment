@@ -81,4 +81,5 @@
     - numba==0.50.1
     - watchdog
     - extension_helpers 
+    - wheel
     - sunpy
