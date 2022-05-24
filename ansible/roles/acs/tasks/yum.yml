@@ -1,48 +1,5 @@
 ---
 
-- name: Check if the ius-release package exists in the local repository
-  stat:
-    path: "{{ local_repository_path }}/{{ ius_release.file }}"
-  delegate_to: localhost
-  run_once: true
-  register: ius_release_package
-
-
-- name: Download ius-release yum package
-  get_url:
-    url: "{{ remote_repository_download_url }}/{{ ius_release.file }}"
-    dest: "{{ local_repository_path }}"
-    headers:
-      Authorization: "token {{ repository_token }}"
-  when: ius_release_package.stat.exists == False
-  delegate_to: localhost
-  run_once: true
-
-
-- name: Copy {{ ius_release.file }} to the remote
-  copy:
-    src: "{{ local_repository_path }}/{{ ius_release.file }}"
-    dest: "/root/"
-
-
-- name: Install the {{ ius_release.file }} yum package
-  yum:
-    name: "/root/{{ ius_release.file }}"
-    state: present
-
-
-- name: Delete the {{ ius_release.file }} package from the remote
-  file:
-    path: "/root/{{ ius_release.file }}"
-    state: absent
-
-
-- name: Make sure the git yum package is not installed
-  yum:
-    name: git
-    state: absent
-
-
 - name: Install ACS related yum-packages
   yum:
     name:
@@ -74,10 +31,46 @@
       - bluefish
       - dejavu-sans-mono-fonts
       - java-1.8.0-openjdk
-      - git-core
       - bash-completion
       - python-argparse
       - "@X Window System"
       - "@Desktop"
       - "@fonts"
     state: present
+
+
+- name: Make sure the default git yum package is not installed
+  yum:
+    name:
+      - git
+      - git-core
+    state: absent
+
+
+- name: Download git224-core-2.24.3-1.el6.ius.x86_64.rpm yum package
+  get_url:
+    url: "{{ remote_repository_download_url }}/git224-core-2.24.3-1.el6.ius.x86_64.rpm"
+    dest: "{{ local_repository_path }}"
+    force: false
+    headers:
+      Authorization: "token {{ repository_token }}"
+  delegate_to: localhost
+  run_once: true
+
+
+- name: Copy git-core to the remote
+  copy:
+    src: "{{ local_repository_path }}/git224-core-2.24.3-1.el6.ius.x86_64.rpm"
+    dest: "/root/"
+
+
+- name: Install the git224-core-2.24.3-1.el6.ius.x86_64.rpm yum package
+  yum:
+    name: "/root/git224-core-2.24.3-1.el6.ius.x86_64.rpm"
+    state: present
+
+
+- name: Delete the git224-core-2.24.3-1.el6.ius.x86_64.rpm package from the remote
+  file:
+    path: "/root/git224-core-2.24.3-1.el6.ius.x86_64.rpm"
+    state: absent

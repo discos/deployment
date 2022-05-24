@@ -19,7 +19,7 @@ Vagrant.configure(vagrantfile_api_version) do |config|
     config.vm.define "manager" do |node|
         node.vm.hostname = "manager"
         node.vm.box = "bento/centos-6.8"
-        node.vm.network :private_network, ip: "192.168.10.200"
+        node.vm.network :private_network, ip: "192.168.56.200"
 
         node.vm.provider :virtualbox do |vb|
             vb.name = "discos_manager"

@@ -1,20 +1,70 @@
 ---
 
-- name: Install SDTools required yum packages
+- name: Download {{ item }} yum package
+  get_url:
+    url: "{{ remote_repository_download_url }}/{{ item }}"
+    dest: "{{ local_repository_path }}"
+    force: false
+    headers:
+      Authorization: "token {{ repository_token }}"
+  delegate_to: localhost
+  run_once: true
+  with_items:
+    - python36u-pip-9.0.1-1.ius.el6.noarch.rpm
+    - python36u-devel-3.6.8-1.el6.ius.x86_64.rpm
+    - python36u-tkinter-3.6.8-1.el6.ius.x86_64.rpm
+    - python36u-setuptools-39.0.1-1.ius.el6.noarch.rpm
+    - python36u-3.6.8-1.el6.ius.x86_64.rpm
+    - python36u-libs-3.6.8-1.el6.ius.x86_64.rpm
+
+
+- name: Copy {{ item }} to the remote
+  copy:
+    src: "{{ local_repository_path }}/{{ item }}"
+    dest: "/root/"
+  with_items:
+    - python36u-pip-9.0.1-1.ius.el6.noarch.rpm
+    - python36u-devel-3.6.8-1.el6.ius.x86_64.rpm
+    - python36u-tkinter-3.6.8-1.el6.ius.x86_64.rpm
+    - python36u-setuptools-39.0.1-1.ius.el6.noarch.rpm
+    - python36u-3.6.8-1.el6.ius.x86_64.rpm
+    - python36u-libs-3.6.8-1.el6.ius.x86_64.rpm
+
+
+- name: Install required yum packages
+  yum:
+    name:
+      - /root/python36u-pip-9.0.1-1.ius.el6.noarch.rpm
+      - /root/python36u-devel-3.6.8-1.el6.ius.x86_64.rpm
+      - /root/python36u-tkinter-3.6.8-1.el6.ius.x86_64.rpm
+      - /root/python36u-setuptools-39.0.1-1.ius.el6.noarch.rpm
+      - /root/python36u-3.6.8-1.el6.ius.x86_64.rpm
+      - /root/python36u-libs-3.6.8-1.el6.ius.x86_64.rpm
+    state: present
+
+
+- name: Delete the {{ item }} package from the remote
+  file:
+    path: "/root/{{ item }}"
+    state: absent
+  with_items:
+    - python36u-pip-9.0.1-1.ius.el6.noarch.rpm
+    - python36u-devel-3.6.8-1.el6.ius.x86_64.rpm
+    - python36u-tkinter-3.6.8-1.el6.ius.x86_64.rpm
+    - python36u-setuptools-39.0.1-1.ius.el6.noarch.rpm
+    - python36u-3.6.8-1.el6.ius.x86_64.rpm
+    - python36u-libs-3.6.8-1.el6.ius.x86_64.rpm
+
+
+- name: Install required llvm yum package
   yum:
     name:
       - llvm
-      - python36u-pip
-      - python36u-devel
-      - python36u-tkinter
     state: present
 
 
 - name: Upgrade pip3.6 to latest version
-  command: "{{ item }}"
-  with_items:
-    - "pip3.6 install --upgrade pip"
-    - "cp /usr/local/bin/pip3 /usr/local/bin/pip3.6"
+  command: "python3.6 -m ensurepip --upgrade"
 
 
 - name: Install SDTools python dependencies
@@ -23,9 +73,12 @@
     - astropy
     - numpy
     - scipy
+    - Pillow==8.3.2
     - matplotlib
     - pyyaml
     - h5py
     - statsmodels
     - numba==0.50.1
     - watchdog
+    - extension_helpers 
+    - sunpy

@@ -736,9 +736,12 @@
 - name: Install some third-party Python packages
   command: "{{ item }}"
   with_items:
+    - "pip install pbr"
     - "pip install mock==1.1.1"
     - "pip install jinja2"
     - "pip install subprocess32"
+    - "pip install d2to1"
+    - "pip install stsci.distutils"
     - "pip install pyfits"
   become: true
   become_user: "{{ user.name }}"

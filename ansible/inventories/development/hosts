@@ -1,5 +1,5 @@
 [manager]
-manager.development.inaf.it ansible_host=10.211.55.7
+manager.development.inaf.it ansible_host=192.168.56.200
 
 [acs:children]
 manager

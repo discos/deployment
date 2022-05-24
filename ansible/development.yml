@@ -115,6 +115,13 @@
     - gildas
 
 
+- name: Install SAOImageDS9
+  hosts: manager
+  remote_user: root
+  roles:
+    - ds9
+
+
 - name: Apply configuration for project users
   hosts: manager
   remote_user: root
