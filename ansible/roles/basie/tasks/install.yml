@@ -30,6 +30,6 @@
 
 - name: Create a symlink to basie executable
   file:
-    src: '/alma/ACS-FEB2017/Python/bin/basie'
+    src: '/alma/{{ acs_tag }}/pyenv/versions/2.7.16/bin/basie'
     dest: '/usr/bin/basie'
     state: link

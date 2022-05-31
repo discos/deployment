@@ -15,6 +15,14 @@
   with_dict: "{{ users_groups }}"
 
 
+- name: Add {{ user.name}} group alias
+  group:
+    name: "{{ user.name }}"
+    gid: "{{ user.group }}"
+    non_unique: yes
+    state: present
+
+
 - name: Add the users
   user:
     name: "{{ item.value.name }}"

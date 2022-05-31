@@ -4,13 +4,9 @@
 # ACS Variables
 ###############
 
-acs_tag: 'ACS-FEB2017'
 acssw: /alma/{{ acs_tag }}/ACSSW
 
 cdb_versions: ['SRT', 'Medicina', 'Noto']
-
-acs_dest: { file: 'acs-2017-02-binaries-64bit.tar.bz2' }
-extprod_dest: { file: 'extprod-2017-02-binaries-64bit.tar.bz2' }
 
 
 ###############################

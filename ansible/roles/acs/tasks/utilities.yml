@@ -11,12 +11,12 @@
 
 
 - name: Install ipython and create default profile
-  command: "{{ item[0] }}"
-  with_nested:
-    - ["pip install ipython", "ipython profile create"]
-    - "{{ users | dict2items }}"
+  command: "{{ item }}"
+  with_items:
+    - "pip install ipython"
+    - "ipython profile create"
   become: True
-  become_user: "{{ item[1].value.name }}"
+  become_user: "{{ user.name }}"
   become_flags: "-i"
   no_log: True
 

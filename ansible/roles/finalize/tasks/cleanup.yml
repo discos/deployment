@@ -1,5 +1,9 @@
 ---
 
+- name: Delete any OS welcome message
+  shell: "truncate -s 0 /etc/motd"
+
+
 - name: Fetch the local user's public key
   command: "cat ~/.ssh/id_rsa.pub"
   register: local_public_key

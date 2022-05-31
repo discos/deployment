@@ -484,6 +484,27 @@
   when: qt_library.stat.exists == False
 
 
+- name: Remove old libpng
+  file:
+    path: /usr/lib64/libpng.so
+    state: absent
+
+
+- name: Install libpng12
+  yum:
+    name: libpng12-devel
+        #- libX11-devel
+        #- libXrender-devel
+        #- libXext-devel
+
+
+- name: Link libpng12
+  file:
+    path: /usr/lib64/libpng.so
+    src: /usr/lib64/libpng12.so
+    state: link
+
+
 - name: No license confirmation prompt during installation
   replace:
     dest: "{{ remote_build_path }}/{{ qt_build_dir }}/configure"
@@ -492,10 +513,36 @@
   when: qt_library.stat.exists == False
 
 
+- name: Configure Qt
+  command: "./configure -no-openssl -opensource --prefix={{ qt_lib }}"
+  args:
+    chdir: "{{ remote_build_path }}/{{ qt_build_dir }}"
+  when: qt_library.stat.exists == False
+
+
+- name: Replace libpng15 with libpng12
+  replace:
+    dest: "{{ remote_build_path }}/{{ qt_build_dir }}/src/gui/Makefile"
+    regexp: "libpng15"
+    replace: "libpng12"
+  when: qt_library.stat.exists == False
+
+
+- name: Add the -fpermissive flag to some Makefiles
+  replace:
+    dest: "{{ item }}"
+    regexp: "CXXFLAGS      = -m64"
+    replace: "CXXFLAGS      = -fpermissive -m64"
+  with_items:
+    - "{{ remote_build_path }}/{{ qt_build_dir }}/src/xmlpatterns/Makefile"
+    - "{{ remote_build_path }}/{{ qt_build_dir }}/src/3rdparty/webkit/WebCore/Makefile"
+    - "{{ remote_build_path }}/{{ qt_build_dir }}/tools/porting/src/Makefile"
+  when: qt_library.stat.exists == False
+
+
 - name: Install Qt
   command: "{{ item }}"
   with_items:
-    - "./configure -no-openssl -opensource --prefix={{ qt_lib }}"
     - "gmake"
     - "gmake install"
   args:
@@ -511,7 +558,7 @@
 
 - name: Check if sip is installed
   stat:
-    path: "/alma/{{ acs_tag }}/Python/lib/python2.7/site-packages/sip.so"
+    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/sip.so"
   register: sip_library
 
 
@@ -543,7 +590,7 @@
   when: sip_library.stat.exists == False
 
 
-- name: Change the {{ pyqt_build_dir }} permissions
+- name: Change the {{ sip_build_dir }} permissions
   file:
     path: "{{ remote_build_path }}/{{ sip_build_dir }}"
     state: directory
@@ -575,7 +622,7 @@
 
 - name: Check if PyQt is installed
   stat:
-    path: "/alma/{{ acs_tag }}/Python/lib/python2.7/site-packages/PyQt4/__init__.py"
+    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/PyQt4/__init__.py"
   register: pyqt_library
 
 
@@ -657,7 +704,7 @@
 
 - name: Check if PyQwt is installed
   stat:
-    path: "/alma/{{ acs_tag }}/Python/lib/python2.7/site-packages/PyQt4/Qwt5/__init__.py"
+    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/PyQt4/Qwt5/__init__.py"
   register: pyqwt_library
 
 

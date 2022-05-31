@@ -1,0 +1,23 @@
+---
+
+
+- name: Patch n1
+  replace:
+    dest: "/alma/ACS-2021DEC/TAO/ACE_wrappers/bin/MakeProjectCreator/config/global.features"
+    regexp: "xerces3       = 0"
+    replace: "xerces3       = 1"
+
+
+- name: Replace buildDDS
+  template:
+    src: "patches/ACS-DEC2021/buildDDS"
+    dest: "{{ remote_build_path }}/acs/ExtProd/INSTALL/"
+    mode: 0755
+    force: yes
+
+
+- name: Patch n2
+  replace:
+    dest: "{{ remote_build_path }}/acs/Makefile"
+    regexp: " bulkDataNT "
+    replace: " bulkDataNTOpenDDS "
