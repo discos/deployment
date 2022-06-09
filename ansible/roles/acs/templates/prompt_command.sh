@@ -18,12 +18,6 @@ if [ -f /{{ discos_sw_dir }}/config/misc/load_branch ]; then
     source /{{ discos_sw_dir }}/config/misc/load_branch
 fi
 
-# Load ACS definitions
-# ====================
-if [ -f /{{ discos_sw_dir }}/config/acs/.bash_profile.acs ]; then
-    source /{{ discos_sw_dir }}/config/acs/.bash_profile.acs
-fi
-
 export ACS_TMP=/service/acstmp/{{ inventory_hostname_short }}
 
 if [ -n "${DISCOS_BRANCH}" ]; then
