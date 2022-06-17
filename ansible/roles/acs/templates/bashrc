@@ -7,12 +7,6 @@ alias ll='ls -la'
 alias la='ls -A'
 alias lt='ls -lt | more'
 
-# Load ACS definitions
-# ====================
-if [ -f /{{ discos_sw_dir }}/config/acs/.bash_profile.acs ]; then
-    source /{{ discos_sw_dir }}/config/acs/.bash_profile.acs
-fi
-
 # Update the pyenv shims in order to be able to use newly installed python packages
 # =================================================================================
 pyenv rehash > /dev/null 2>&1

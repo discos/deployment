@@ -18,6 +18,12 @@ if [ -f /{{ discos_sw_dir }}/config/misc/load_branch ]; then
     source /{{ discos_sw_dir }}/config/misc/load_branch
 fi
 
+# Load ACS definitions
+# ====================
+if [ -f /{{ discos_sw_dir }}/config/acs/.bash_profile.acs ]; then
+    source /{{ discos_sw_dir }}/config/acs/.bash_profile.acs
+fi
+
 export ACS_TMP=/service/acstmp/{{ inventory_hostname_short }}
 
 if [ -n "${DISCOS_BRANCH}" ]; then
@@ -48,3 +54,24 @@ if [ -n "${DISCOS_BRANCH}" ]; then
 else
     PS1="(\[$red\]branch?\[$txtrst\]) \u@\h \w $ "
 fi
+
+##############################################
+# Remove duplicates from environment variables
+
+for oldvariable in `env | awk -F= '{print $1}'`; do
+    newvariable=
+    oldifs=$IFS
+    IFS=":"
+    declare -A exists
+    for entry in ${!oldvariable}; do
+        if [ ! -z "$entry" ] && [ -z ${exists[$entry]} ]; then
+            newvariable=${newvariable:+$newvariable:}$entry
+            exists[$entry]=yes
+        fi
+    done
+    unset exists
+    IFS=$oldifs
+    unset oldifs
+    export $oldvariable="$newvariable"
+    unset newvariable
+done
