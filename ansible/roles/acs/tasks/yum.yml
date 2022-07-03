@@ -43,6 +43,15 @@
       - python2-pip
       - python3-pip
       - python-argparse
+      - qt
+      - qt-devel
+      - qt-x11
+      - qt-assistant
+      - qt-assistant-adp
+      - qt-assistant-adp-devel
+      - qt-settings
+      - PyQt4
+      - PyQt4-devel
       - readline-devel
       - redhat-lsb-core
       - rpm-build
@@ -63,6 +72,7 @@
       - wget
       - tree
       - xterm
+      - xorg-x11-font*
       - gsl
       - gsl-devel
       - gdb

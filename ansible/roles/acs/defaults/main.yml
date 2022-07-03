@@ -25,10 +25,7 @@ googletest_file: "{{ googletest_build_dir }}.zip"
 gmock_build: "{{ remote_build_path }}/{{ googletest_build_dir }}/googlemock"
 gtest_build: "{{ remote_build_path }}/{{ googletest_build_dir }}/googletest"
 
-qt_version: qt-4.5.2
-qt_lib: /usr/local/{{ qt_version }}
-qt_build_dir: qt-x11-opensource-src-4.5.2
-qt_file: "{{ qt_build_dir}}.tar.gz"
+qt_version: qt4
 
 sip_build_dir: sip-4.19.2
 sip_file: "{{ sip_build_dir }}.tar.gz"
@@ -40,13 +37,6 @@ pyqwt_build_dir: PyQwt-5.2.0
 pyqwt_file: "{{ pyqwt_build_dir }}.tar.gz"
 
 slalibrary_file: "SlaLibrary.tar.gz"
-
-
-#######################
-# IUS Release Variables
-#######################
-
-ius_release: { file: 'ius-release-el7.rpm' }
 
 
 ################

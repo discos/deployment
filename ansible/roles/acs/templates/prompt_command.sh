@@ -55,13 +55,10 @@ else
     PS1="(\[$red\]branch?\[$txtrst\]) \u@\h \w $ "
 fi
 
-##############################################
-# Remove duplicates from environment variables
+###################################################
+# Remove duplicates from PATH environment variables
 
-for oldvariable in `env | awk -F= '{print $1}'`; do
-    if [ "${!oldvariable}" == ":" ]; then
-        continue
-    fi
+for oldvariable in `env | grep "PATH" | grep -v "PATH_SEP" | awk -F= '{print $1}'`; do
     newvariable=
     oldifs=$IFS
     IFS=":"

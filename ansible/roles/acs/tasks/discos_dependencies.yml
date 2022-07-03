@@ -409,145 +409,12 @@
 # QT AND PYQT LIBRARIES
 #######################
 
-- name: Increment the process stack size in order to compile AS GUI
+- name: Increment the process stack size in order to compile SRT AS GUI
   pam_limits:
     domain: "{{ user.name }}"
     limit_type: '-'
     limit_item: stack
     value: '65532'
-
-
-- name: Verify the Qt library is not installed
-  yum:
-    name:
-      - "qt"
-      - "qt-devel"
-      - "qt4"
-    state: absent
-  register: result
-  retries: 2
-  until: result is succeeded
-
-
-- name: Check if {{ qt_lib }} exists
-  stat:
-    path: "{{ qt_lib }}"
-  register: qt_library
-
-
-- name: Check if the {{ qt_file }} exists in the local repository
-  stat:
-    path: "{{ local_repository_path }}/{{ qt_file }}"
-  delegate_to: localhost
-  run_once: true
-  register: qt_sources
-
-
-- name: Download {{ qt_file }} parts
-  get_url:
-    url: "{{ remote_repository_download_url }}/{{ qt_file }}_0{{ item }}"
-    dest: "{{ local_repository_path }}"
-    headers:
-      Authorization: "token {{ repository_token }}"
-  with_sequence: start=0 end=1
-  when:
-    - qt_sources.stat.exists == False
-  delegate_to: localhost
-  run_once: true
-
-
-- name: Merge {{ qt_file }} parts
-  shell: "cat {{ qt_file }}_* >> {{ qt_file }}"
-  args:
-    chdir: "{{ local_repository_path }}"
-  when:
-    - qt_sources.stat.exists == False
-  delegate_to: localhost
-  run_once: true
-
-
-- name: Delete {{ qt_file }} parts
-  file:
-    path: "{{ local_repository_path }}/{{ qt_file }}_0{{ item }}"
-    state: absent
-  with_sequence: start=0 end=1
-  when:
-    - qt_sources.stat.exists == False
-  delegate_to: localhost
-  run_once: true
-
-
-- name: Copy {{ qt_file }} to the remote {{ remote_build_path }}
-  unarchive:
-    src: "{{ local_repository_path }}/{{ qt_file }}"
-    dest: "{{ remote_build_path }}"
-  when: qt_library.stat.exists == False
-
-
-- name: Remove old libpng
-  file:
-    path: /usr/lib64/libpng.so
-    state: absent
-
-
-- name: Install libpng12
-  yum:
-    name: libpng12-devel
-        #- libX11-devel
-        #- libXrender-devel
-        #- libXext-devel
-
-
-- name: Link libpng12
-  file:
-    path: /usr/lib64/libpng.so
-    src: /usr/lib64/libpng12.so
-    state: link
-
-
-- name: No license confirmation prompt during installation
-  replace:
-    dest: "{{ remote_build_path }}/{{ qt_build_dir }}/configure"
-    regexp: "OPT_CONFIRM_LICENSE=no"
-    replace: "OPT_CONFIRM_LICENSE=yes"
-  when: qt_library.stat.exists == False
-
-
-- name: Configure Qt
-  command: "./configure -no-openssl -opensource --prefix={{ qt_lib }}"
-  args:
-    chdir: "{{ remote_build_path }}/{{ qt_build_dir }}"
-  when: qt_library.stat.exists == False
-
-
-- name: Replace libpng15 with libpng12
-  replace:
-    dest: "{{ remote_build_path }}/{{ qt_build_dir }}/src/gui/Makefile"
-    regexp: "libpng15"
-    replace: "libpng12"
-  when: qt_library.stat.exists == False
-
-
-- name: Add the -fpermissive flag to some Makefiles
-  replace:
-    dest: "{{ item }}"
-    regexp: "CXXFLAGS      = -m64"
-    replace: "CXXFLAGS      = -fpermissive -m64"
-  with_items:
-    - "{{ remote_build_path }}/{{ qt_build_dir }}/src/xmlpatterns/Makefile"
-    - "{{ remote_build_path }}/{{ qt_build_dir }}/src/3rdparty/webkit/WebCore/Makefile"
-    - "{{ remote_build_path }}/{{ qt_build_dir }}/tools/porting/src/Makefile"
-  when: qt_library.stat.exists == False
-
-
-- name: Install Qt
-  command: "{{ item }}"
-  with_items:
-    - "gmake"
-    - "gmake install"
-  args:
-    chdir: "{{ remote_build_path }}/{{ qt_build_dir }}"
-  when: qt_library.stat.exists == False
 
 
 - name: Verify the sip library is not installed
@@ -558,7 +425,7 @@
 
 - name: Check if sip is installed
   stat:
-    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/sip.so"
+    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/sip.soprova"
   register: sip_library
 
 
@@ -622,7 +489,7 @@
 
 - name: Check if PyQt is installed
   stat:
-    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/PyQt4/__init__.py"
+    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/PyQt4/__init__.pyprova"
   register: pyqt_library
 
 
@@ -665,9 +532,7 @@
 
 
 - name: Configure PyQt
-  command: "{{ item }}"
-  with_items:
-    - "python configure.py --confirm-license --qmake {{ qt_lib }}/bin/qmake"
+  shell: "python configure.py --confirm-license --qmake `which qmake`"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
@@ -704,7 +569,7 @@
 
 - name: Check if PyQwt is installed
   stat:
-    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/PyQt4/Qwt5/__init__.py"
+    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/PyQt4/Qwt5/__init__.pyprova"
   register: pyqwt_library
 
 
