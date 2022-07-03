@@ -10,14 +10,19 @@
     - "prospector==0.12.11"
 
 
-- name: Install ipython and create default profile
-  command: "{{ item }}"
-  with_items:
-    - "pip install ipython"
-    - "ipython profile create"
+- name: Install ipython
+  command: "pip install ipython"
   become: True
   become_user: "{{ user.name }}"
   become_flags: "-i"
+
+
+- name: Create default ipython profile
+  command: "ipython profile create"
+  become: True
+  become_user: "{{ item.value.name }}"
+  become_flags: "-i"
+  with_dict: "{{ users }}"
   no_log: True
 
 

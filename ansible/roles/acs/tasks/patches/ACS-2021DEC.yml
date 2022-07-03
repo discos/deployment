@@ -3,14 +3,14 @@
 
 - name: Patch n1
   replace:
-    dest: "/alma/ACS-2021DEC/TAO/ACE_wrappers/bin/MakeProjectCreator/config/global.features"
+    dest: "/alma/{{ acs_tag }}/TAO/ACE_wrappers/bin/MakeProjectCreator/config/global.features"
     regexp: "xerces3       = 0"
     replace: "xerces3       = 1"
 
 
 - name: Replace buildDDS
   template:
-    src: "patches/ACS-DEC2021/buildDDS"
+    src: "patches/{{ acs_tag }}/buildDDS"
     dest: "{{ remote_build_path }}/acs/ExtProd/INSTALL/"
     mode: 0755
     force: yes

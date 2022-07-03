@@ -10,7 +10,7 @@ Vagrant.configure(vagrantfile_api_version) do |config|
     config.vm.synced_folder '.', '/vagrant', disabled: true
     config.vm.provider :virtualbox do |vb|
         vb.customize ["modifyvm", :id, "--ioapic", "on"]
-        vb.memory = 4096
+        vb.memory = 8192
         vb.cpus = 4
         vb.default_nic_type = "virtio"
     end

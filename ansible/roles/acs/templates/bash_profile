@@ -10,7 +10,7 @@ fi
 
 # Variables to export
 # ===================
-export QTDIR=/usr/local/{{ qt_version }}
+export QTDIR=/usr/lib64/{{ qt_version }}
 export QTLIB=$QTDIR/lib
 export QTINC=$QTDIR/include
 export qt_prefix=$QTLIB

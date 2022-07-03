@@ -160,5 +160,6 @@
         if [ -f /{{ discos_sw_dir }}/config/misc/bash_profile ]; then
             source /{{ discos_sw_dir }}/config/misc/bash_profile
         fi
+    insertafter: "# .bash_profile"
   no_log: True
   with_dict: "{{ users }}"

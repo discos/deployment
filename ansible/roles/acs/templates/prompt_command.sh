@@ -59,6 +59,9 @@ fi
 # Remove duplicates from environment variables
 
 for oldvariable in `env | awk -F= '{print $1}'`; do
+    if [ "${!oldvariable}" == ":" ]; then
+        continue
+    fi
     newvariable=
     oldifs=$IFS
     IFS=":"
