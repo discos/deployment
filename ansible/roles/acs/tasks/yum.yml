@@ -9,6 +9,7 @@
       - bison
       - bzip2
       - bzip2-devel
+      - dbus-devel
       - dos2unix
       - doxygen
       - expat
@@ -39,10 +40,6 @@
       - perl
       - perl-devel
       - procmail
-      - python-devel
-      - python2-pip
-      - python3-pip
-      - python-argparse
       - qt
       - qt-devel
       - qt-x11
@@ -50,8 +47,8 @@
       - qt-assistant-adp
       - qt-assistant-adp-devel
       - qt-settings
-      - PyQt4
-      - PyQt4-devel
+      - qwt
+      - qwt-devel
       - readline-devel
       - redhat-lsb-core
       - rpm-build

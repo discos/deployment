@@ -21,3 +21,42 @@
     dest: "{{ remote_build_path }}/acs/Makefile"
     regexp: " bulkDataNT "
     replace: " bulkDataNTOpenDDS "
+
+
+- set_fact:
+    acs_command_center: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/acscommandcenter/"
+
+
+- set_fact:
+    execute_container: "{{ acs_command_center }}/src/alma/acs/commandcenter/engine/ExecuteContainer.java"
+    executor: "{{ acs_command_center }}/src/alma/acs/commandcenter/engine/Executor.java"
+
+
+- name: Replace ExecuteContainer.java
+  template:
+    src: "patches/{{ acs_tag }}/ExecuteContainer.java"
+    dest: "{{ execute_container }}"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: 0664
+    backup: yes
+
+
+- name: Replace Executor.java
+  template:
+    src: "patches/{{ acs_tag }}/Executor.java"
+    dest: "{{ executor }}"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: 0664
+    backup: yes
+
+
+- name: Replace enumpropAlarm.i
+  template:
+    src: "patches/{{ acs_tag }}/enumpropAlarm.i"
+    dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/enumprop/ws/include/enumpropAlarm.i"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: 0664
+    backup: True

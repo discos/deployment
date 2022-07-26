@@ -425,7 +425,7 @@
 
 - name: Check if sip is installed
   stat:
-    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/sip.soprova"
+    path: "/alma/{{ acs_tag }}/pyenv/shims/sip"
   register: sip_library
 
 
@@ -444,7 +444,6 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - sip_library.stat.exists == False
     - sip_sources.stat.exists == False
   delegate_to: localhost
   run_once: true
@@ -454,17 +453,9 @@
   unarchive:
     src: "{{ local_repository_path }}/{{ sip_file }}"
     dest: "{{ remote_build_path }}"
-  when: sip_library.stat.exists == False
-
-
-- name: Change the {{ sip_build_dir }} permissions
-  file:
-    path: "{{ remote_build_path }}/{{ sip_build_dir }}"
-    state: directory
-    recurse: yes
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0755
+  when: sip_library.stat.exists == False
 
 
 - name: Install sip
@@ -473,6 +464,7 @@
     - "python configure.py"
     - "make"
     - "make install"
+    - "pyenv rehash"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
@@ -489,7 +481,7 @@
 
 - name: Check if PyQt is installed
   stat:
-    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/PyQt4/__init__.pyprova"
+    path: "/alma/{{ acs_tag }}/pyenv/shims/pyuic4"
   register: pyqt_library
 
 
@@ -508,7 +500,6 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - pyqt_library.stat.exists == False
     - pyqt_sources.stat.exists == False
   delegate_to: localhost
   run_once: true
@@ -518,17 +509,9 @@
   unarchive:
     src: "{{ local_repository_path }}/{{ pyqt_file }}"
     dest: "{{ remote_build_path }}"
-  when: pyqt_library.stat.exists == False
-
-
-- name: Change the {{ pyqt_build_dir }} permissions
-  file:
-    path: "{{ remote_build_path }}/{{ pyqt_build_dir }}"
-    state: directory
-    recurse: yes
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0755
+  when: pyqt_library.stat.exists == False
 
 
 - name: Configure PyQt
@@ -560,79 +543,129 @@
   with_items:
     - "make"
     - "make install"
+    - "pyenv rehash"
   become: true
   become_user: "{{ user.name }}"
+  become_flags: "-i"
   args:
     chdir: "{{ remote_build_path }}/{{ pyqt_build_dir }}"
   when: pyqt_library.stat.exists == False
 
 
-- name: Check if PyQwt is installed
+- name: Check if PyQtQwt is installed
   stat:
-    path: "/alma/{{ acs_tag }}/pyenv/versions/2.7.16/lib/python2.7/site-packages/PyQt4/Qwt5/__init__.pyprova"
-  register: pyqwt_library
+    path: "/alma/{{ acs_tag }}/pyenv/versions/3.6.9/share/sip/PyQt4/Qwt"
+  register: pyqtqwt_library
 
 
-- name: Check if the {{ pyqwt_file }}  exists in the local repository
+- name: Check if the {{ pyqtqwt_file }}  exists in the local repository
   stat:
-    path: "{{ local_repository_path }}/{{ pyqwt_file }}"
+    path: "{{ local_repository_path }}/{{ pyqtqwt_file }}"
   delegate_to: localhost
   run_once: true
-  register: pyqwt_sources
+  register: pyqtqwt_sources
 
 
-- name: Download {{ pyqwt_file }}
+- name: Download {{ pyqtqwt_file }}
   get_url:
-    url: "{{ remote_repository_download_url }}/{{ pyqwt_file }}"
+    url: "{{ remote_repository_download_url }}/{{ pyqtqwt_file }}"
     dest: "{{ local_repository_path }}"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - pyqwt_library.stat.exists == False
-    - pyqwt_sources.stat.exists == False
+    - pyqtqwt_sources.stat.exists == False
   delegate_to: localhost
   run_once: true
 
 
-- name: Copy {{ pyqwt_file }} to the remote {{ remote_build_path }}
+- name: Copy {{ pyqtqwt_file }} to the remote {{ remote_build_path }}
   unarchive:
-    src: "{{ local_repository_path }}/{{ pyqwt_file }}"
+    src: "{{ local_repository_path }}/{{ pyqtqwt_file }}"
     dest: "{{ remote_build_path }}"
-  when: pyqwt_library.stat.exists == False
-
-
-- name: Change the {{ pyqwt_build_dir }} permissions
-  file:
-    path: "{{ remote_build_path }}/{{ pyqwt_build_dir }}"
-    state: directory
-    recurse: yes
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0755
+  when: pyqtqwt_library.stat.exists == False
 
 
-- name: Configure PyQwt
+- name: Copy include files
+  copy:
+    src: "/usr/include/qwt"
+    dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/"
+    force: True
+    owner: "{{ user.name }}"
+    remote_src: True
+  when: pyqtqwt_library.stat.exists == False
+
+
+- name: Replace include files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/qwt/"
+    force: True
+    owner: "{{ user.name }}"
+    remote_src: True
+  with_items:
+    - "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/qwt_series_data.h"
+    - "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/qwt_series_store.h"
+  when: pyqtqwt_library.stat.exists == False
+
+
+- name: Patch Qwt_Qt4.sip
+  replace:
+    dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/sip/Qwt_Qt4.sip"
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp: "//typedef unsigned long size_t;", replace: "typedef unsigned long size_t;" }
+    - { regexp: "%Include qwt_plot_zoomer.sip", replace: "//%Include qwt_plot_zoomer.sip" }
+    - { regexp: "%Include qwt_plot_spectrocurve.sip", replace: "//%Include qwt_plot_spectrocurve.sip" }
+    - { regexp: "%Include qwt_plot_tradingcurve.sip", replace: "//%Include qwt_plot_tradingcurve.sip" }
+  when: pyqtqwt_library.stat.exists == False
+
+
+- name: Patch qwt_plot_renderer.sip
+  replace:
+    dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/sip/qwt_plot_renderer.sip"
+    regexp: "class QPrinter;"
+    replace: "//class QPrinter;"
+  when: pyqtqwt_library.stat.exists == False
+
+
+- name: Configure PyQtQwt
   command: "{{ item }}"
   with_items:
-    - "python configure.py -Q ../qwt-5.2"
+    - "python configure.py --pyqt=PyQt4 --qwt-incdir=header/qwt/"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
   args:
-    chdir: "{{ remote_build_path }}/{{ pyqwt_build_dir }}/configure"
-  when: pyqwt_library.stat.exists == False
+    chdir: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}"
+  when: pyqtqwt_library.stat.exists == False
 
 
-- name: Install PyQwt
-  command: "{{ item }}"
-  with_items:
-    - "make"
-    - "make install"
-  become: true
+- name: Patch Makefile
+  replace:
+    dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/Qwt/Makefile"
+    regexp: "-I. -I/usr/include/QtCore"
+    replace: "-I. -I/usr/include/Qt -I/usr/include/QtCore"
+  when: pyqtqwt_library.stat.exists == False
+
+
+- name: Build and install PyQtQwt
+  command: "{{ item.command }}"
+  become: "{{ item.become }}"
   become_user: "{{ user.name }}"
+  become_flags: "-i"
+  with_items:
+    - { become: "true", command: "make" }
+    - { become: "true", command: "make install_subtargets" }
+    - { become: "true", command: "make install_pep484_stubs" }
+    - { become: "false", command: "make install_api" }
+    - { become: "true", command: "make install_distinfo" }
+    - { become: "true", command: "pyenv rehash" }
   args:
-    chdir: "{{ remote_build_path }}/{{ pyqwt_build_dir }}/configure"
-  when: pyqwt_library.stat.exists == False
+    chdir: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}"
+  when: pyqtqwt_library.stat.exists == False
 
 
 - name: Remove the temporary directory used for libraries compilation

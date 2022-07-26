@@ -166,18 +166,6 @@
 #  become_user: "{{ user.name }}"
 
 
-#- name: Copy some system Python libraries into ACS path
-#  copy:
-#    src: "/usr/lib64/python2.7/lib-dynload/{{ item }}"
-#    dest: "/alma/{{ acs_tag }}/Python/lib/python2.7/lib-dynload/"
-#    remote_src: True
-#  with_items:
-#    - "bz2.so"
-#    - "_sqlite3.so"
-#  become: True
-#  become_user: "{{ user.name }}"
-
-
 ##################################
 # Load ACS libraries to the system
 ##################################
@@ -192,7 +180,6 @@
   with_items:
     - "/alma/{{ acs_tag }}/ACSSW/lib"
     - "/alma/{{ acs_tag }}/TAO/ACE_wrappers/build/linux/lib"
-#    - "/alma/{{ acs_tag }}/Python/lib"
 
 
 - name: Load the ACS libraries to the system

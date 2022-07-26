@@ -1,16 +1,16 @@
 ---
 
-- name: Download the BASIE repository
+- name: Download the DISCOS Simulators repository
   git:
-    repo: "https://github.com/discos/basie.git"
-    dest: "/{{ discos_sw_dir }}/basie"
+    repo: "https://github.com/discos/simulators.git"
+    dest: "/{{ discos_sw_dir }}/simulators"
     version: "master"
     force: yes
   become: True
   become_user: "{{ user.name }}"
 
 
-- name: Install BASIE
+- name: Install DISCOS Simulators
   command: "{{ item }}"
   become: True
   become_user: "{{ user.name }}"
@@ -22,4 +22,4 @@
     - "pyenv rehash"
     - "pyenv local --unset"
   args:
-    chdir: "/{{ discos_sw_dir }}/basie/"
+    chdir: "/{{ discos_sw_dir }}/simulators/"

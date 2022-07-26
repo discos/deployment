@@ -7,7 +7,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: "{{ item.mode }}"
-    follow: yes
+    follow: True
   with_items:
     - { path: "config", mode: "0750" }
     - { path: "config/misc", mode: "0750" }
@@ -21,7 +21,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0640
-    force: yes
+    force: True
 
 
 - name: Copy the bash_profile template
@@ -31,7 +31,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0640
-    force: yes
+    force: True
 
 
 - name: Copy prompt_command.sh
@@ -41,7 +41,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0640
-    force: yes
+    force: True
 
 
 - name: Create the branches file
@@ -60,7 +60,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0640
-    force: yes
+    force: False
 
 
 - name: Create the station file
@@ -68,7 +68,7 @@
     path: "/{{ discos_sw_dir }}/config/misc/station"
     line: "{{ item }}"
     state: present
-    create: true
+    create: True
     mode: 0644
   loop:
     - "#!/usr/bin/env bash"
@@ -93,7 +93,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0500
-    force: yes
+    force: True
 
 
 - name: Render the discos-set template
@@ -103,7 +103,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0500
-    force: yes
+    force: True
  
  
 - name: Render the _discos-check-branch template
@@ -113,7 +113,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0500
-    force: yes
+    force: True
 
 
 - name: Copy the pyrc template

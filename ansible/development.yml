@@ -90,29 +90,18 @@
     - manager
 
 
-#- name: Install single dish tools
-#  hosts: manager
-#  remote_user: root
-#  tasks:
-#    - include_role:
-#        name: sdtools
-#- include_role:
-#        name: quicklook
-#  when: quicklook_directories is defined
-
-
-- name: Install basie
+- name: Install BASIE
   hosts: manager
   remote_user: root
   roles:
     - basie
 
 
-#- name: Install GILDAS
-#  hosts: manager
-#  remote_user: root
-#  roles:
-#    - gildas
+- name: Install DISCOS Simulators
+  hosts: manager
+  remote_user: root
+  roles:
+    - simulators
 
 
 - name: Install SAOImageDS9
