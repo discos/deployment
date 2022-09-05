@@ -23,6 +23,18 @@
     replace: " bulkDataNTOpenDDS "
 
 
+- name: Patch n3
+  replace:
+    dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/{{ item }}"
+    regexp: "pfl-basic-4.0.1"
+    replace: "pfl-basic-4.1.2"
+  with_items:
+    - "acsGUIs/alarmsDefGUI/src/project.properties"
+    - "acsGUIs/objexp/src/objexp"
+    - "cdb_rdb/src/module.mk"
+    - "cdb_rdb/src/rules.mk"
+
+
 - set_fact:
     acs_command_center: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/acscommandcenter/"
 
