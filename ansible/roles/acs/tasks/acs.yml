@@ -45,7 +45,7 @@
 
 - name: Download the ACS repository
   git:
-    repo: "https://bitbucket.alma.cl/scm/asw/acs.git"
+    repo: "https://asw.alma.cl/ASW/acs.git"
     dest: "{{ remote_build_path }}/acs"
     version: "acs/2021DEC"
     track_submodules: yes
@@ -146,13 +146,6 @@
     group: "{{ user.group }}"
     mode: 0755
     recurse: True
-
-
-#- name: Set the default python version to 2.7
-#  shell: "pyenv global 2.7.16"
-#  become: True
-#  become_user: "{{ user.name }}"
-#  become_flags: "-i"
 
 
 #- name: Copy the acsStartContainer with debugger
