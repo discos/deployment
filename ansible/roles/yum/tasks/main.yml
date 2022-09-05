@@ -49,6 +49,7 @@
 - name: Install common required yum packages
   yum:
     name:
+      - openssl
       - procmail
       - vim-enhanced
       - subversion

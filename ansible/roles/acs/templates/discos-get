@@ -4,7 +4,7 @@ import os
 import sys
 import shutil
 import argparse
-import urllib2
+import urllib.request
 import json
 if os.name == 'posix' and sys.version_info[0] < 3:
     import subprocess32 as subprocess
@@ -45,10 +45,10 @@ elif args.tag:
     choices_type = 'tags'
     args.target = args.tag
 
-request = urllib2.Request(
+request = urllib.request.Request(
     'https://api.github.com/repos/discos/discos/%s' % choices_type,
 )
-choices = json.loads(urllib2.urlopen(request).read())
+choices = json.loads(urllib.request.urlopen(request).read())
 choices = [str(c.get('name')) for c in choices]
 
 if args.target not in choices:

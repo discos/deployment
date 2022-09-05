@@ -7,6 +7,11 @@ alias ll='ls -la'
 alias la='ls -A'
 alias lt='ls -lt | more'
 
-# Update the environment at every prompt
-# ======================================
+# Update the pyenv shims in order to be able to use newly installed python packages
+# =================================================================================
+pyenv rehash > /dev/null 2>&1
+
+# Update the environment now and with every prompt
+# ================================================
+source /discos-sw/config/misc/prompt_command.sh
 PROMPT_COMMAND='source /{{ discos_sw_dir }}/config/misc/prompt_command.sh'

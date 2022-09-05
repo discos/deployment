@@ -3,38 +3,91 @@
 - name: Install ACS related yum-packages
   yum:
     name:
-      - gnome-desktop
-      - gnome-desktop-devel
-      - python-devel
-      - gcc-c++
-      - gdb
-      - cmake
+      - deltarpm
+      - epel-release
+      - autoconf
+      - bison
+      - bzip2
+      - bzip2-devel
+      - dbus-devel
+      - dos2unix
+      - doxygen
       - expat
       - expat-devel
-      - expect
+      - file
+      - flex
+      - freetype-devel
+      - gcc
+      - gcc-c++
+      - gcc-gfortran
+      - java-11-openjdk
+      - java-11-openjdk-devel
+      - lbzip2
+      - lbzip2-utils
+      - libffi
+      - libffi-devel
+      - libX11-devel
+      - libXext-devel
+      - libXtst-devel
+      - libxml2-devel
+      - libxslt-devel
+      - lockfile-progs
+      - make
+      - net-tools
+      - openldap-devel
+      - openssh-server
+      - openssl-devel
+      - perl
+      - perl-devel
+      - procmail
+      - qt
+      - qt-devel
+      - qt-x11
+      - qt-assistant
+      - qt-assistant-adp
+      - qt-assistant-adp-devel
+      - qt-settings
+      - qwt
+      - qwt-devel
+      - readline-devel
+      - redhat-lsb-core
+      - rpm-build
+      - sqlite-devel
+      - tcl-devel
+      - tk-devel
+      - xauth
+      - curl
+      - curl-devel
+      - ksh
+      - mc
+      - nc
+      - patch
+      - screen
+      - subversion
+      - unzip
+      - vim
+      - wget
+      - tree
+      - xterm
+      - xorg-x11-font*
       - gsl
       - gsl-devel
+      - gdb
+      - cmake
+      - expect
       - boost
       - boost-devel
-      - openssl-devel
+      - ncurses
       - ncurses-devel
       - jpackage-utils
-      - ncurses
       - libtool
-      - java-1.8.0-openjdk-devel
-      - curl-devel
-      - perl-devel
-      - gettext-devel
-      - bzip2-devel
       - firefox
       - gedit
       - bluefish
       - dejavu-sans-mono-fonts
-      - java-1.8.0-openjdk
       - bash-completion
-      - python-argparse
       - "@X Window System"
-      - "@Desktop"
+      - "@GNOME"
       - "@fonts"
     state: present
 
@@ -43,13 +96,12 @@
   yum:
     name:
       - git
-      - git-core
     state: absent
 
 
-- name: Download git224-core-2.24.3-1.el6.ius.x86_64.rpm yum package
+- name: Download git224-core-2.24.3-1.el7.ius.x86_64.rpm yum package
   get_url:
-    url: "{{ remote_repository_download_url }}/git224-core-2.24.3-1.el6.ius.x86_64.rpm"
+    url: "{{ remote_repository_download_url }}/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
     dest: "{{ local_repository_path }}"
     force: false
     headers:
@@ -60,17 +112,19 @@
 
 - name: Copy git-core to the remote
   copy:
-    src: "{{ local_repository_path }}/git224-core-2.24.3-1.el6.ius.x86_64.rpm"
+    src: "{{ local_repository_path }}/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
     dest: "/root/"
 
 
-- name: Install the git224-core-2.24.3-1.el6.ius.x86_64.rpm yum package
+- name: Install the git224-core-2.24.3-1.el7.ius.x86_64.rpm yum package
   yum:
-    name: "/root/git224-core-2.24.3-1.el6.ius.x86_64.rpm"
+    name:
+     - "/root/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
+     - git-lfs
     state: present
 
 
-- name: Delete the git224-core-2.24.3-1.el6.ius.x86_64.rpm package from the remote
+- name: Delete the git224-core-2.24.3-1.el7.ius.x86_64.rpm package from the remote
   file:
-    path: "/root/git224-core-2.24.3-1.el6.ius.x86_64.rpm"
+    path: "/root/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
     state: absent

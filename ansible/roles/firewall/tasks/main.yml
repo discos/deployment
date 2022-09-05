@@ -27,7 +27,7 @@
 
 
 - name: Configure the firewall
-  service:
+  systemd:
     name: iptables
     state: "{{ firewall_state }}"
     enabled: "{{ firewall_enabled }}"

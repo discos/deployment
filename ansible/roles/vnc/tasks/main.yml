@@ -7,51 +7,20 @@
 
 
 - name: Configure the VNCSERVERS
-  lineinfile:
-    path: /etc/sysconfig/vncservers
-    line: 'VNCSERVERS="{% for element in users | dict2items %}{{ element.value.vnc_port_offset }}:{{ element.value.name }}{% if element.value.vnc_port_offset < users | length %} {% endif %}{% endfor %}"'
-    regexp: '^VNCSERVERS=(.*)$'
-    state: present
-
-
-- name: Configure VNCSERVERARGS
-  lineinfile:
-    path: /etc/sysconfig/vncservers
-    line: 'VNCSERVERARGS[{{ item.value.vnc_port_offset }}]="-name {{ inventory_hostname_short }}-{{ item.value.name }} -SecurityTypes None -geometry {{ vnc_resolution }} -depth 32 -AlwaysShared -nolisten tcp -rfbport {{ vnc_starting_port+item.value.vnc_port_offset|int }}"'
-    state: present
-  no_log: True
+  template:
+    src: vncserver@:user.service
+    dest: "/etc/systemd/system/vncserver@:{{ item.value.name }}.service"
+    mode: "0644"
   with_dict: "{{ users }}"
 
 
-- name: Enable ssh tunneling for only for the VNCSERVER port
-  blockinfile:
-    path: "/etc/ssh/sshd_config"
-    state: present
-    marker: "##### {{ item.value.name }} port forwarding configuration {mark} #####"
-    block: |
-        Match User {{ item.value.name }}
-            PermitOpen localhost:{{ vnc_starting_port+item.value.vnc_port_offset|int }}
-  no_log: True
-  with_dict: "{{ users }}"
-
-
-- name: Restart ssh service
-  service:
-    name: sshd
-    state: restarted
-    enabled: yes
-
-
-- name: Apply a patch to GNOME in order to avoid an annoying VNC popup
-  lineinfile:
-    path: /etc/xdg/autostart/gpk-update-icon.desktop
-    line: X-GNOME-Autostart-enabled=false
-    state: present
-  failed_when: false
+- name: Run systemd daemon-reload
+  systemd:
+    daemon_reload: yes
 
 
 - name: Start vncserver service
-  service:
-    name: vncserver
+  systemd:
+    name: "vncserver@:{{ user.name }}.service"
     state: restarted
     enabled: yes

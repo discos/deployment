@@ -1,0 +1,79 @@
+#! /bin/bash
+#*******************************************************************************
+# E.S.O. - ALMA project
+#
+
+# Load functions
+. standardUtilities
+#
+# Fetch operating system and release version
+#
+os_discovery
+
+LOG=buildDDS.log
+exec > $LOG 2>&1
+
+date
+
+CURR_DIR=`pwd`
+OPENDDS_URL="https://github.com/objectcomputing/OpenDDS.git"
+OPENDDS_INSTDIR="$ALMASW_INSTDIR/DDS"
+OPENDDS_VERSION="3.13.2"
+
+NUM_CPU=`grep -c processor  /proc/cpuinfo`
+
+if [ "$OS" = "LINUX" ]
+then 
+  OSTAG=linux
+elif [ "$OS" = "$CYGWIN_VER" ]
+then
+  OSTAG=cygwin
+else
+  echo "OS $OS not supported"
+  exit -1
+fi
+
+echo "Installing OpenDDS for $OSTAG"
+echo 
+
+if [ -d $OPENDDS_INSTDIR ]
+then
+  echo $OPENDDS_INSTDIR directory exists already. I clean it up.
+  rm -rf $OPENDDS_INSTDIR
+fi
+
+echo "Clonning OpenDDS from $OPENDDS_URL"
+git clone -b DDS-$OPENDDS_VERSION $OPENDDS_URL $OPENDDS_INSTDIR
+echo "Applying QOS_XML_Handler patch"
+pushd $OPENDDS_INSTDIR
+patch -p1 < $CURR_DIR/../PRODUCTS/OpenDDS/OpenDDS_QOS_XML_Handler.patch
+cp $CURR_DIR/../PRODUCTS/OpenDDS/linux/default.features $ACE_ROOT/bin/MakeProjectCreator/config/default.features
+
+echo "Cloning build tree to $OPENDDS_INSTDIR/build/$OSTAG ..."
+$ACE_ROOT/MPC/clone_build_tree.pl -f $OSTAG
+
+echo "Enabling ACE_XML Utils..."
+pushd $ACE_ROOT
+bin/mwc.pl -type gnuace ace/ace.mwc
+make -j $NUM_CPU
+pushd $ACE_ROOT/ace
+XERCESCROOT=$ALMASW_INSTDIR/ExternalDependencies make -j $NUM_CPU
+popd
+popd
+cd $DDS_ROOT/dds/DCPS/QOS_XML_Handler
+echo "Done"
+
+echo "Configuring OpenDDS..."
+cd $OPENDDS_INSTDIR/build/$OSTAG
+./configure  --xerces3=$ALMASW_INSTDIR/ExternalDependencies --boost=$ALMASW_INSTDIR/boost --no-tests --verbose
+echo "Configuration done!"
+
+echo "Building OpenDDS"
+make -j $NUM_CPU
+
+make -j $NUM_CPU -f $DDS_ROOT/dds/DCPS/QOS_XML_Handler/GNUmakefile.OpenDDS_QOS_XML_XSC_Handler
+popd
+
+echo "DDS installation done"
+date
+

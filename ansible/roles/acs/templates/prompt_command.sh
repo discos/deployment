@@ -54,3 +54,24 @@ if [ -n "${DISCOS_BRANCH}" ]; then
 else
     PS1="(\[$red\]branch?\[$txtrst\]) \u@\h \w $ "
 fi
+
+# Remove duplicates from PATH environment variables
+# =================================================
+
+for oldvariable in `env | grep "PATH" | grep -v "PATH_SEP" | awk -F= '{print $1}'`; do
+    newvariable=
+    oldifs=$IFS
+    IFS=":"
+    declare -A exists
+    for entry in ${!oldvariable}; do
+        if [ ! -z "$entry" ] && [ -z ${exists[$entry]} ]; then
+            newvariable=${newvariable:+$newvariable:}$entry
+            exists[$entry]=yes
+        fi
+    done
+    unset exists
+    IFS=$oldifs
+    unset oldifs
+    export $oldvariable="$newvariable"
+    unset newvariable
+done

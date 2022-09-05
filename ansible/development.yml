@@ -17,12 +17,6 @@
       with_dict: "{{ users }}"
 
 
-- name: Patch yum sources
-  hosts: acs
-  roles:
-    - yum_patch
-
-
 - name: Configure SELINUX
   hosts: manager
   remote_user: root
@@ -96,29 +90,18 @@
     - manager
 
 
-- name: Install single dish tools
-  hosts: manager
-  remote_user: root
-  tasks:
-    - include_role:
-        name: sdtools
-    - include_role:
-        name: quicklook
-      when: quicklook_directories is defined
-
-
-- name: Install basie
+- name: Install BASIE
   hosts: manager
   remote_user: root
   roles:
     - basie
 
 
-- name: Install GILDAS
+- name: Install DISCOS Simulators
   hosts: manager
   remote_user: root
   roles:
-    - gildas
+    - simulators
 
 
 - name: Install SAOImageDS9
