@@ -163,7 +163,7 @@ try:
             'p'
             + args.user.replace('-', '').zfill(4)
             + '-'
-            + ''.join([random.choice(string.letters) for x in range(4)])
+            + ''.join([random.choice(string.ascii_letters) for x in range(4)])
         )
 
     pwd = md5_crypt.using(salt=args.user[8:], salt_size=8).hash(password)

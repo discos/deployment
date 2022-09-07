@@ -120,7 +120,7 @@ try:
             'getent',
             'passwd',
             args.user
-        ]).strip().split(':')[3]
+        ]).decode().strip().split(':')[3]
         if u_gid != gid:
             raise ValueError
     except:
@@ -128,7 +128,7 @@ try:
         sys.exit(1)
 
     try:
-        choice = choices.get(raw_input(
+        choice = choices.get(input(
             'Are you sure you want to remove user %s? [y/N]: ' % args.user
         ))
     except (KeyboardInterrupt, EOFError):
