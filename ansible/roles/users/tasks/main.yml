@@ -60,6 +60,8 @@
     src: "/{{ discos_sw_dir }}/service"
     dest: "/service"
     state: link
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
 
 
 - name: Give administrator permissions
