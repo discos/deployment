@@ -681,6 +681,8 @@
 - name: Install some third-party Python packages
   command: "{{ item }}"
   with_items:
+    - "pip uninstall -y pyopenssl"
+    - "pip install pyopenssl"
     - "pip install pbr"
     - "pip install mock==1.1.1"
     - "pip install jinja2"
