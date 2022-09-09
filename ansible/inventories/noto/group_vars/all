@@ -22,7 +22,7 @@ key_exchange_users:
   - "{{ user.name }}"
 
 quicklook_directories:
-  - "/archive/data"
+  - "/{{ archive }}/data"
 
 quicklook_server_port: 8080
 

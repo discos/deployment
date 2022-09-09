@@ -314,9 +314,9 @@
     force: true
 
 
-- name: Tune the /archive directory permissions after mount
+- name: Tune the /{{ archive }} directory permissions after mount
   file:
-    path: /archive
+    path: /{{ archive }}
     state: directory
     owner: "{{ user.name }}"
     group: "{{ users_groups.projects }}"

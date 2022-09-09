@@ -1,8 +1,8 @@
 #==========================================
-# logfiles rotation in /archive/events/acs.xml
+# logfiles rotation in /{{ archive }} /events/acs.xml
 #
 
-/archive/events/acs.xml {
+/{{ archive }}/events/acs.xml {
     rotate 365
     daily
     copytruncate
@@ -12,7 +12,7 @@
     missingok
     compress
     lastaction
-        rsync /archive/events/*.gz /service/events/
+        rsync /{{ archive }}/events/*.gz /service/events/
     endscript
 }
 

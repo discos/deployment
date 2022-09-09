@@ -1,8 +1,8 @@
 ---
 
-- name: Populate the /archive directory tree
+- name: Populate the /{{ archive }} directory tree
   file:
-    path: "/archive/{{ item.path }}"
+    path: "/{{ archive }}/{{ item.path }}"
     state: directory
     owner: "{{ user.name }}"
     group: "{{ item.group }}"
@@ -17,9 +17,9 @@
     - { path: "schedules", group: "{{ users_groups.projects }}", mode: "0710" }
 
 
-- name: Set ACLs for the /archive directory tree
+- name: Set ACLs for the /{{ archive }} directory tree
   acl:
-    path: "/archive/{{ item[0] }}"
+    path: "/{{ archive }}/{{ item[0] }}"
     entry: "default:{{ item[1] }}"
     state: present
   with_nested:

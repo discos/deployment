@@ -3,7 +3,7 @@
 start()
 {
     sleep 5
-    mount -t lustre {{ lustre_server_ip }}@tcp0:/discos /archive || true
+    mount -t lustre {{ lustre_server_ip }}@tcp0:/discos /{{ archive }}|| true
 
     for machine in {{ lustre_clients_list | trim }}; do
         ssh -o ConnectTimeout=5 root@$machine "service lustre start" || true
@@ -16,7 +16,7 @@ stop()
         ssh -o ConnectTimeout=5 root@$machine "service lustre stop" || true
     done
 
-    umount /archive || true
+    umount /{{ archive }} || true
 }
 
 case "$1" in

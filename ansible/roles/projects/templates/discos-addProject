@@ -119,16 +119,16 @@ def add_user(server_ip, user, pwd):
         add_local(user, pwd)
 
     paths = {
-        '/archive/schedules/%s' % user: [
+        '/{{ archive }}/schedules/%s' % user: [
             'u:%s:rwx' % user,
             'd:u:%s:rwx' % getpass.getuser()
         ],
-        '/archive/data/%s' % user: [
+        '/{{ archive }}/data/%s' % user: [
             'u:%s:r-x' % user,
             'd:u:%s:rwx' % getpass.getuser(),
             'd:u:%s:r-x' % user
         ],
-        '/archive/extraData/%s' % user: [
+        '/{{ archive }}/extraData/%s' % user: [
             'u:%s:r-x' % user,
             'd:u:%s:rwx' % getpass.getuser(),
             'd:u:%s:r-x' % user

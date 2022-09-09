@@ -8,6 +8,7 @@ user: { name: "discos", uid: 3060, group: "{{ users_groups.acs }}", groups: "{{ 
 observer: { name: "observer", uid: 3061, group: "{{ users_groups.acs }}", administrator: False, vnc_port_offset: 2 }
 
 discos_sw_dir: "discos-sw"
+archive: "discos-archive"
 
 local_repository_path: "{{ lookup('env','HOME') }}/.deployment/repository"
 remote_repository_download_url: "https://raw.githubusercontent.com/discos/dependencies/discos_provisioning_centos7"
