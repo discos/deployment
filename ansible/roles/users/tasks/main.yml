@@ -47,6 +47,21 @@
     group: "{{ user.group }}"
 
 
+- name: Create the /{{ discos_sw_dir }}/service directory
+  file:
+    path: "/{{ discos_sw_dir }}/service"
+    state: directory
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+
+
+- name: Create a symbolic lint to /{{ discos_sw_dir }}/service
+  file:
+    src: "/{{ discos_sw_dir }}/service"
+    dest: "/service"
+    state: link
+
+
 - name: Give administrator permissions
   lineinfile:
     dest: /etc/sudoers
