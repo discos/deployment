@@ -26,7 +26,7 @@ start()
     if [[ $(mount | grep '{{ lustre_server_ip }}@tcp0:/discos' | wc -l) -eq 0 ]]; then
         if $(ping -I {{ lustre_network_interface }} -c 1 -w 1 {{ lustre_server_ip }} > /dev/null); then
             echo -n "Mounting remote lustre partition..."
-            mount -t lustre {{ lustre_server_ip }}@tcp0:/discos /archive
+            mount -t lustre {{ lustre_server_ip }}@tcp0:/discos /{{ archive }}
             echo "done."
 {% if quicklook_directories is defined %}
 
@@ -56,7 +56,7 @@ stop()
 
 {% endif %}
         echo -n "Unmounting remote lustre partition..."
-        umount /archive
+        umount /{{ archive }}
         echo "done."
     else
         echo "Lustre remote partition not mounted, nothing to do."

@@ -96,9 +96,9 @@ def remove_user(server_ip, user):
         remove_local(user)
 
     paths = [
-        '/archive/data/%s',
-        '/archive/schedules/%s',
-        '/archive/extraData/%s'
+        '/{{ archive }}/data/%s',
+        '/{{ archive }}/schedules/%s',
+        '/{{ archive }}/extraData/%s'
     ]
     for path in paths:
         try:

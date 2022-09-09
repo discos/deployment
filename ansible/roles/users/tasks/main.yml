@@ -74,9 +74,9 @@
   when: item.value.administrator == True
 
 
-- name: Create the DISCOS archive directory
+- name: Create the DISCOS {{ archive }} directory
   file:
-    path: /archive
+    path: /{{ archive }}
     state: directory
     owner: "{{ user.name }}"
     group: "{{ users_groups.projects }}"

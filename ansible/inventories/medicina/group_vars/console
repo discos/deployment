@@ -3,7 +3,7 @@
 lustre_network_interface: eth0
 
 quicklook_directories:
-  - "/archive/data"
+  - "/{{ archive }}/data"
 quicklook_server_port: 8080
 quicklook_workers: 1
 quicklook_polling: True
