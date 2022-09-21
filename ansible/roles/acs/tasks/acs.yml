@@ -69,6 +69,19 @@
   when: target_dir.stat.exists == False
 
 
+- name: Patch ACS Python 3 default version
+  template:
+    src: "patches/{{ acs_tag }}/{{ item }}"
+    dest: "{{ remote_build_path }}/acs/ExtProd/INSTALL"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: 0755
+  with_items:
+    - "buildPython"
+    - "buildPyModules"
+    - "buildOmniORB"
+
+
 - name: Install ACS ExtProd
   shell: 'source {{ remote_build_path }}/acs/LGPL/acsBUILD/config/.acs/.bash_profile.acs && make all && find /alma -name "*.o" -exec rm -v {} \;'
   args:

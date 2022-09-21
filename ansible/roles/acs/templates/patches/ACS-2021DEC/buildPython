@@ -1,0 +1,76 @@
+#! /bin/bash
+#*******************************************************************************
+# E.S.O. - ALMA project
+#
+# "@(#) $Id: buildPython,v 1.29 2013/03/01 11:37:54 eallaert Exp $"
+#
+# who       when        what
+# --------  ----------  ----------------------------------------------
+# psivera   2002-08-21  created
+# sturolla  2005-10-09  ported to bourne shell + add external subroutin for OS checking
+# agrimstrup 2007-07-10 modified build to create shared library for Python interpreter
+# agrimstrup 2007-08-22 updated Python to version 2.5.1 
+# eallaert  2013-03-01  determine Tcl/Tk version dynamically instead of hardcoding
+#
+
+#************************************************************************
+#   NAME
+#
+#   SYNOPSIS
+#
+#   DESCRIPTION
+#
+#   FILES
+#
+#   ENVIRONMENT
+#
+#   RETURN VALUES
+#
+#   CAUTIONS
+#
+#   EXAMPLES
+#
+#   SEE ALSO
+#
+#   BUGS
+#
+#------------------------------------------------------------------------
+#
+
+#
+# Install Python
+#
+#  See www.python.org for information.
+#
+# Retrieve the sources from: ftp.python.org
+#
+#set -x
+#export PYTHON_ROOT=/alma/$ALMASW_RELEASE/Python
+
+# Load functions
+. standardUtilities
+#
+# Fetch operating system and release version
+#
+os_discovery
+
+
+LOG=buildPython.log
+CWD=`pwd`
+#
+exec > $LOG 2>&1
+
+date
+
+PYENV_VER=v1.2.26
+git clone https://github.com/pyenv/pyenv.git $PYENV_ROOT || (echo "FAILED: Cloning pyenv repository." && exit 1)
+cd $PYENV_ROOT && git checkout tags/$PYENV_VER -b pyenv-acs && cd - || (echo "FAILED: Checkout of $PYENV_VER tag version." && exit 1)
+eval "$(pyenv init -)" || (echo "FAILED: Initializing pyenv environment." && exit 1)
+PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install -f 2.7.16 || (echo "FAILED: Installing Python 2.7.16." && exit 1)
+PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install -f 3.9.4 || (echo "FAILED: Installing Python 3.9.4." && exit 1)
+pyenv global 3.9.4 2.7.16 || (echo "FAILED: Setting the global Python version" && exit 1)
+cp ../PRODUCTS/python-patches/compileall.py $(python2-config --prefix)/lib/python2.7 || (echo "FAILED: Copying compileall to Python 2.7." && exit 1)
+
+cd $CWD
+echo Python installation done!
+date
