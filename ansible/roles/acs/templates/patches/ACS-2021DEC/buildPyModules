@@ -1,0 +1,122 @@
+#! /bin/bash
+#*******************************************************************************
+# E.S.O. - ALMA project
+#
+# "@(#) $Id$"
+#
+# who        when        what
+# --------   ----------  ----------------------------------------------
+# agrimstrup 2007-07-10  created
+#
+
+#************************************************************************
+#   NAME
+#
+#   SYNOPSIS
+#
+#   DESCRIPTION
+#
+#   FILES
+#
+#   ENVIRONMENT
+#
+#   RETURN VALUES
+#
+#   CAUTIONS
+#
+#   EXAMPLES
+#
+#   SEE ALSO
+#
+#   BUGS
+#
+#------------------------------------------------------------------------
+#
+
+#
+# Install Python Modules
+#
+#set -x
+#export PYTHON_ROOT=/alma/$ALMASW_RELEASE/Python
+
+# Load functions
+. standardUtilities
+#
+# Fetch operating system and release version
+#
+os_discovery
+
+LOG=buildPyModules.log
+CWD=`pwd`
+#
+exec > $LOG 2>&1
+
+date
+
+PIP_VER=20.1.1
+
+if [ ! -d $PYTHON_ROOT ]
+then
+  echo "$PYTHON_ROOT not found, cannot continue..."
+  exit 1
+fi
+
+echo installing Python Modules
+
+echo $SEPARATOR
+if [ ${OS} = "LINUX" ] 
+then
+	echo "Installing on $DISTRO $OS version $REL"
+else
+	echo "Installing on $OS version $REL"
+fi
+
+if [     ${DISTRO}-${REL} != "SOLARIS-5.8"       \
+     -a  ${DISTRO}-${REL} != "RHLX-7.2"           \
+     -a  ${DISTRO}-${REL} != "RHLX-7.3"           \
+     -a  ${DISTRO}-${REL} != "RHLX-9"           \
+     -a  ${DISTRO}-${REL} != "RHEL-4"           \
+     -a  ${DISTRO}-${REL} != "RHEL-5"           \
+     -a  ${DISTRO}-${REL} != "RHEL-5.3"           \
+     -a  ${DISTRO}-${REL} != "SL-4.1"           \
+     -a  ${DISTRO}-${REL} != "SL-5.3"           \
+   ]
+then
+    echo "OS not supported. Proceeding as for Linux RH 9"
+    echo ""
+fi
+
+#
+# PyEnv
+#
+# Notes: See README for help
+#
+cd ../PRODUCTS
+
+eval "$(pyenv init -)"
+pip2 install --upgrade pip==$PIP_VER
+pip2 config --site set global.disable-pip-version-check true
+pip2 install --force-reinstall -r acs-py27.req || { echo "FAILED: Installing Python 2 ACS Requirements (req) for Python 2.7" && exit 1; }
+patch -p1 -d $(pip2 show pip |grep Location |awk '{print $2}')/pip < ../PRODUCTS/pip.patch || { echo "Failed to apply patch for Pip in Python 2" && exit 1; }
+patch -p1 -d $(pip2 show PyXB |grep Location |awk '{print $2}')/pyxb < ../PRODUCTS/pyxb.patch || { echo "Failed to apply patch for PyXB in Python 2" && exit 1; }
+cp acs-py27.req $(python2-config --prefix)/acs-py.req
+
+pip3.9 install --upgrade pip==$PIP_VER
+pip3.9 config --site set global.disable-pip-version-check true
+pip3.9 install --force-reinstall -r acs-py3.req || { echo "FAILED: Installing Python 3 ACS Requirements (req) for Python 3.9" && exit 1; }
+patch -p1 -d $(pip3.9 show pip |grep Location |awk '{print $2}')/pip < ../PRODUCTS/pip.patch || { echo "Failed to apply patch for Pip in Python 3.9" && exit 1; }
+patch -p1 -d $(pip3.9 show PyXB |grep Location |awk '{print $2}')/pyxb < ../PRODUCTS/pyxb.patch || { echo "Failed to apply patch for PyXB in Python 3.9" && exit 1; }
+cp acs-py3.req $(python3.9-config --prefix)/acs-py.req
+
+cd $CWD
+result=$(grep Failed ${LOG}|wc -l)
+if [ $result -gt 0 ]
+then
+    echo "Python Module installation fail."
+    date
+    exit 1
+else
+    echo "Python Module installation done."
+fi
+
+date
