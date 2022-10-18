@@ -52,6 +52,7 @@
     force: yes
   become: True
   become_user: "{{ user.name }}"
+  become_flags: "-i"
   when: target_dir.stat.exists == False
 
 
@@ -66,6 +67,7 @@
     - "https://sourceforge.net/projects/numpy/files/OldFiles/1.3.3/numarray-1.3.3.tar.gz"
   become: True
   become_user: "{{ user.name }}"
+  become_flags: "-i"
   when: target_dir.stat.exists == False
 
 
@@ -80,6 +82,7 @@
     - "buildPython"
     - "buildPyModules"
     - "buildOmniORB"
+  when: target_dir.stat.exists == False
 
 
 - name: Install ACS ExtProd
@@ -88,6 +91,7 @@
     chdir: "{{ remote_build_path }}/acs/ExtProd/INSTALL"
   become: True
   become_user: "{{ user.name }}"
+  become_flags: "-i"
   when: target_dir.stat.exists == False
 
 
@@ -112,6 +116,7 @@
     chdir: "{{ remote_build_path }}/acs/ExtProd/INSTALL"
   become: True
   become_user: "{{ user.name }}"
+  become_flags: "-i"
   when: target_dir.stat.exists == False
 
 
@@ -121,6 +126,7 @@
     chdir: "{{ remote_build_path }}/acs"
   become: True
   become_user: "{{ user.name }}"
+  become_flags: "-i"
   when: target_dir.stat.exists == False
 
 
@@ -130,6 +136,7 @@
     state: absent
   become: True
   become_user: "{{ user.name }}"
+  become_flags: "-i"
 
 
 - name: Remove the directory used for the build
@@ -147,6 +154,7 @@
   command: "cp -r .acs /{{ discos_sw_dir }}/config/acs"
   become: True
   become_user: "{{ user.name }}"
+  become_flags: "-i"
   args:
     chdir: "{{ acssw }}/config"
 
@@ -170,6 +178,7 @@
 #    mode: 0755
 #  become: True
 #  become_user: "{{ user.name }}"
+#  become_flags: "-i"
 
 
 ##################################

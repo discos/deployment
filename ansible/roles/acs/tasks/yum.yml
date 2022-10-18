@@ -17,9 +17,6 @@
       - file
       - flex
       - freetype-devel
-      - gcc
-      - gcc-c++
-      - gcc-gfortran
       - java-11-openjdk
       - java-11-openjdk-devel
       - lbzip2
@@ -90,6 +87,23 @@
       - "@GNOME"
       - "@fonts"
     state: present
+
+
+- name: Install centos-release-scl
+  yum:
+    name: centos-release-scl
+
+
+- name: Install devtoolset-{{ devtoolset_release }}-gcc
+  yum:
+    name: devtoolset-{{ devtoolset_release }}-gcc*
+    enablerepo: centos-sclo-rh-testing
+
+
+- name: Disable the devtoolset-{{ devtoolset_release }} sudo command
+  file:
+    path: "/opt/rh/devtoolset-8/root/usr/bin/sudo"
+    mode: 0444
 
 
 - name: Make sure the default git yum package is not installed

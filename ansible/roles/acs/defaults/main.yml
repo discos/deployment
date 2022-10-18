@@ -45,3 +45,4 @@ slalibrary_file: "SlaLibrary.tar.gz"
 ################
 
 monitor_receivers: False
+devtoolset_release: 8

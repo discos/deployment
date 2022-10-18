@@ -99,7 +99,7 @@
 
 
 - name: Install cfitsio
-  command: "{{ item }}"
+  shell: "{{ item }}"
   with_items:
     - "./configure --prefix=/usr/local"
     - "make"
@@ -117,7 +117,7 @@
 
 
 - name: Install CCfits
-  command: "{{ item }}"
+  shell: "source /etc/profile && {{ item }}"
   with_items:
     - "./configure --prefix=/usr/local"
     - "make"
@@ -225,7 +225,7 @@
   register: gmock_lib
 
 
-- name: Check if the {{ googletest_file }}  exists in the local repository
+- name: Check if the {{ googletest_file }} exists in the local repository
   stat:
     path: "{{ local_repository_path }}/{{ googletest_file }}"
   delegate_to: localhost
@@ -261,7 +261,7 @@
 
 
 - name: Compile gmock
-  command: "{{ item }}"
+  shell: "source /etc/profile && {{ item }}"
   with_items:
     - 'cmake ..'
     - 'make'
@@ -307,7 +307,7 @@
 
 
 - name: Compile gtest
-  command: "{{ item }}"
+  shell: "source /etc/profile && {{ item }}"
   args:
     chdir: "{{ gtest_build }}/build"
   with_items:
