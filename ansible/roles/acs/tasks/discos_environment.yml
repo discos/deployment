@@ -163,3 +163,9 @@
     insertafter: "# .bash_profile"
   no_log: True
   with_dict: "{{ users }}"
+
+
+- name: Source scl_source
+  lineinfile:
+    dest: /etc/profile
+    line: 'source scl_source enable devtoolset-{{ devtoolset_release }}'
