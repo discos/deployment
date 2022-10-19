@@ -74,6 +74,7 @@
       - expect
       - boost
       - boost-devel
+      - boost-python36*
       - ncurses
       - ncurses-devel
       - jpackage-utils
