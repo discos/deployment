@@ -91,7 +91,7 @@ if code:
     sys.exit(code)
 else:
     # Change the push url of the repository
-    code = subprocess.call(
+    subprocess.call(
         ['git',
         'config',
         'remote.origin.pushurl',
