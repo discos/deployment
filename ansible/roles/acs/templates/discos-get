@@ -11,7 +11,8 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-repository = 'https://github.com/discos/discos.git'
+https_url = 'https://github.com/discos/discos.git'
+ssh_url = 'git@github.com:discos/discos.git'
 
 STATION = ''
 try:
@@ -74,22 +75,29 @@ try:
     code = subprocess.call(
         ['git',
         'clone',
-        repository,
+        https_url,
         branch_name,
         '--branch',
-        args.target,
-        '--single-branch'],
+        args.target],
         timeout=120,
-        )
+    )
 except subprocess.TimeoutExpired:
     if os.path.exists(BRANCH_PATH):
         shutil.rmtree(BRANCH_PATH)
-    print('\nERROR: timeout expired cloning %s.' % repository)
+    print('\nERROR: timeout expired cloning %s.' % https_url)
     sys.stderr.flush()
     sys.exit(-1)
 if code:
     sys.exit(code)
 else:
+    # Change the push url of the repository
+    subprocess.call(
+        ['git',
+        'config',
+        'remote.origin.pushurl',
+        ssh_url],
+        cwd=BRANCH_PATH
+    )
     os.symlink(
         '/{{ discos_sw_dir }}/SlaLibrary',
         '%s/Common/Libraries/SlaLibrary' % BRANCH_PATH
