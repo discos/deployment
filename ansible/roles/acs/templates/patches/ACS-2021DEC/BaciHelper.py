@@ -242,7 +242,7 @@ def addProperty(comp_ref,
         
     #must handle user defined enums as well
     elif prop_type.startswith("RO") or prop_type.startswith("RW"):
-        prop_class = getEnumClass(prop_ifr_name)
+        prop_class = getEnumClass(prop_type)
                 
     else:
         msg = "The '" + str(prop_name) + "' property of type '" 
