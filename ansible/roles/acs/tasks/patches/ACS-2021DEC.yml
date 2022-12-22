@@ -72,3 +72,13 @@
     group: "{{ user.group }}"
     mode: 0664
     backup: True
+
+
+- name: Replace BaciHelper.py to fix IDL property inheritance issue
+  template:
+    src: "patches/{{ acs_tag }}/BaciHelper.py"
+    dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/acspycommon/src/Acspy/Util/BaciHelper.py"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: 0664
+    backup: True
