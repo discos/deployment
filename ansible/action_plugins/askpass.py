@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 import getpass
 from ansible.plugins.action import ActionBase
+from ansible.parsing.yaml.objects import AnsibleUnicode
 
 __metaclass__ = type
 
@@ -25,9 +26,9 @@ class ActionModule(ActionBase):
                 if arg != 'username':
                     return self._fail(result, "Unexpected parameter '%s'." % arg)
                 elif isinstance(args[arg], str):
-                    return self._fail(result, "Parameter 'username' must be a string.")
-                else:
                     username = args[arg]
+                else:
+                    return self._fail(result, "Parameter 'username' must be a string.")
 
         return self._prompt(result, username)
 
@@ -87,7 +88,7 @@ class ActionModule(ActionBase):
         if not isinstance(result, dict):
             raise TypeError("Invalid result provided. Expected dict, received %s." % type(result))
 
-        if not isinstance(message, (str, unicode)):
+        if not isinstance(message, (str, AnsibleUnicode)):
             raise TypeError("Invalid message provided. Expected string, received '%s'." % type(message))
 
         if message == "":

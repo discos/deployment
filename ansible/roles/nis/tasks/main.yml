@@ -17,9 +17,9 @@
     line: "NISDOMAIN={{ nis_domain_name }}"
 
 
-- include: nis_server.yml
+- include_tasks: nis_server.yml
   when: nis_type == "server"
 
 
-- include: nis_client.yml
+- include_tasks: nis_client.yml
   when: nis_type == "client"

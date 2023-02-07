@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-
 import os
 import shutil
+
 try:
     from setuptools import setup
 except ImportError:
@@ -24,7 +24,7 @@ setup(
     platforms='all',
     classifiers=[
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.10.7',
     ]
 )
 

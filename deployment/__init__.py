@@ -24,9 +24,6 @@ def error(msg, choices=(), name='', code=1):
         print('\n{}'.format(doc), file=sys.stderr)
     sys.exit(code)
 
-if sys.version_info[0] != 2 or sys.version_info[1] != 7:
-    error('Python 2.7 is required!')
-
 import os
 import time
 import subprocess
@@ -86,7 +83,7 @@ def parseInventory(inventory):
                     for machine in groups[host]:
                         if machine not in groups[current_group]:
                             groups[current_group].append(machine)
-    clusters = hosts.keys() + groups.keys()
+    clusters = list(hosts.keys()) + list(groups.keys())
     return hosts, groups, clusters 
 
 def sshCommand(ssh, command):
@@ -96,11 +93,11 @@ def sshCommand(ssh, command):
         ssh.sendline(command)
         while not ssh.prompt():
             time.sleep(0.05)
-        output = ssh.before.split('\r\n')[1:-1]
+        output = ssh.before.decode().split('\r\n')[1:-1]
         ssh.sendline('echo $?')
         while not ssh.prompt():
             time.sleep(0.05)
-        rc = not bool(int(ssh.before.split('\r\n')[1:-1][0]))
+        rc = not bool(int(ssh.before.decode().split('\r\n')[1:-1][0]))
     except pexpect.exceptions.EOF:
         pass
     return Namespace(rc=rc, stdout=output)
@@ -124,7 +121,7 @@ def ping(ip):
             ssh.login(ip, 'root')
             ssh.logout()
         except pxssh.ExceptionPxssh as err:
-            if err.message == 'Could not establish connection to host':
+            if str(err) == 'Could not establish connection to host':
                 time.sleep(4)
 
     p = Process(target=loginTry, args=(ip,))
@@ -140,16 +137,16 @@ def getIp(machine, inventory='development'):
     try:
         return hosts[machine]['ip']
     except KeyError:
-        return None
+        error('No IP associated with machine {}!'.format(machine))
 
 def _startVm(machine):
     machine_id = 'discos_{}'.format(machine)
+    ip = getIp(machine)
     subprocess.call(
         ['VBoxManage', 'startvm', machine_id, '--type', 'headless'],
         stdout=DEVNULL,
         stderr=DEVNULL
     )
-    ip = getIp(machine)
     state = 0
     while state >= 0:
         if state == 0:
@@ -171,7 +168,7 @@ def startVm(machine):
     sys.stdout.flush()
     t = Thread(target=_startVm, args=(machine,))
     t.start()
-    while t.isAlive():
+    while t.is_alive():
         t0 = time.time()
         sys.stdout.write('.')
         sys.stdout.flush()
@@ -205,7 +202,7 @@ def stopVm(machine):
     sys.stdout.flush()
     t = Thread(target=_stopVm, args=(machine,))
     t.start()
-    while t.isAlive():
+    while t.is_alive():
         t0 = time.time()
         sys.stdout.write('.')
         sys.stdout.flush()
@@ -247,7 +244,7 @@ def restartVm(machine):
     sys.stdout.flush()
     t = Thread(target=_restartVm, args=(machine,))
     t.start()
-    while t.isAlive():
+    while t.is_alive():
         t0 = time.time()
         sys.stdout.write('.')
         sys.stdout.flush()
@@ -295,6 +292,7 @@ def machineList(inventory='development'):
             stdout=subprocess.PIPE
         )
         for line in cmd.stdout:
+            line = line.decode()
             if 'discos_' in line:
                 m_name = line.split()[0].strip('"').replace('discos_', '')
                 machines.append(m_name)

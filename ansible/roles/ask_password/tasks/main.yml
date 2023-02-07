@@ -6,5 +6,5 @@
   failed_when: False
 
 
-- include: askpass.yml
+- include_tasks: askpass.yml
   when: user_exists.stdout_lines | length == 0

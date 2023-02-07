@@ -2,7 +2,7 @@
 
 - name: Install SELINUX python bindings
   yum:
-    name: libselinux-python
+    name: python3-libselinux
     state: present
 
 

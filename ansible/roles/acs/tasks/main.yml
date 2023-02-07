@@ -1,10 +1,10 @@
 ---
 
-- include: yum.yml
-- include: discos_environment.yml
-- include: acs.yml
-- include: discos_dependencies.yml
-- include: utilities.yml
-- include: receivers_monitor.yml
+- include_tasks: yum.yml
+- include_tasks: discos_environment.yml
+- include_tasks: acs.yml
+- include_tasks: discos_dependencies.yml
+- include_tasks: utilities.yml
+- include_tasks: receivers_monitor.yml
   when:
     - monitor_receivers == True
