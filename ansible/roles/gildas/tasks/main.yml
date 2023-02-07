@@ -25,5 +25,5 @@
   register: gildas_exe_dir
 
 
-- include: install.yml
+- include_tasks: install.yml
   when: gildas_exe_dir.stat.exists == False

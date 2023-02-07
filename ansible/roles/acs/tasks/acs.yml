@@ -99,7 +99,7 @@
 # Apply some patch to ACS
 #########################
 
-- include: "{{ patch_file }}"
+- include_tasks: "{{ patch_file }}"
   vars:
     params:
       files:

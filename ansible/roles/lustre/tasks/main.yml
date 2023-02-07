@@ -1,12 +1,12 @@
 ---
 
-- include: check_interfaces.yml
+- include_tasks: check_interfaces.yml
 
-- include: check_dependencies.yml
+- include_tasks: check_dependencies.yml
   delegate_to: localhost
   run_once: true
 
-- include: lustre_clients.yml
+- include_tasks: lustre_clients.yml
   when: lustre_type == "client"
 
 - block:
@@ -14,6 +14,6 @@
     stat:
       path: /usr/lib/systemd/system/lustre.service
     register: lustre_configured
-  - include: lustre_server.yml
+  - include_tasks: lustre_server.yml
     when: not lustre_configured.stat.exists
   when: lustre_type == "server"

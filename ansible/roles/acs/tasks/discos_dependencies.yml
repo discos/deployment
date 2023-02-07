@@ -678,11 +678,18 @@
 # PYTHON PACKAGES
 #################
 
+- name: Manually get rid of cryptography package since it breaks pip functionality
+  file:
+    path: "/alma/{{ acs_tag }}/pyenv/versions/3.9.4/lib/python3.9/site-packages/cryptography"
+    state: absent
+
+
 - name: Install some third-party Python packages
   command: "{{ item }}"
   with_items:
     - "pip uninstall -y pyopenssl"
     - "pip install pyopenssl"
+    - "pip install cryptography"
     - "pip install pbr"
     - "pip install mock==1.1.1"
     - "pip install jinja2"
