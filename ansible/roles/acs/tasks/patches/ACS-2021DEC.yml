@@ -13,7 +13,7 @@
     src: "patches/{{ acs_tag }}/buildDDS"
     dest: "{{ remote_build_path }}/acs/ExtProd/INSTALL/"
     mode: 0755
-    force: yes
+    force: true
 
 
 - name: Patch n2
@@ -51,7 +51,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0664
-    backup: yes
+    backup: false
 
 
 - name: Replace Executor.java
@@ -61,7 +61,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0664
-    backup: yes
+    backup: false
 
 
 - name: Replace enumpropAlarm.i
@@ -71,7 +71,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0664
-    backup: True
+    backup: false
 
 
 - name: Replace BaciHelper.py to fix IDL property inheritance issue
@@ -81,4 +81,4 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: 0664
-    backup: True
+    backup: false

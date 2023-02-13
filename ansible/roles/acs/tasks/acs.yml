@@ -85,6 +85,13 @@
   when: target_dir.stat.exists == False
 
 
+- name: Force specific Python 3 cryptography package
+  lineinfile:
+    dest: "{{ remote_build_path }}/acs/ExtProd/PRODUCTS/acs-py3.req"
+    line: "cryptography==37.0.4"
+    state: present
+
+
 - name: Install ACS ExtProd
   shell: 'source {{ remote_build_path }}/acs/LGPL/acsBUILD/config/.acs/.bash_profile.acs && make all && find /alma -name "*.o" -exec rm -v {} \;'
   args:
