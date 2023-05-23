@@ -6,7 +6,7 @@ Dependencies
 
 To automatically deploy DISCOS, you need to install some dependencies:
 `Git <https://git-scm.com/>`_, `Ansible <https://www.ansible.com/>`_,
-`Python 2.7 <https://www.python.org/download/releases/2.7/>`_,
+`Python 3 <https://www.python.org/download/>`_,
 `Vagrant <https://www.vagrantup.com/>`_ and `VirtualBox
 <https://www.virtualbox.org/>`_.  It usually takes about 15 minutes.
 
@@ -25,18 +25,18 @@ fails, than you have to install Git by following the instructions at the `offici
 website <https://git-scm.com/book/en/v1/Getting-Started-Installing-Git>`_.
 
 
-Install a Python 2.7 environment
-================================
-The whole DISCOS deployment procedure relies on Python 2.7. Verify if Python 2.7 is already
+Install a Python environment
+============================
+The whole DISCOS deployment procedure relies on Python 3. Verify if Python is already
 installed on your system:
 
 .. code-block:: shell
 
    $ python --version
-   Python 2.7.15rc1
+   Python 3.11.1
 
 If your system comes bundled with a different Python version, you may want to
-consider installing a Python 2.7 environment such as
+consider installing a Python environment such as
 `Anaconda <https://www.anaconda.com/download/#linux>`_,
 `Miniconda <https://conda.io/miniconda.html>`_ or
 `Pyenv <https://github.com/pyenv/pyenv>`_ and its
@@ -51,7 +51,7 @@ environment. As a first step, check if VirtualBox is already installed:
 
 .. code-block:: shell
 
-   $ which virtualbox 
+   $ which virtualbox
    /usr/bin/virtualbox
 
 In case it is not, download the binary file from the
