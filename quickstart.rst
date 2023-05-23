@@ -17,7 +17,7 @@ If you have installed the dependencies, as explained in section
    to GitHub requires the use of a `SSH key <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/>`_.
 
 
-Before installing the package, you have to install some additional Python 2.7 requirements.
+Before installing the package, you have to install some additional Python requirements.
 Move inside the `deployment` directory and type the following command:
 
 .. code-block:: shell
@@ -34,7 +34,7 @@ Move inside the `deployment` directory and type the following command:
 
 
 Now you are ready to install the package. The recommended way to do so is to
-install it inside a Python 2.7 custom environment. In order to do so, type the
+install it inside a Python custom environment. In order to do so, type the
 following command:
 
 .. code-block:: shell
@@ -42,7 +42,7 @@ following command:
    $ python setup.py install
 
 
-If you want to install the package inside the system Python 2.7 environment instead,
+If you want to install the package inside the system Python environment instead,
 you have to execute the following command:
 
 .. code-block:: shell
