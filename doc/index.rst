@@ -24,9 +24,12 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   dependencies.rst
-   quickstart.rst
-   development.rst
-   production.rst
-   scripts.rst
+   content/intro.rst
+   content/dependencies.rst
+   content/quickstart.rst
+   content/development.rst
+   content/production.rst
+   content/scripts.rst
 
+.. bibliography:: content/bibliography.bib
+   :style: unsrt
