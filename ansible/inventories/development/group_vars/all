@@ -10,4 +10,6 @@ quicklook_directories:
 
 quicklook_server_port: 8080
 
-users: { user: "{{ user }}", observer: "{{ observer }}" }
+users:
+  user: "{{ user | combine({'password': '$6$rounds=656000$discos$AY5Vh/n.xgrYrjH8N0NmcV1xAXkHRh55SUfw2cOHdZx/YFy9UYJc1KR0ZORIhftTQKgKMLdUUUXv8CDscigpt0'}) }}"
+  observer: "{{ observer | combine({'password': '$6$rounds=656000$observer$lR.xsFX/i4v2MDAkPD6Vlt.hmsSLOgeW0RnoUxlGwrL.KMnLacVB2xiWKUoeoRMirpk7v.hFyXXJLAIENAZee.'}) }}"
