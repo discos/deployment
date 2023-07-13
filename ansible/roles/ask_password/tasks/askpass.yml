@@ -8,4 +8,4 @@
 
 - name: Update user '{{ item.value.name }}' password
   set_fact:
-      users: "{{ users | combine({ item.key: item.value | combine({'password': typed_password | password_hash('md5', item.value.name[8:]) })}) }}"
+      users: "{{ users | combine({ item.key: item.value | combine({'password': typed_password | password_hash(hashtype='sha512', salt=item.value.name[:8]) })}) }}"
