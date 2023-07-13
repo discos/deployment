@@ -15,6 +15,7 @@
     - include_role:
         name: ask_password
       with_dict: "{{ users }}"
+      when: lookup('ansible.builtin.env', 'CI', default='false')
 
 
 - name: Configure SELINUX
