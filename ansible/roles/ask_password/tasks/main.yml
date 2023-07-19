@@ -7,4 +7,6 @@
 
 
 - include_tasks: askpass.yml
-  when: user_exists.stdout_lines | length == 0
+  when:
+    - user_exists.stdout_lines | length == 0
+    - lookup('ansible.builtin.env', 'CI') == ""
