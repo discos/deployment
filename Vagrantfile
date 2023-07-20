@@ -15,6 +15,11 @@ Vagrant.configure(vagrantfile_api_version) do |config|
         vb.default_nic_type = "virtio"
     end
 
+    config.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "/tmp/id_rsa.pub"
+    config.vm.provision "shell", "inline" => "mkdir '/root/.ssh' && touch '/root/.ssh/authorized_keys'"
+    config.vm.provision "shell", "inline" => "cat '/tmp/id_rsa.pub' >> '/root/.ssh/authorized_keys'"
+    config.vm.provision "shell", "inline" => "rm '/tmp/id_rsa.pub'"
+
     # ACS node n.1 (manager)
     config.vm.define "manager" do |node|
         node.vm.hostname = "manager"
