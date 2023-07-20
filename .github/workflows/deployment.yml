@@ -60,7 +60,7 @@ jobs:
         working-directory: /Users/runner/.deployment
       - name: Prepare the virtual machine for caching
         run: |
-          ssh-keyscan -t rsa $(grep 'private_network' Vagrantfile | awk '{print $NF}' | sed 's/\"//g') >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa ${{ env.VM_IP_ADDRESS }} >> ~/.ssh/known_hosts
           vagrant halt
         working-directory: /Users/runner/.deployment
         if: steps.restore-cache.outputs.cache-hit != 'true'
