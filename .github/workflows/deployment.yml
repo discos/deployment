@@ -60,7 +60,6 @@ jobs:
         working-directory: /Users/runner/.deployment
       - name: Prepare the virtual machine for caching
         run: |
-          ssh-keyscan -t rsa ${{ env.VM_IP_ADDRESS }} >> ~/.ssh/known_hosts
           vagrant halt
         working-directory: /Users/runner/.deployment
         if: steps.restore-cache.outputs.cache-hit != 'true'
@@ -79,7 +78,7 @@ jobs:
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Provision the virtual machine
         run: |
-          ansible-playbook /Users/runner/.deployment/ansible/development.yml --inventory-file /Users/runner/.deployment/ansible/inventories/development --limit manager
+          discos-deploy manager:development
       - name: Finally shutdown the virtual machine
         run: |
           vagrant halt
