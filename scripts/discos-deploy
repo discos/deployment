@@ -181,10 +181,10 @@ if not args.sim:
 
 # Ask for root password
 if not args.sim:
-    os.environ['SSH_ASKPASS'] = os.path.join(
-        os.path.dirname(os.path.abspath(sys.argv[0])),
-        'discos-askpass'
-    )
+    with open('/tmp/ssh_askpass', 'w') as f:
+        f.write('#!/bin/bash\necho $DEPLOY_PASSWORD\n')
+    os.chmod('/tmp/ssh_askpass', 700)
+    os.environ['SSH_ASKPASS'] = '/tmp/ssh_askpass'
     for machine in current_machines:
         ip = inventories[env_arg]['hosts'][machine]['ip']
         if not deployment.sshLogin(ip):
@@ -192,13 +192,14 @@ if not args.sim:
             os.environ['DEPLOY_PASSWORD'] = getpass.getpass(
                 f"Type the password for user 'root' on machine {machine}: "
             )
-            os.unsetenv('DEPLOY_PASSWORD')
             deployment.authorizeKey(ip)
+            os.unsetenv('DEPLOY_PASSWORD')
             if not deployment.sshLogin(ip):
                 deployment.error(
                     f'Cannot authenticate to machine {machine}, '
                     f'try again with the correct password.'
                 )
+    os.remove('/tmp/ssh_askpass')
 
 # Call ansible
 ansible_cmd = [

@@ -11,6 +11,9 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - name: Install missing packages on the ${{ runner.os }} runner
+        run: |
+          brew install coreutils
       - name: Clone the repository
         uses: actions/checkout@v3
       - name: Set up Python

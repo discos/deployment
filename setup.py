@@ -7,7 +7,7 @@ try:
 except ImportError:
     from distutils.core import setup
 
-scripts = ['discos-deploy', 'discos-askpass', 'discos-vms', 'discos-vnc', 'discos-login']
+scripts = ['discos-deploy', 'discos-vms', 'discos-vnc', 'discos-login']
 scripts = [os.path.join('scripts', s) for s in scripts]
 
 setup(
