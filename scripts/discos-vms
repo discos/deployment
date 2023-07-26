@@ -6,7 +6,6 @@
   $ discos-vms stop -m storage
   $ discos-vms status
 """
-from __future__ import print_function
 import sys
 from argparse import ArgumentParser
 import deployment
@@ -28,14 +27,17 @@ parser.add_argument(
     'action',
     choices=['status', 'start', 'stop', 'restart'],
 )
+help_msg = (
+)
 parser.add_argument(
     '-m', '--machine',
     nargs='*',
     type=check_machine,
-    help='The machine you want to control. \
-         Choose among "%s". \
-         Leave this field empty to select all \
-         available machines.' % '", "'.join(machines)
+    help=(
+        f'the machine you want to control. '
+        f'Leave this field empty to select all available machines.'
+    ),
+    choices=machines
 )
 args = parser.parse_args()
 
