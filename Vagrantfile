@@ -6,6 +6,10 @@ vagrantfile_api_version = "2"
 
 Vagrant.configure(vagrantfile_api_version) do |config|
 
+    config.ssh.username = 'root'
+    config.ssh.password = 'vagrant'
+    config.ssh.insert_key = false
+
     # Common configuration for all virtual machines
     config.vm.synced_folder '.', '/vagrant', disabled: true
     config.vm.provider :virtualbox do |vb|
@@ -15,10 +19,9 @@ Vagrant.configure(vagrantfile_api_version) do |config|
         vb.default_nic_type = "virtio"
     end
 
-    config.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "/tmp/id_rsa.pub"
-    config.vm.provision "shell", "inline" => "mkdir '/root/.ssh' && touch '/root/.ssh/authorized_keys'"
-    config.vm.provision "shell", "inline" => "cat '/tmp/id_rsa.pub' >> '/root/.ssh/authorized_keys'"
-    config.vm.provision "shell", "inline" => "rm '/tmp/id_rsa.pub'"
+    config.vm.provision "file", source: "#{ENV['HOME']}/.ssh/id_rsa.pub", destination: "/root/.ssh/authorized_keys"
+    config.vm.provision "shell", "inline" => "sed -i -e 's/NM_CONTROLLED=yes/NM_CONTROLLED=no/g' /etc/sysconfig/network-scripts/ifcfg-eth1"
+    config.vm.provision "shell", "inline" => "usermod -m -d /vagrant vagrant"
 
     # ACS node n.1 (manager)
     config.vm.define "manager" do |node|

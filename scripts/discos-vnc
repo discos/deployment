@@ -5,7 +5,6 @@
   $ discos-vnc -u discos manager
   $ discos-vnc -u observer console
 """
-from __future__ import print_function
 import os
 import subprocess
 from multiprocessing import Process
