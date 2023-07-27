@@ -42,7 +42,7 @@ jobs:
             /Users/runner/.deployment/.vagrant
             /Users/runner/VirtualBox VMs
             /Users/runner/.ssh
-          key: cache-${{ hashFiles('Vagrantfile') }}
+          key: cache-fresh-${{ hashFiles('Vagrantfile') }}
       - name: Generate the RSA private-public key pair
         run: |
           mkdir -p "/Users/runner/.ssh"
@@ -73,7 +73,7 @@ jobs:
             /Users/runner/.deployment/.vagrant
             /Users/runner/VirtualBox VMs
             /Users/runner/.ssh
-          key: cache-${{ hashFiles('Vagrantfile') }}
+          key: cache-fresh-${{ hashFiles('Vagrantfile') }}
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Boot up the virtual machine again
         run: vagrant up
@@ -86,3 +86,11 @@ jobs:
         run: |
           vagrant halt
         working-directory: /Users/runner/.deployment
+      - name: Cache the fully provisioned virtual machine
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            /Users/runner/.deployment/.vagrant
+            /Users/runner/VirtualBox VMs
+            /Users/runner/.ssh
+          key: cache-provisioned-${{ hashFiles('Vagrantfile') }}
