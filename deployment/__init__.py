@@ -86,7 +86,7 @@ def sshLogin(ip, user='root'):
     sp = subprocess.run(
         [
             'timeout',
-            '0.5',
+            '2' if os.environ.get('CI') else '0.5',
             'ssh',
             f'{user}@{ip}',
             '-o',
