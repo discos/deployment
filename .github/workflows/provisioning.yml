@@ -1,4 +1,4 @@
-name: Deployment
+name: Provisioning
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
     - cron: '0 4 * * 1'
 
 jobs:
-  deployment:
+  provisioning:
     runs-on: macos-latest
 
     steps:
