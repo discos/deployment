@@ -1,10 +1,7 @@
 import sys
-import inspect
 import os
 import time
 import subprocess
-import socket
-from threading import Thread
 from argparse import Namespace
 try:
     from subprocess import DEVNULL
@@ -17,6 +14,7 @@ INVENTORIES_DIR = os.path.join(ANSIBLE_DIR, 'inventories')
 os.environ['ANSIBLE_CONFIG'] = os.path.join(ANSIBLE_DIR, 'ansible.cfg')
 
 def error(msg, choices=(), name='', code=1):
+    import inspect
     choices_msg = ''
     if choices:
         if len(msg) > 0:
@@ -38,12 +36,20 @@ def error(msg, choices=(), name='', code=1):
         print(f'\n{doc}', file=sys.stderr)
     sys.exit(code)
 
-def getInventories():
-    inventories = []
-    for item in os.listdir(INVENTORIES_DIR):
-        if not os.path.isfile(os.path.join(INVENTORIES_DIR, item)):
-            inventories.append(item)
-    return inventories
+def getEnvironments():
+    inventories = {}
+    systems = []
+    for env in os.listdir(INVENTORIES_DIR):
+        if not os.path.isfile(os.path.join(INVENTORIES_DIR, env)):
+            h, g, c = parseInventory(env)
+            inventories[env] = {}
+            inventories[env]['hosts'] = h
+            inventories[env]['groups'] = g
+            inventories[env]['clusters'] = c
+
+            for cluster in c:
+                systems.append(f'{cluster}:{env}')
+    return (inventories, systems)
 
 def parseInventory(inventory):
     hosts = {}
@@ -81,6 +87,26 @@ def parseInventory(inventory):
                             groups[current_group].append(machine)
     clusters = list(hosts.keys()) + list(groups.keys())
     return hosts, groups, clusters 
+
+def getBranches():
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError
+    import json
+    branches = []
+    try:
+        request = Request(
+            'https://api.github.com/repos/discos/discos/branches'
+        )
+        branches += json.loads(urlopen(request).read())
+        request = Request(
+            'https://api.github.com/repos/discos/discos/tags'
+        )
+        branches += json.loads(urlopen(request).read())
+        branches = [str(item.get('name')) for item in branches]
+        branches.sort()
+    except HTTPError:
+        pass
+    return branches
 
 def sshLogin(ip, user='root'):
     sp = subprocess.run(
@@ -172,19 +198,9 @@ def stopVm(machine):
     print('done.')
 
 def restartVm(machine):
-    if not isRunning(machine):
-        startVm(machine)
-        return
-    sys.stdout.write(f'Restarting machine {machine}')
-    sys.stdout.flush()
-    t = Thread(target=_restartVm, args=(machine,))
-    t.start()
-    while t.is_alive():
-        t0 = time.time()
-        sys.stdout.write('.')
-        sys.stdout.flush()
-        time.sleep(max(0, 1 - (time.time() - t0)))
-    print('done.')
+    if isRunning(machine):
+        stopVm(machine)
+    startVm(machine)
 
 def createVm(machine):
     if machine in machineList():
@@ -248,6 +264,7 @@ def generateRSAKey(
         stdout=subprocess.PIPE
     )
     public_key = cmd.stdout.readline().decode()
+    import socket
     if os.getlogin() + '@' + socket.gethostname() not in public_key:
         file_name = os.path.join(ssh_dir, key_file)
         if not os.path.exists(file_name):
@@ -269,7 +286,7 @@ def updateKnownHosts(
             stderr=DEVNULL
         )
         subprocess.run(
-            ['ssh-keyscan', '-H', ip],
+            ['ssh-keyscan', '-t', 'rsa', '-H', ip],
             stderr=DEVNULL,
             stdout=open(file_name, 'a')
         )
@@ -280,3 +297,24 @@ def authorizeKey(ip):
         stdout=DEVNULL,
         stderr=DEVNULL,
     )
+
+def injectRSAKey(machines):
+    import getpass
+    with open('/tmp/ssh_askpass', 'w') as f:
+        f.write('#!/bin/bash\necho $DEPLOY_PASSWORD\n')
+    os.chmod('/tmp/ssh_askpass', 700)
+    os.environ['SSH_ASKPASS'] = '/tmp/ssh_askpass'
+    for machine, ip in machines.items():
+        if not sshLogin(ip):
+            # Cannot authenticate, we need to exchange the public key
+            os.environ['DEPLOY_PASSWORD'] = getpass.getpass(
+                f"Type the password for user 'root' on machine {machine}: "
+            )
+            authorizeKey(ip)
+            os.unsetenv('DEPLOY_PASSWORD')
+            if not sshLogin(ip):
+                deployment.error(
+                    f'Cannot authenticate to machine {machine}, '
+                    f'try again with the correct password.'
+                )
+    os.remove('/tmp/ssh_askpass')

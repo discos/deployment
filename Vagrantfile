@@ -19,7 +19,10 @@ Vagrant.configure(vagrantfile_api_version) do |config|
         vb.default_nic_type = "virtio"
     end
 
-    config.vm.provision "file", source: "#{ENV['HOME']}/.ssh/id_rsa.pub", destination: "/root/.ssh/authorized_keys"
+    config.vm.provision "file", source: "#{ENV['HOME']}/.ssh/id_rsa.pub", destination: "/tmp/id_rsa.pub"
+    config.vm.provision "shell", "inline" => "mkdir -p '/root/.ssh' && touch '/root/.ssh/authorized_keys'"
+    config.vm.provision "shell", "inline" => "cat '/tmp/id_rsa.pub' >> '/root/.ssh/authorized_keys'"
+    config.vm.provision "shell", "inline" => "rm '/tmp/id_rsa.pub'"
     config.vm.provision "shell", "inline" => "sed -i -e 's/NM_CONTROLLED=yes/NM_CONTROLLED=no/g' /etc/sysconfig/network-scripts/ifcfg-eth1"
     config.vm.provision "shell", "inline" => "usermod -m -d /vagrant vagrant"
 
