@@ -1,0 +1,77 @@
+name: Deployment
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Provisioning]
+    types: [completed]
+
+jobs:
+  deployment:
+    runs-on: macos-latest
+
+    steps:
+      - name: Restore the cached, already provisioned, virtual machine and ssh configuration
+        id: restore-cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            /Users/runner/.deployment/.vagrant
+            /Users/runner/VirtualBox VMs
+            /Users/runner/.ssh
+          key: cache-provisioned-${{ hashFiles('*') }}
+      - name: Install missing packages on the ${{ runner.os }} runner
+        run: |
+          brew install coreutils
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Clone the repository
+        uses: actions/checkout@v3
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9.4'
+          check-latest: true
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Install package and dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python setup.py install
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Copy the discos-dependencies token
+        run: |
+           mkdir -p $HOME/.deployment/repository/token
+           touch $HOME/.deployment/repository/token/token
+           echo "${{ secrets.DEPENDENCIES_TOKEN }}" >> $HOME/.deployment/repository/token/token
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Read the virtual machine info
+        run: |
+          echo "VM_NAME=$(grep 'vb\.name' Vagrantfile | awk '{print $NF}' | sed 's/\"//g')" >> "$GITHUB_ENV"
+          echo "VM_IP_ADDRESS=$(grep 'private_network' Vagrantfile | awk '{print $NF}' | sed 's/\"//g')" >> "$GITHUB_ENV"
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Load the RSA private-public key pair to the ssh-agent
+        run: |
+          eval $(ssh-agent)
+          ssh-add "/Users/runner/.ssh/id_rsa"
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Register the virtual machine
+        run: |
+          vboxmanage registervm "/Users/runner/VirtualBox VMs/${{ env.VM_NAME }}/${{ env.VM_NAME }}.vbox"
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Deploy DISCOS on the virtual machine
+        run: |
+          discos-deploy manager:development -s srt -b centos_7_compatibility --deploy-only
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Finally shutdown the virtual machine
+        run: |
+          discos-vms stop
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Finally cache the deployed virtual machine and ssh configuration
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            /Users/runner/.deployment/.vagrant
+            /Users/runner/VirtualBox VMs
+            /Users/runner/.ssh
+          key: cache-deployed-${{ hashFiles('*') }}
+        if: steps.restore-cache.outputs.cache-hit == 'true'

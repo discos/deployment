@@ -84,7 +84,7 @@ jobs:
           discos-deploy manager:development
       - name: Finally shutdown the virtual machine
         run: |
-          vagrant halt
+          discos-vms stop
         working-directory: /Users/runner/.deployment
       - name: Cache the fully provisioned virtual machine
         uses: actions/cache/save@v3
@@ -93,4 +93,4 @@ jobs:
             /Users/runner/.deployment/.vagrant
             /Users/runner/VirtualBox VMs
             /Users/runner/.ssh
-          key: cache-provisioned-${{ hashFiles('Vagrantfile') }}
+          key: cache-provisioned-${{ hashFiles('*') }}
