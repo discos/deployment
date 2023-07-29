@@ -47,7 +47,7 @@ if len(machines) == 0:
     sys.exit()
 
 if not args.machine:
-    args.machine = deployment.machineList()
+    args.machine = machines
 
 if 'storage' in args.machine and len(args.machine) > 1:
     args.machine.insert(0, args.machine.pop(args.machine.index('storage')))

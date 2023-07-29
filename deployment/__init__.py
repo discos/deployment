@@ -232,14 +232,27 @@ def machineList(inventory='development'):
     machines = []
     if inventory == 'development':
         cmd = subprocess.Popen(
-            ['VBoxManage', 'list', 'vms'],
-            stdout=subprocess.PIPE
+            "grep 'vb\.name' Vagrantfile | awk '{print $NF}' | sed 's/\"//g'",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=DEVNULL,
+            cwd=os.path.join(os.environ['HOME'], '.deployment')
         )
-        for line in cmd.stdout:
-            line = line.decode()
-            if 'discos_' in line:
-                m_name = line.split()[0].strip('"').replace('discos_', '')
-                machines.append(m_name)
+        vagrant_vms = [
+            m.decode().strip() for m in cmd.stdout.readlines()
+        ]
+        cmd = subprocess.Popen(
+            "vboxmanage list vms | awk '{print $1}' | sed 's/\"//g'",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=DEVNULL,
+        )
+        vbox_vms = [
+            m.decode().strip() for m in cmd.stdout.readlines()
+        ]
+        machines = [
+            m.replace('discos_', '') for m in vagrant_vms if m in vbox_vms
+        ]
     else:
         h, _, _ = parseInventory(inventory)
         machines = h.keys()
