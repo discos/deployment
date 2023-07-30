@@ -160,6 +160,10 @@ ansible_cmd = [
 extra_vars = []
 if args.station:
     extra_vars.append(f'station={STATIONS[args.station]}')
+    if env == 'development':
+        extra_vars.append('cdb=test')
+    else:
+        extra_vars.append('cdb=telescope')
 if args.branch:
     extra_vars.append(f'branch={args.branch}')
 
@@ -180,5 +184,6 @@ ansible_cmd = ' '.join(ansible_cmd)
 print('Calling Ansible...')
 if args.sim:
     print(ansible_cmd)
+    sys.exit()
 else:
-    subprocess.call(ansible_cmd, shell=True)
+    sys.exit(subprocess.call(ansible_cmd, shell=True))

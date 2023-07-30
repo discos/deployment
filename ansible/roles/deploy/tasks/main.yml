@@ -5,13 +5,6 @@
     repo_name: "{{ branch }}{{ '-' + station|lower if inventory_dir.split('/')[-1] == 'development' else '' }}"
     discos_get_cmd: "discos-get -b {{ branch }}{{ ' -s ' + station|lower if inventory_dir.split('/')[-1] == 'development' else '' }}"
 
-- debug:
-    var: discos_get_cmd
-
-- debug:
-    var: repo_name
-  failed_when: True
-
 
 - name: Define the sources and introot directory for DISCOS repository
   set_fact:

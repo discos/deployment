@@ -129,7 +129,14 @@ def sshLogin(ip, user='root'):
 
 def ping(ip):
     sp = subprocess.run(
-        ['timeout', '0.01', 'nc', '-z', ip, '22'],
+        [
+            'timeout',
+            '1' if os.environ.get('CI') else '0.1',
+            'nc',
+            '-z',
+            ip,
+            '22'
+        ],
         stdout=DEVNULL,
         stderr=DEVNULL
     )
@@ -211,7 +218,7 @@ def createVm(machine):
         sys.stdout.flush()
         proc = subprocess.Popen(
             ['vagrant', 'up', machine],
-            stdout=subprocess.PIPE,
+            stdout=DEVNULL,
             stderr=DEVNULL,
             cwd=os.path.join(os.environ['HOME'], '.deployment')
         )
@@ -282,8 +289,16 @@ def generateRSAKey(
         file_name = os.path.join(ssh_dir, key_file)
         if not os.path.exists(file_name):
             subprocess.run(
-                f"ssh-keygen -f {file_name} -t rsa -N '' -q".split()
+                f"ssh-keygen -q -f {file_name} -t rsa -P ''",
+                stdout=DEVNULL,
+                stderr=DEVNULL,
+                shell=True
             )
+    subprocess.call(
+        ['ssh-add', f'{file_name}'],
+        stdout=DEVNULL,
+        stderr=DEVNULL
+    )
 
 def updateKnownHosts(
         ips,

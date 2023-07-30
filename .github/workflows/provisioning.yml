@@ -1,19 +1,20 @@
-name: Provisioning
+name: DISCOS provisioning and deployment
 
 on:
   workflow_dispatch:
   push:
+  pull_request:
+    branches:
+      - 'master'
   schedule:
     - cron: '0 4 * * 1'
 
 jobs:
   provisioning:
     runs-on: macos-latest
-
+    outputs:
+      deploy: ${{ steps.deploy.outputs.DEPLOY }}
     steps:
-      - name: Install missing packages on the ${{ runner.os }} runner
-        run: |
-          brew install coreutils
       - name: Clone the repository
         uses: actions/checkout@v3
       - name: Set up Python
@@ -25,72 +26,88 @@ jobs:
         run: |
           python -m pip install -r requirements.txt
           python setup.py install
-      - name: Copy the discos-dependencies token
-        run: |
-           mkdir -p $HOME/.deployment/repository/token
-           touch $HOME/.deployment/repository/token/token
-           echo "${{ secrets.DEPENDENCIES_TOKEN }}" >> $HOME/.deployment/repository/token/token
-      - name: Read the virtual machine info
-        run: |
-          echo "VM_NAME=$(grep 'vb\.name' Vagrantfile | awk '{print $NF}' | sed 's/\"//g')" >> "$GITHUB_ENV"
-          echo "VM_IP_ADDRESS=$(grep 'private_network' Vagrantfile | awk '{print $NF}' | sed 's/\"//g')" >> "$GITHUB_ENV"
-      - name: Restore the cached virtual machine and ssh configuration
+      - name: Check if anything changed from the previous build
         id: restore-cache
         uses: actions/cache/restore@v3
         with:
           path: |
             /Users/runner/.deployment/.vagrant
             /Users/runner/VirtualBox VMs
-            /Users/runner/.ssh
-          key: cache-fresh-${{ hashFiles('Vagrantfile') }}
-      - name: Generate the RSA private-public key pair
+          key: cache-${{ hashFiles('ansible', 'deployment', 'scripts', 'Vagrantfile') }}
+          lookup-only: true
+      - name: Disable the deployment job if nothing changed from previous build
+        id: deploy
         run: |
-          mkdir -p "/Users/runner/.ssh"
-          touch "/Users/runner/.ssh/known_hosts"
-          ssh-keygen -t rsa -f "/Users/runner/.ssh/id_rsa" -P ""
-        if: steps.restore-cache.outputs.cache-hit != 'true'
-      - name: Load the RSA private-public key pair to the ssh-agent
-        run: |
-          eval $(ssh-agent)
-          ssh-add "/Users/runner/.ssh/id_rsa"
-      - name: Register the virtual machine
-        run: |
-          vboxmanage registervm "/Users/runner/VirtualBox VMs/${{ env.VM_NAME }}/${{ env.VM_NAME }}.vbox"
+          echo "DEPLOY=false" >> "$GITHUB_OUTPUT"
         if: steps.restore-cache.outputs.cache-hit == 'true'
-      - name: Boot up the virtual machine
+      - name: Install missing packages on the ${{ runner.os }} runner
         run: |
-          vagrant up
-        working-directory: /Users/runner/.deployment
-      - name: Prepare the virtual machine for caching
+          brew install coreutils
+        if: steps.restore-cache.outputs.cache-hit != 'true'
+      - name: Copy the discos-dependencies token
         run: |
-          vagrant halt
-        working-directory: /Users/runner/.deployment
-        if: steps.restore-cache.outputs.cache-hit != 'true'
-      - name: Cache the fresh virtual machine
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            /Users/runner/.deployment/.vagrant
-            /Users/runner/VirtualBox VMs
-            /Users/runner/.ssh
-          key: cache-fresh-${{ hashFiles('Vagrantfile') }}
-        if: steps.restore-cache.outputs.cache-hit != 'true'
-      - name: Boot up the virtual machine again
-        run: vagrant up
-        working-directory: /Users/runner/.deployment
+           mkdir -p $HOME/.deployment/repository/token
+           touch $HOME/.deployment/repository/token/token
+           echo "${{ secrets.DEPENDENCIES_TOKEN }}" >> $HOME/.deployment/repository/token/token
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Provision the virtual machine
         run: |
           discos-deploy manager:development
+        if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Finally shutdown the virtual machine
         run: |
           discos-vms stop
         working-directory: /Users/runner/.deployment
-      - name: Cache the fully provisioned virtual machine
+        if: steps.restore-cache.outputs.cache-hit != 'true'
+      - name: Cache the provisioned virtual machine for deployment
         uses: actions/cache/save@v3
         with:
           path: |
             /Users/runner/.deployment/.vagrant
             /Users/runner/VirtualBox VMs
-            /Users/runner/.ssh
-          key: cache-provisioned-${{ hashFiles('*') }}
+          key: cache-${{ hashFiles('ansible', 'deployment', 'scripts', 'Vagrantfile') }}
+        if: steps.restore-cache.outputs.cache-hit != 'true'
+  deployment:
+    needs: provisioning
+    if: needs.provisioning.outputs.deploy != 'false'
+    runs-on: macos-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9.4'
+          check-latest: true
+      - name: Install package and dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python setup.py install
+      - name: Restore the provisioned virtual machine
+        id: restore-cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            /Users/runner/.deployment/.vagrant
+            /Users/runner/VirtualBox VMs
+          key: cache-${{ hashFiles('ansible', 'deployment', 'scripts', 'Vagrantfile') }}
+      - name: Read the virtual machine name
+        run: |
+          echo "VM_NAME=$(grep 'vb\.name' Vagrantfile | awk '{print $NF}' | sed 's/\"//g')" >> "$GITHUB_ENV"
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Register the virtual machine
+        run: |
+          vboxmanage registervm "/Users/runner/VirtualBox VMs/${{ env.VM_NAME }}/${{ env.VM_NAME }}.vbox"
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Install missing packages on the ${{ runner.os }} runner
+        run: |
+          brew install coreutils
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Deploy DISCOS
+        run: |
+          discos-deploy manager:development -s srt -b centos_7_compatibility --deploy-only
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Finally shutdown the virtual machine
+        run: |
+          discos-vms stop
+        if: steps.restore-cache.outputs.cache-hit == 'true'
