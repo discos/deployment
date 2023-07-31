@@ -14,6 +14,7 @@ import subprocess
 import os
 import argparse
 import deployment
+import json
 
 STATIONS = { 'srt': 'SRT', 'medicina': 'Medicina', 'noto': 'Noto' }
 INVENTORIES, SYSTEMS = deployment.getEnvironments()
@@ -91,6 +92,11 @@ parser.add_argument(
     help='only deploy the DISCOS Control Software'
 )
 parser.add_argument(
+    '--default-passwords',
+    action='store_true',
+    help='use the default passwords for the DISCOS users'
+)
+parser.add_argument(
     '--sim',
     action='store_true',
     help='only print the final Ansible command'
@@ -130,15 +136,20 @@ if not args.sim:
     # Check if the chosen machines are reachable
     for machine, ip in machines.items():
         if env == 'development' and not args.no_vagrant:
-            if not deployment.ping(ip):
-                # Create or start virtual machine(s)
+            # Start or create the virtual machine
+            code = 0
+            action = 'starting'
+            if machine not in deployment.machineList():
                 code = deployment.createVm(machine)
-                if code:
-                    deployment.error(
-                        f'Encountered some problems while starting '
-                        f'machine {machine}.',
-                        code=code
-                    )
+                action = 'creating'
+            elif not deployment.ping(ip):
+                code = deployment.startVm(machine)
+            if code != 0:
+                deployment.error(
+                    f'Encountered some problems while '
+                    f'{action} machine {machine}.',
+                    code=code
+                )
         else:
             if not deployment.ping(ip):
                 deployment.error(
@@ -157,25 +168,29 @@ ansible_cmd = [
     '--limit', cluster
 ]
 
-extra_vars = []
+extra_vars = {}
+if args.default_passwords:
+    extra_vars['use_default_passwords'] = True
 if args.station:
-    extra_vars.append(f'station={STATIONS[args.station]}')
+    extra_vars['station'] = STATIONS[args.station]
     if env == 'development':
-        extra_vars.append('cdb=test')
+        extra_vars['cdb'] = 'test'
     else:
-        extra_vars.append('cdb=telescope')
+        extra_vars['cdb'] = 'telescope'
 if args.branch:
-    extra_vars.append(f'branch={args.branch}')
+    extra_vars['branch'] = args.branch
 
 if extra_vars:
-    extra_vars = ['--extra-vars', '"' + ' '.join(extra_vars) + '"']
+    extra_vars = ['--extra-vars', f"'{json.dumps(extra_vars)}'"]
+else:
+    extra_vars = []
 
 # Check if we want provision only or deployment only
 ansible_tags = []
 if args.deploy_only:
-    ansible_tags = ['--tags', '"deploy"']
+    ansible_tags = ['--tags', "'deploy'"]
 elif not args.branch:
-    ansible_tags = ['--skip-tags', '"deploy"']
+    ansible_tags = ['--skip-tags', "'deploy'"]
 
 # Add extra variables to the ansible command
 ansible_cmd += ansible_tags + extra_vars

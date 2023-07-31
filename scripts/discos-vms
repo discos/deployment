@@ -1,73 +1,68 @@
 #!/usr/bin/env python
 """Some command line examples:
 
-  $ discos-vms start -m manager
-  $ discos-vms restart -m console storage
-  $ discos-vms stop -m storage
+  $ discos-vms start manager
+  $ discos-vms restart console storage
+  $ discos-vms stop storage
   $ discos-vms status
+  $ discos-vms export manager
+  $ discos-vms destroy console
 """
 import sys
-from argparse import ArgumentParser
+import argparse
 import deployment
 
-machines = deployment.machineList()
+machines = deployment._vagrantList()
 
-def check_machine(machine):
-    if machine not in machines:
-        deployment.error(
-            'machine %s unknown!' % machine,
-            choices=machines,
-            name='machine'
-        )
-    else:
-        return machine
-
-parser = ArgumentParser()
+parser = argparse.ArgumentParser(
+    description=(f'Handle a DISCOS environment. {__doc__}'),
+    formatter_class=argparse.RawTextHelpFormatter
+)
 parser.add_argument(
     'action',
-    choices=['status', 'start', 'stop', 'restart', 'export'],
-)
-help_msg = (
+    choices=['status', 'start', 'stop', 'restart', 'create', 'destroy', 'export', 'list'],
 )
 parser.add_argument(
-    '-m', '--machine',
-    nargs='*',
-    type=check_machine,
+    'machine',
+    nargs='?',
+    type=str,
     help=(
         f'the desired machine. '
         f'Leave this field empty to select all available machines.'
     ),
-    choices=machines
+    choices=machines,
+    default=None
 )
 args = parser.parse_args()
 
-if len(machines) == 0:
-    print('No machine currently deployed.\n')
-    parser.print_help()
-    sys.exit()
-
 if not args.machine:
     args.machine = machines
+elif not isinstance(args.machine, list):
+    args.machine = [args.machine]
 
 if 'storage' in args.machine and len(args.machine) > 1:
     args.machine.insert(0, args.machine.pop(args.machine.index('storage')))
 
-if args.action == 'stop':
+if args.action in ['stop', 'destroy']:
     args.machine.reverse()
+
+if args.action == 'list':
+    print('Machines available for deployment: ')
 
 for machine in args.machine:
     if args.action == 'status':
-        status_msg = 'Machine {} status: '.format(machine)
-        if deployment.isRunning(machine):
-            status_msg += 'running.'
-        else:
-            status_msg += 'powered off.'
-        print(status_msg)
+        deployment.statusVm(machine)
     elif args.action == 'start':
         deployment.startVm(machine)
     elif args.action == 'stop':
         deployment.stopVm(machine)
     elif args.action == 'restart':
         deployment.restartVm(machine)
+    elif args.action == 'create':
+        deployment.createVm(machine)
+    elif args.action == 'destroy':
+        deployment.destroyVm(machine)
     elif args.action == 'export':
         deployment.exportVm(machine)
+    elif args.action == 'list':
+        print(machine)

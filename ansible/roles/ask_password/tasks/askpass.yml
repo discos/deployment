@@ -3,9 +3,10 @@
 - name: Prompt the user '{{ item.value.name }}' for password
   askpass:
     username: "{{ item.value.name }}"
-  run_once: True
+  run_once: true
 
 
 - name: Update user '{{ item.value.name }}' password
   set_fact:
-      users: "{{ users | combine({ item.key: item.value | combine({'password': typed_password | password_hash(hashtype='sha512', salt=item.value.name[:8]) })}) }}"
+    users: "{{ users | combine({item.key: item.value | combine({'password': typed_password \
+           | password_hash(hashtype='sha512', salt=item.value.name[:8])})}) }}"
