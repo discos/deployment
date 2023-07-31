@@ -8,7 +8,7 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')
 
-DEPLOYMENT_DIR = os.path.join(os.environ['HOME'], '.deployment')
+DEPLOYMENT_DIR = os.path.join(os.environ.get('HOME'), '.deployment')
 ANSIBLE_DIR = os.path.join(DEPLOYMENT_DIR, 'ansible')
 INVENTORIES_DIR = os.path.join(ANSIBLE_DIR, 'inventories')
 os.environ['ANSIBLE_CONFIG'] = os.path.join(ANSIBLE_DIR, 'ansible.cfg')
@@ -159,15 +159,15 @@ def startVm(machine):
     else:
         sys.stdout.write(f'Starting machine {machine}')
         sys.stdout.flush()
-        proc = subprocess.Popen(
+        cmd = subprocess.Popen(
             ['vagrant', 'up', machine],
             stdout=subprocess.PIPE,
             stderr=DEVNULL,
-            cwd=os.path.join(os.environ['HOME'], '.deployment')
+            cwd=os.path.join(os.environ.get('HOME'), '.deployment')
         )
         while True:
             t0 = time.time()
-            code = proc.poll()
+            code = cmd.poll()
             if code is not None:
                 if code == 0:
                     print('done.')
@@ -185,15 +185,15 @@ def stopVm(machine):
     else:
         sys.stdout.write(f'Powering off machine {machine}')
         sys.stdout.flush()
-        proc = subprocess.Popen(
+        cmd = subprocess.Popen(
             ['vagrant', 'halt', machine],
             stdout=subprocess.PIPE,
             stderr=DEVNULL,
-            cwd=os.path.join(os.environ['HOME'], '.deployment')
+            cwd=os.path.join(os.environ.get('HOME'), '.deployment')
         )
         while True:
             t0 = time.time()
-            code = proc.poll()
+            code = cmd.poll()
             if code is not None:
                 if code == 0:
                     print('done.')
@@ -216,15 +216,15 @@ def createVm(machine):
     else:
         sys.stdout.write(f'Creating machine {machine}')
         sys.stdout.flush()
-        proc = subprocess.Popen(
+        cmd = subprocess.Popen(
             ['vagrant', 'up', machine],
             stdout=DEVNULL,
             stderr=DEVNULL,
-            cwd=os.path.join(os.environ['HOME'], '.deployment')
+            cwd=os.path.join(os.environ.get('HOME'), '.deployment')
         )
         while True:
             t0 = time.time()
-            code = proc.poll()
+            code = cmd.poll()
             if code is not None:
                 if code == 0:
                     print('done.')
@@ -235,6 +235,31 @@ def createVm(machine):
                 time.sleep(max(0, 1 - (time.time() - t0)))
     return 0
 
+def exportVm(machine, outdir=os.environ.get('HOME')):
+    if isRunning(machine):
+        error(f'Machine {machine} is running. Stop it and try again.')
+    else:
+        outfile = os.path.join(outdir, f'discos_{machine}.ova')
+        sys.stdout.write(f'Exporting machine {machine} as {outfile}')
+        sys.stdout.flush()
+        cmd = subprocess.Popen(
+            ['vboxmanage', 'export', f'discos_{machine}', '-o', outfile],
+            stdout=DEVNULL,
+            stderr=DEVNULL
+        )
+        while True:
+            t0 = time.time()
+            code = cmd.poll()
+            if code is not None:
+                if code == 0:
+                    print('done.')
+                return code
+            else:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(max(0, 1 - (time.time() - t0)))
+        return 0
+
 def machineList(inventory='development'):
     machines = []
     if inventory == 'development':
@@ -243,7 +268,7 @@ def machineList(inventory='development'):
             shell=True,
             stdout=subprocess.PIPE,
             stderr=DEVNULL,
-            cwd=os.path.join(os.environ['HOME'], '.deployment')
+            cwd=os.path.join(os.environ.get('HOME'), '.deployment')
         )
         vagrant_vms = [
             m.decode().strip() for m in cmd.stdout.readlines()
@@ -270,13 +295,13 @@ def isRunning(name, inventory='development'):
         error(f'Machine {name} unknown!')
     return ping(getIp(name, inventory))
 
-def _initSSHDir(ssh_dir=os.path.join(os.environ['HOME'], '.ssh')):
+def _initSSHDir(ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')):
     if not os.path.exists(ssh_dir):
         os.mkdir(ssh_dir, 0o700)
 
 def generateRSAKey(
         key_file='id_rsa',
-        ssh_dir=os.path.join(os.environ['HOME'], '.ssh')
+        ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')
     ):
     _initSSHDir(ssh_dir)
     cmd = subprocess.Popen(
@@ -303,7 +328,7 @@ def generateRSAKey(
 def updateKnownHosts(
         ips,
         known_hosts='known_hosts',
-        ssh_dir=os.path.join(os.environ['HOME'], '.ssh')
+        ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')
     ):
     _initSSHDir(ssh_dir)
     file_name = os.path.join(ssh_dir, known_hosts)

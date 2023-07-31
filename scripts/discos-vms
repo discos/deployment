@@ -25,7 +25,7 @@ def check_machine(machine):
 parser = ArgumentParser()
 parser.add_argument(
     'action',
-    choices=['status', 'start', 'stop', 'restart'],
+    choices=['status', 'start', 'stop', 'restart', 'export'],
 )
 help_msg = (
 )
@@ -34,7 +34,7 @@ parser.add_argument(
     nargs='*',
     type=check_machine,
     help=(
-        f'the machine you want to control. '
+        f'the desired machine. '
         f'Leave this field empty to select all available machines.'
     ),
     choices=machines
@@ -69,3 +69,5 @@ for machine in args.machine:
         deployment.stopVm(machine)
     elif args.action == 'restart':
         deployment.restartVm(machine)
+    elif args.action == 'export':
+        deployment.exportVm(machine)
