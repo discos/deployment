@@ -52,7 +52,7 @@ jobs:
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Provision the virtual machine
         run: |
-          discos-deploy manager:development
+          discos-deploy manager:development --default-passwords
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Finally shutdown the virtual machine
         run: |

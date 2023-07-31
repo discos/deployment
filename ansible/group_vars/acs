@@ -10,3 +10,5 @@ firewall_packages:
   - iptables-services
 
 remote_build_path: "/tmp/builds"
+
+use_default_passwords: false

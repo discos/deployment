@@ -152,10 +152,29 @@ def getIp(machine, inventory='development'):
     except KeyError:
         error(f'No IP associated with machine {machine}!')
 
+def statusVm(machine):
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine not in machineList():
+        print(f'Machine {machine} not created.')
+    elif isRunning(machine):
+        print(f'Machine {machine} is running.')
+    else:
+        print(f'Machine {machine} powered off.')
+    return return_code 
+
 def startVm(machine):
-    if isRunning(machine):
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine not in machineList():
+        print(f'Machine {machine} not created.')
+        return_code = 2
+    elif isRunning(machine):
         print(f'Machine {machine} is already running.')
-        return
     else:
         sys.stdout.write(f'Starting machine {machine}')
         sys.stdout.flush()
@@ -171,17 +190,26 @@ def startVm(machine):
             if code is not None:
                 if code == 0:
                     print('done.')
-                return code
+                else:
+                    print('error while starting the requested VM.')
+                    return_code = 3
+                break
             else:
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 time.sleep(max(0, 1 - (time.time() - t0)))
-    print('done.')
+    return return_code
 
 def stopVm(machine):
-    if not isRunning(machine):
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine not in machineList():
+        print(f'Machine {machine} not created.')
+        return_code = 2
+    elif not isRunning(machine):
         print(f'Machine {machine} is not running.')
-        return
     else:
         sys.stdout.write(f'Powering off machine {machine}')
         sys.stdout.flush()
@@ -197,12 +225,15 @@ def stopVm(machine):
             if code is not None:
                 if code == 0:
                     print('done.')
-                return code
+                else:
+                    print('error while stopping the requested VM.')
+                    return_code = 3
+                break
             else:
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 time.sleep(max(0, 1 - (time.time() - t0)))
-    print('done.')
+    return return_code
 
 def restartVm(machine):
     if isRunning(machine):
@@ -210,9 +241,13 @@ def restartVm(machine):
     startVm(machine)
 
 def createVm(machine):
-    if machine in machineList():
-        if not isRunning(machine):
-            startVm(machine)
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine in machineList():
+        print(f'Machine {machine} already created.')
+        return_code = 2
     else:
         sys.stdout.write(f'Creating machine {machine}')
         sys.stdout.flush()
@@ -228,16 +263,78 @@ def createVm(machine):
             if code is not None:
                 if code == 0:
                     print('done.')
-                return code
+                else:
+                    print('error while creating the requested VM.')
+                    return_code = 3
+                break
             else:
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 time.sleep(max(0, 1 - (time.time() - t0)))
-    return 0
+    return return_code
+
+def destroyVm(machine):
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine not in machineList():
+        print(f'Machine {machine} not created.')
+    else:
+        valid = {"yes": True, "y": True, "ye": True, "no": False, "n": False}
+        prompted = 0
+        choice = False
+        while True:
+            if prompted == 3:
+                return return_code
+            prompted += 1
+            sys.stdout.write(
+                f'Are you sure you want to destroy machine {machine}? [y/N]: '
+            )
+            sys.stdout.flush()
+            choice = input().lower()
+            if choice not in valid.keys():
+                continue
+            else:
+                choice = False if choice == '' else valid[choice]
+                break
+        if choice == False:
+            return return_code
+        sys.stdout.write(f'Destroying machine {machine}')
+        sys.stdout.flush()
+        cmd = subprocess.Popen(
+            ['vagrant', 'destroy', '-f', machine],
+            stdout=DEVNULL,
+            stderr=DEVNULL,
+            cwd=os.path.join(os.environ.get('HOME'), '.deployment')
+        )
+        while True:
+            t0 = time.time()
+            code = cmd.poll()
+            if code is not None:
+                if code == 0:
+                    print('done.')
+                else:
+                    print('error while destroying the requested VM.')
+                    return_code = 3
+                break
+            else:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(max(0, 1 - (time.time() - t0)))
+    return return_code
 
 def exportVm(machine, outdir=os.environ.get('HOME')):
-    if isRunning(machine):
-        error(f'Machine {machine} is running. Stop it and try again.')
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine not in machineList():
+        print(f'Machine {machine} not created.')
+        return_code = 2
+    elif isRunning(machine):
+        print(f'Machine {machine} is running. Stop it and try again.')
+        return_code = 3
     else:
         outfile = os.path.join(outdir, f'discos_{machine}.ova')
         sys.stdout.write(f'Exporting machine {machine} as {outfile}')
@@ -253,35 +350,42 @@ def exportVm(machine, outdir=os.environ.get('HOME')):
             if code is not None:
                 if code == 0:
                     print('done.')
-                return code
+                else:
+                    print('error while exporting the requested VM.')
+                    return_code = code
+                break
             else:
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 time.sleep(max(0, 1 - (time.time() - t0)))
-        return 0
+    return return_code
+
+def _vagrantList():
+    cmd = subprocess.Popen(
+        "grep 'vb\.name' Vagrantfile | awk '{print $NF}' | sed 's/\"//g'",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=DEVNULL,
+        cwd=os.path.join(os.environ.get('HOME'), '.deployment')
+    )
+    machines = cmd.stdout.readlines()
+    return [m.decode().strip().replace('discos_', '') for m in machines]
+
+def _vboxList():
+    cmd = subprocess.Popen(
+        "vboxmanage list vms | awk '{print $1}' | sed 's/\"//g'",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=DEVNULL,
+    )
+    machines = cmd.stdout.readlines()
+    return [m.decode().strip().replace('discos_', '') for m in machines]
 
 def machineList(inventory='development'):
     machines = []
     if inventory == 'development':
-        cmd = subprocess.Popen(
-            "grep 'vb\.name' Vagrantfile | awk '{print $NF}' | sed 's/\"//g'",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=DEVNULL,
-            cwd=os.path.join(os.environ.get('HOME'), '.deployment')
-        )
-        vagrant_vms = [
-            m.decode().strip() for m in cmd.stdout.readlines()
-        ]
-        cmd = subprocess.Popen(
-            "vboxmanage list vms | awk '{print $1}' | sed 's/\"//g'",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=DEVNULL,
-        )
-        vbox_vms = [
-            m.decode().strip() for m in cmd.stdout.readlines()
-        ]
+        vagrant_vms = _vagrantList()
+        vbox_vms = _vboxList()
         machines = [
             m.replace('discos_', '') for m in vagrant_vms if m in vbox_vms
         ]
@@ -303,6 +407,7 @@ def generateRSAKey(
         key_file='id_rsa',
         ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')
     ):
+    file_name = os.path.join(ssh_dir, key_file)
     _initSSHDir(ssh_dir)
     cmd = subprocess.Popen(
         ['ssh-add', '-L'],
@@ -311,7 +416,6 @@ def generateRSAKey(
     public_key = cmd.stdout.readline().decode()
     import socket
     if os.getlogin() + '@' + socket.gethostname() not in public_key:
-        file_name = os.path.join(ssh_dir, key_file)
         if not os.path.exists(file_name):
             subprocess.run(
                 f"ssh-keygen -q -f {file_name} -t rsa -P ''",
