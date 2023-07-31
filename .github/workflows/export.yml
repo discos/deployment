@@ -1,0 +1,52 @@
+name: Export the DISCOS virtual machine
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  export:
+    runs-on: macos-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9.4'
+          check-latest: true
+      - name: Install package and dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python setup.py install
+      - name: Restore che cached virtual machine
+        id: restore-cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            /Users/runner/.deployment/.vagrant
+            /Users/runner/VirtualBox VMs
+          #key: cache-${{ hashFiles('ansible', 'deployment', 'scripts', 'Vagrantfile') }}
+          key: cache-7e4d876b85bb6c3cf58601b5e62616f0330ca8e4560258c86c6f2c7d24bad71b
+      - name: Read the virtual machine name
+        run: |
+          echo "VM_NAME=$(grep 'vb\.name' Vagrantfile | awk '{print $NF}' | sed 's/\"//g')" >> "$GITHUB_ENV"
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Register the virtual machine
+        run: |
+          vboxmanage registervm "/Users/runner/VirtualBox VMs/${{ env.VM_NAME }}/${{ env.VM_NAME }}.vbox"
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Install missing packages on the ${{ runner.os }} runner
+        run: |
+          brew install coreutils
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Export the virtual machine
+        run: |
+          discos-vms export -m manager
+        if: steps.restore-cache.outputs.cache-hit == 'true'
+      - name: Save the virtual machine as GitHub Action artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: discos_manager
+          path: /Users/runner/discos_manager.ova
+        if: steps.restore-cache.outputs.cache-hit == 'true'
