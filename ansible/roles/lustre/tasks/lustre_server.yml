@@ -1,7 +1,7 @@
 ---
 
 - name: Install some yum dependencies
-  yum:
+  ansible.builtin.yum:
     name:
       - sg3_utils
       - lsof
@@ -16,21 +16,22 @@
 #########################
 
 - name: Copy e2fsprogs yum packages to the remote
-  copy:
+  ansible.builtin.copy:
     src: "{{ local_repository_path }}/{{ item }}-{{ e2fsprogs_tail }}"
     dest: "/tmp/"
+    mode: "0644"
   with_items: "{{ e2fsprogs_files }}"
 
 
 - name: Install e2fsprogs yum packages
-  yum:
+  ansible.builtin.yum:
     name: "{{ e2fsprogs_files | map('regex_replace', '(.*)', '/tmp/\\1-' + e2fsprogs_tail) | list }}"
     state: present
-    validate_certs: no
+    validate_certs: false
 
 
 - name: Delete e2fsprogs packages from the remote
-  file:
+  ansible.builtin.file:
     path: "/tmp/{{ item }}-{{ e2fsprogs_tail }}"
     state: absent
   with_items: "{{ e2fsprogs_files }}"
@@ -41,69 +42,73 @@
 ######################
 
 - name: Copy lustre server kernel yum packages to the remote
-  copy:
+  ansible.builtin.copy:
     src: "{{ local_repository_path }}/{{ item }}-{{ lustre_server_kernel_tail }}"
     dest: "/tmp/"
+    mode: "0644"
   with_items: "{{ lustre_server_kernel_files }}"
 
 
 - name: Install lustre server kernel yum packages
-  yum:
+  ansible.builtin.yum:
     name: "{{ lustre_server_kernel_files | map('regex_replace', '(.*)', '/tmp/\\1-' + lustre_server_kernel_tail) | list }}"
     state: present
-    validate_certs: no
+    validate_certs: false
 
 
 - name: Delete lustre server kernel packages from the remote
-  file:
+  ansible.builtin.file:
     path: "/tmp/{{ item }}-{{ lustre_server_kernel_tail }}"
     state: absent
   with_items: "{{ lustre_server_kernel_files }}"
 
 
 - name: Check if a reboot is required
-  shell: "if [ $(rpm -q kernel|tail -n 1) != kernel-$(uname -r) ]; then echo 'reboot'; else echo 'no'; fi"
+  ansible.builtin.shell: "if [ $(rpm -q kernel|tail -n 1) != kernel-$(uname -r) ]; then echo 'reboot'; else echo 'no'; fi"
   ignore_errors: true
   register: reboot_required
+  changed_when: reboot_required.stdout.find("reboot") != -1
 
 
 - name: Reboot the machine if required
-  reboot:
+  ansible.builtin.reboot:
     msg: 'Kernel update with lustre modules.'
   when: reboot_required.stdout.find("reboot") != -1
 
 
 - name: Copy lustre server yum packages to the remote
-  copy:
+  ansible.builtin.copy:
     src: "{{ local_repository_path }}/{{ item }}-{{ lustre_server_tail }}"
     dest: "/tmp/"
+    mode: "0644"
   with_items: "{{ lustre_server_files }}"
 
 
 - name: Install lustre server yum packages
-  yum:
+  ansible.builtin.yum:
     name: "{{ lustre_server_files | map('regex_replace', '(.*)', '/tmp/\\1-' + lustre_server_tail) | list }}"
     state: present
-    validate_certs: no
+    validate_certs: false
 
 
 - name: Delete lustre server packages from the remote
-  file:
+  ansible.builtin.file:
     path: "/tmp/{{ item }}-{{ lustre_server_tail }}"
     state: absent
   with_items: "{{ lustre_server_files }}"
 
 
 - name: Add lustre configuration into modprobe.d
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/modprobe.d/lustre.conf
     line: "options lnet networks=tcp({{ lustre_network_interface }})"
     state: present
-    create: yes
+    create: true
+    mode: "0644"
 
 
 - name: Load lustre modules
-  modprobe:
+  community.general.modprobe:
     name: "{{ item }}"
     state: present
   with_items:
@@ -112,12 +117,12 @@
 
 
 - name: Add lustre modules to startup modules
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/sysconfig/modules/lustre.modules
     line: "{{ item.line }}"
     state: present
-    create: yes
-    mode: 0755
+    create: true
+    mode: "0755"
     insertbefore: "{{ item.before }}"
   with_items:
     - { line: '#!/bin/sh', before: "BOF" }
@@ -125,13 +130,14 @@
 
 
 - name: Initialize lustre disk
-  parted:
+  community.general.parted:
     device: "{{ lustre_device }}"
     label: gpt
   when: initialize_lustre_disk and lustre_device is defined
 
 
-- set_fact:
+- name: Set mount point names
+  ansible.builtin.set_fact:
     lustre_mount_points:
       - "/lustre"
       - "/lustre/mgs-mdt"
@@ -139,7 +145,8 @@
   when: merge_mgs_mdt
 
 
-- set_fact:
+- name: Set mount point names
+  ansible.builtin.set_fact:
     lustre_mount_points:
       - "/lustre"
       - "/lustre/mgs"
@@ -149,14 +156,15 @@
 
 
 - name: Create the lustre mount points
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
+    mode: "0755"
   with_items: "{{ lustre_mount_points }}"
 
 
 - name: Create the lustre mgs-mdt partition
-  parted:
+  community.general.parted:
     device: "{{ lustre_mgs_mdt_partition.device }}"
     number: "{{ lustre_mgs_mdt_partition.number }}"
     state: present
@@ -168,30 +176,31 @@
     - merge_mgs_mdt
 
 
-- block:
-  - name: Create the lustre mgs partition
-    parted:
-      device: "{{ lustre_mgs_partition.device }}"
-      number: "{{ lustre_mgs_partition.number }}"
-      state: present
-      part_start: "{{ lustre_mgs_partition.start }}"
-      part_end: "{{ lustre_mgs_partition.end }}"
-      label: gpt
-  - name: Create the lustre mdt partition
-    parted:
-      device: "{{ lustre_mdt_partition.device }}"
-      number: "{{ lustre_mdt_partition.number }}"
-      state: present
-      part_start: "{{ lustre_mdt_partition.start }}"
-      part_end: "{{ lustre_mdt_partition.end }}"
-      label: gpt
+- name: Create the lustre mgs and mdt partitions
   when:
     - initialize_lustre_disk
     - not merge_mgs_mdt
+  block:
+    - name: Create the lustre mgs partition
+      community.general.parted:
+        device: "{{ lustre_mgs_partition.device }}"
+        number: "{{ lustre_mgs_partition.number }}"
+        state: present
+        part_start: "{{ lustre_mgs_partition.start }}"
+        part_end: "{{ lustre_mgs_partition.end }}"
+        label: gpt
+    - name: Create the lustre mdt partition
+      community.general.parted:
+        device: "{{ lustre_mdt_partition.device }}"
+        number: "{{ lustre_mdt_partition.number }}"
+        state: present
+        part_start: "{{ lustre_mdt_partition.start }}"
+        part_end: "{{ lustre_mdt_partition.end }}"
+        label: gpt
 
 
 - name: Create the lustre data partition
-  parted:
+  community.general.parted:
     device: "{{ lustre_ost_partition.device }}"
     number: "{{ lustre_ost_partition.number }}"
     state: present
@@ -202,35 +211,40 @@
 
 
 - name: Format the lustre mgs-mdt partition
-  command: "mkfs.lustre --fsname=discos --mgs --mdt {{ lustre_mgs_mdt_partition.device}}{{ lustre_mgs_mdt_partition.number }}"
+  ansible.builtin.command: "mkfs.lustre --fsname=discos --mgs --mdt {{ lustre_mgs_mdt_partition.device }}{{ lustre_mgs_mdt_partition.number }}"
   register: command_result
   failed_when:
     - command_result.rc != 0
     - command_result.rc != 1
     - command_result.rc != 17
   when: merge_mgs_mdt
+  changed_when: true
 
 
-- block:
-  - name: Format the lustre mgs partition
-    command: "mkfs.lustre --mgs {{ lustre_mgs_partition.device}}{{ lustre_mgs_partition.number }}"
-    register: command_result
-    failed_when:
-      - command_result.rc != 0
-      - command_result.rc != 1
-      - command_result.rc != 17
-  - name: Format the lustre mdt partition
-    command: "mkfs.lustre --mdt --fsname=discos --mgsnode={{ lustre_server_ip }}@tcp --index=0 {{ lustre_mdt_partition.device}}{{ lustre_mdt_partition.number }}"
-    register: command_result
-    failed_when:
-      - command_result.rc != 0
-      - command_result.rc != 1
-      - command_result.rc != 17
+- name: Format the lustre mgs and mdt partitions
   when: not merge_mgs_mdt
+  block:
+    - name: Format the lustre mgs partition
+      ansible.builtin.command: "mkfs.lustre --mgs {{ lustre_mgs_partition.device }}{{ lustre_mgs_partition.number }}"
+      register: command_result
+      failed_when:
+        - command_result.rc != 0
+        - command_result.rc != 1
+        - command_result.rc != 17
+      changed_when: true
+    - name: Format the lustre mdt partition
+      ansible.builtin.command: "mkfs.lustre --mdt --fsname=discos --mgsnode={{ lustre_server_ip }}@tcp --index=0\
+               {{ lustre_mdt_partition.device }}{{ lustre_mdt_partition.number }}"
+      register: command_result
+      failed_when:
+        - command_result.rc != 0
+        - command_result.rc != 1
+        - command_result.rc != 17
+      changed_when: true
 
 
 - name: Mount the lustre mgs-mdt partition
-  mount:
+  ansible.posix.mount:
     path: /lustre/mgs-mdt
     src: "{{ lustre_mgs_mdt_partition.device }}{{ lustre_mgs_mdt_partition.number }}"
     fstype: lustre
@@ -239,26 +253,29 @@
   when: merge_mgs_mdt
 
 
-- block:
-  - name: Mount the lustre mgs partition
-    mount:
-      path: /lustre/mgs
-      src: "{{ lustre_mgs_partition.device }}{{ lustre_mgs_partition.number }}"
-      fstype: lustre
-      state: mounted
-      opts: defaults
-  - name: Mount the lustre mdt partition
-    mount:
-      path: /lustre/mdt
-      src: "{{ lustre_mdt_partition.device }}{{ lustre_mdt_partition.number }}"
-      fstype: lustre
-      state: mounted
-      opts: defaults,abort_recovery
+- name: Mount the lustre mgs and mdt partitions
   when: not merge_mgs_mdt
+  block:
+    - name: Mount the lustre mgs and mdt partitions
+      ansible.posix.mount:
+        path: /lustre/mgs
+        src: "{{ lustre_mgs_partition.device }}{{ lustre_mgs_partition.number }}"
+        fstype: lustre
+        state: mounted
+        opts: defaults
+    - name: Mount the lustre mgs and mdt partitions
+      ansible.posix.mount:
+        path: /lustre/mdt
+        src: "{{ lustre_mdt_partition.device }}{{ lustre_mdt_partition.number }}"
+        fstype: lustre
+        state: mounted
+        opts: defaults,abort_recovery
 
 
 - name: Format the lustre data partition
-  command: "mkfs.lustre --ost --fsname=discos --mgsnode={{ lustre_server_ip }}@tcp --index=0 {{ lustre_ost_partition.device }}{{ lustre_ost_partition.number }}"
+  ansible.builtin.command: "mkfs.lustre --ost --fsname=discos --mgsnode={{ lustre_server_ip }}@tcp \
+                           --index=0 {{ lustre_ost_partition.device }}{{ lustre_ost_partition.number }}"
+  changed_when: true
   register: command_result
   failed_when:
     - command_result.rc != 0
@@ -267,7 +284,7 @@
 
 
 - name: Mount the lustre data partition
-  mount:
+  ansible.posix.mount:
     path: /lustre/ost
     src: "{{ lustre_ost_partition.device }}{{ lustre_ost_partition.number }}"
     fstype: lustre
@@ -276,12 +293,12 @@
 
 
 - name: Create the lustre clients list
-  set_fact:
+  ansible.builtin.set_fact:
     lustre_clients_list: ""
 
 
 - name: Update the lustre clients list
-  set_fact:
+  ansible.builtin.set_fact:
     lustre_clients_list: "{{ lustre_clients_list }} {{ hostvars[item].inventory_hostname_short }}"
   with_items: "{{ groups['all'] }}"
   when:
@@ -290,23 +307,23 @@
 
 
 - name: Copy the lustre-server-service template
-  template:
+  ansible.builtin.template:
     src: lustre-server-service
     dest: /usr/bin/lustre
-    mode: 0755
-    force: yes
+    mode: "0755"
+    force: true
 
 
 - name: Copy the lustre-server-unit template
-  template:
+  ansible.builtin.template:
     src: lustre-server-unit
     dest: /usr/lib/systemd/system/lustre.service
-    mode: 0644
-    force: yes
+    mode: "0644"
+    force: true
 
 
 - name: Start the server lustre service
-  systemd:
+  ansible.builtin.systemd:
     name: lustre
     state: restarted
     enabled: true
@@ -315,9 +332,9 @@
 
 
 - name: Tune the /{{ archive }} directory permissions after mount
-  file:
+  ansible.builtin.file:
     path: /{{ archive }}
     state: directory
     owner: "{{ user.name }}"
     group: "{{ users_groups.projects }}"
-    mode: 0755
+    mode: "0755"

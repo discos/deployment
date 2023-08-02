@@ -1,39 +1,40 @@
 ---
 
 - name: Install the ntp yum package
-  yum:
+  ansible.builtin.yum:
     name: ntp
     state: present
 
 
 - name: Set the timezone to UTC
-  timezone:
+  community.general.timezone:
     name: Etc/UTC
 
 
 - name: Copy the ntp.conf template
-  template:
-    src: ntp.conf
-    dest: /etc/ntp.conf
-    backup: yes
+  ansible.builtin.template:
+    src: "ntp.conf"
+    dest: "/etc/ntp.conf"
+    backup: true
+    mode: "0644"
   when: ntp_servers is defined
 
 
 - name: Restart ntp service
-  service:
+  ansible.builtin.service:
     name: ntpd
     state: restarted
-    enabled: yes
+    enabled: true
 
 
 - name: Install the gnuplot yum package
-  yum:
+  ansible.builtin.yum:
     name: gnuplot
     state: present
 
 
 - name: Copy the plot_loopstats script
-  template:
+  ansible.builtin.template:
     src: plot_loopstats
-    dest: /usr/local/bin/plot_loopstats
-    mode: 0755
+    dest: "/usr/local/bin/plot_loopstats"
+    mode: "0755"

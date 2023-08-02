@@ -1,56 +1,58 @@
 ---
 
 - name: Install ypserv yum package
-  yum:
+  ansible.builtin.yum:
     name: ypserv
     state: present
 
 
 - name: Set yp securenets
-  lineinfile:
-    path: /var/yp/securenets
+  ansible.builtin.lineinfile:
+    path: "/var/yp/securenets"
     state: present
     line: "{{ item }}"
-    create: yes
+    create: true
+    mode: "0644"
   with_items:
     - "255.255.255.0 {{ network_ip_address.split('/')[0] }}"
     - "255.0.0.0 127.0.0.1"
 
-    
+
 - name: Start rpcbind service
-  service:
+  ansible.builtin.service:
     name: rpcbind
     state: started
-    enabled: yes
+    enabled: true
 
 
 - name: Start ypserv service
-  service:
+  ansible.builtin.service:
     name: ypserv
     state: started
-    enabled: yes
+    enabled: true
 
 
 - name: Start ypxfrd service
-  service:
+  ansible.builtin.service:
     name: ypxfrd
     state: started
-    enabled: yes
+    enabled: true
 
 
 - name: Start yppasswdd
-  service:
+  ansible.builtin.service:
     name: yppasswdd
     state: started
-    enabled: yes
+    enabled: true
 
 
 - name: Perform a backup of the ypinit script
-  command: "cp /usr/lib64/yp/ypinit /usr/lib64/yp/ypinit.bak"
+  ansible.builtin.command: "cp /usr/lib64/yp/ypinit /usr/lib64/yp/ypinit.bak"
+  changed_when: true
 
 
 - name: Apply a patch to the ypinit script
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: '/usr/lib64/yp/ypinit'
     regexp: '{{ item.original }}'
     line: '{{ item.new }}'
@@ -58,10 +60,12 @@
     - { original: 'while read h', new: 'while false' }
     - { original: 'read hostlist_ok', new: '#read hostlist_ok' }
 
-    
+
 - name: Set up NIS maps
-  command: "/usr/lib64/yp/ypinit -m"
+  ansible.builtin.command: "/usr/lib64/yp/ypinit -m"
+  changed_when: true
 
 
 - name: Restore the original ypinit script
-  command: "mv /usr/lib64/yp/ypinit.bak /usr/lib64/yp/ypinit"
+  ansible.builtin.command: "mv /usr/lib64/yp/ypinit.bak /usr/lib64/yp/ypinit"
+  changed_when: true

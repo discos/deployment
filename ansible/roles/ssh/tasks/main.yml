@@ -1,33 +1,33 @@
 ---
 
 - name: Prevent ssh to accept different localizations
-  replace:
+  ansible.builtin.replace:
     dest: /etc/ssh/sshd_config
     regexp: '^AcceptEnv'
     replace: '# AcceptEnv'
 
 
 - name: Disable DNS for ssh
-  replace:
+  ansible.builtin.replace:
     dest: /etc/ssh/sshd_config
     regexp: '^#UseDNS yes$'
     replace: 'UseDNS no'
 
 
 - name: Disable gnome-ssh-askpass
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/bashrc
     line: 'unset SSH_ASKPASS'
 
 
 - name: Disable GSSAPIAuthentication for ssh
-  replace:
+  ansible.builtin.replace:
     dest: /etc/ssh/sshd_config
     regexp: '^GSSAPIAuthentication yes$'
     replace: 'GSSAPIAuthentication no'
 
 
 - name: Restart ssh service of the remote machine
-  service:
+  ansible.builtin.service:
     name: sshd
     state: restarted

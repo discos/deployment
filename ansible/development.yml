@@ -4,17 +4,19 @@
   tags: provision
   hosts: manager
   tasks:
-    - import_role:
+    - name: Check presence of dependencies on local repository
+      ansible.builtin.import_role:
         name: dependencies
       delegate_to: localhost
-      run_once: True
+      run_once: true
 
 
 - name: Check users presence and eventually ask for their password
   tags: provision
   hosts: manager
   tasks:
-    - include_role:
+    - name: Check users presence and eventually ask for their password
+      ansible.builtin.include_role:
         name: ask_password
       with_dict: "{{ users }}"
 
@@ -79,7 +81,8 @@
   tags: provision
   hosts: manager
   tasks:
-    - include_role:
+    - name: Perform the key exchange procedure
+      ansible.builtin.include_role:
         name: key_exchange
       loop: "{{ key_exchange_users }}"
       loop_control:
@@ -132,14 +135,6 @@
   remote_user: root
   roles:
     - projects
-
-
-- name: Configure the windows management
-  tags: provision
-  hosts: manager
-  remote_user: root
-  roles:
-    - windows_management
 
 
 - name: Configure the VNC servers

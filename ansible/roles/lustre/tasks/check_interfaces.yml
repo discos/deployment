@@ -1,16 +1,19 @@
 ---
 
 - name: Gather network interfaces list
-  shell: ifconfig -a | sed 's/[ :].*//;/^\(lo\|\)$/d'
+  ansible.builtin.shell: |
+    set -o pipefail
+    ifconfig -a | sed 's/[ :].*//;/^\(lo\|\)$/d'
   register: network_interfaces
+  changed_when: false
 
 
 - name: Parse the network interfaces list
-  set_fact:
+  ansible.builtin.set_fact:
     network_interfaces: "{{ network_interfaces.stdout.split('\n') }}"
 
 
 - name: Check if lustre_network_interface is listed
-  fail:
+  ansible.builtin.fail:
     msg: "Interface {{ lustre_network_interface }} not present in the system! Choose among {{ ', '.join(network_interfaces) }}"
   when: lustre_network_interface not in network_interfaces

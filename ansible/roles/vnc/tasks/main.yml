@@ -1,13 +1,13 @@
 ---
 
 - name: Install tigervnc-server yum package
-  yum:
+  ansible.builtin.yum:
     name: tigervnc-server
     state: present
 
 
 - name: Configure the VNCSERVERS
-  template:
+  ansible.builtin.template:
     src: vncserver@:user.service
     dest: "/etc/systemd/system/vncserver@:{{ item.value.name }}.service"
     mode: "0644"
@@ -15,12 +15,12 @@
 
 
 - name: Run systemd daemon-reload
-  systemd:
-    daemon_reload: yes
+  ansible.builtin.systemd:
+    daemon_reload: true
 
 
 - name: Start vncserver service
-  systemd:
+  ansible.builtin.systemd:
     name: "vncserver@:{{ user.name }}.service"
     state: restarted
-    enabled: yes
+    enabled: true

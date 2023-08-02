@@ -1,22 +1,23 @@
 ---
 
 - name: Install quicklook python dependencies
-  command: "pip3.6 install {{ item }}"
+  ansible.builtin.command: "pip3.6 install {{ item }}"
   with_items:
     - Zdaemon
     - tornado
+  changed_when: true
 
 
 - name: Copy the quicklook service template
-  template:
+  ansible.builtin.template:
     src: quicklook
     dest: /etc/rc.d/init.d/quicklook
-    mode: 0755
+    mode: "0755"
     force: true
 
 
 - name: Create the sdtools/quicklook directories
-  file:
+  ansible.builtin.file:
     path: "{{ item.path }}"
     state: directory
     owner: "{{ user.name }}"
@@ -29,7 +30,7 @@
 
 
 - name: Copy the quicklook configuration files
-  template:
+  ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "/{{ discos_sw_dir }}/sdtools/quicklook/conf"
     owner: "{{ user.name }}"

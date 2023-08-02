@@ -1,48 +1,52 @@
 ---
 
 - name: Install prospector (Python linter)
-  command: "pip install {{ item }}"
-  become: True
+  ansible.builtin.command: "pip install {{ item }}"
+  become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
   with_items:
     - "lazy-object-proxy==1.6.0"
     - "prospector==0.12.11"
+  changed_when: true
 
 
 - name: Install ipython
-  command: "pip install ipython"
-  become: True
+  ansible.builtin.command: "pip install ipython"
+  become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
+  changed_when: true
 
 
 - name: Create default ipython profile
-  command: "ipython profile create"
-  become: True
+  ansible.builtin.command: "ipython profile create"
+  become: true
   become_user: "{{ item.value.name }}"
   become_flags: "-i"
   with_dict: "{{ users }}"
-  no_log: True
+  no_log: true
+  changed_when: true
 
 
 - name: Copy the ipython startup files
-  template:
+  ansible.builtin.template:
     src: ipython_startup_01.py
     dest: "/{{ discos_sw_dir }}/{{ item.value.name }}/.ipython/profile_default/startup/01.py"
     owner: "{{ item.value.name }}"
     group: "{{ item.value.group }}"
-    mode: 0644
+    mode: "0644"
   with_dict: "{{ users }}"
-  no_log: True
+  no_log: true
 
 
 - name: Set the default application for html files
-  lineinfile:
-    path: /usr/share/applications/mimeapps.list
+  ansible.builtin.lineinfile:
+    path: "/usr/share/applications/mimeapps.list"
     line: "{{ item }}"
     state: present
-    create: True
+    create: true
+    mode: "0644"
   with_items:
     - "[Default Applications]"
     - "text/html=firefox.desktop"

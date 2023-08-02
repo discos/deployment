@@ -1,19 +1,19 @@
 ---
 
 - name: Build the discos-get Ansible command
-  set_fact:
-    repo_name: "{{ branch }}{{ '-' + station|lower if inventory_dir.split('/')[-1] == 'development' else '' }}"
-    discos_get_cmd: "discos-get -b {{ branch }}{{ ' -s ' + station|lower if inventory_dir.split('/')[-1] == 'development' else '' }}"
+  ansible.builtin.set_fact:
+    repo_name: "{{ branch }}{{ '-' + station | lower if inventory_dir.split('/')[-1] == 'development' else '' }}"
+    discos_get_cmd: "discos-get -b {{ branch }}{{ ' -s ' + station | lower if inventory_dir.split('/')[-1] == 'development' else '' }}"
 
 
 - name: Define the sources and introot directory for DISCOS repository
-  set_fact:
+  ansible.builtin.set_fact:
     sources_path: "/{{ discos_sw_dir }}/{{ user.name }}/{{ repo_name }}"
     introot_path: "/{{ discos_sw_dir }}/introots/{{ repo_name }}"
 
 
 - name: Remove the repository directory and introot (if present)
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   with_items:
@@ -22,26 +22,29 @@
 
 
 - name: Clone the selected DISCOS branch repository
-  command: "{{ discos_get_cmd }}"
-  become: True
+  ansible.builtin.command: "{{ discos_get_cmd }}"
+  become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
+  changed_when: true
 
 
 - name: Set the correct CDB
-  command: "discos-set --cdb {{ cdb }} {{ repo_name }}"
-  become: True
+  ansible.builtin.command: "discos-set --cdb {{ cdb }} {{ repo_name }}"
+  become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
+  changed_when: true
 
 
 - name: Install DISCOS
-  shell: "{{ item }}"
+  ansible.builtin.command: "{{ item }}"
   with_items:
     - make
     - make install
   args:
     chdir: "{{ sources_path }}/SystemMake"
-  become: True
+  become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
+  changed_when: true

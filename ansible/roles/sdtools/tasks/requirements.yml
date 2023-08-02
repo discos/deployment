@@ -1,14 +1,16 @@
 ---
 
 - name: Download {{ item }} yum package
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ item }}"
     dest: "{{ local_repository_path }}"
     force: false
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   delegate_to: localhost
   run_once: true
+  no_log: true
   with_items:
     - python36u-pip-9.0.1-1.ius.el6.noarch.rpm
     - python36u-devel-3.6.8-1.el6.ius.x86_64.rpm
@@ -19,9 +21,10 @@
 
 
 - name: Copy {{ item }} to the remote
-  copy:
+  ansible.builtin.copy:
     src: "{{ local_repository_path }}/{{ item }}"
     dest: "/root/"
+    mode: "0644"
   with_items:
     - python36u-pip-9.0.1-1.ius.el6.noarch.rpm
     - python36u-devel-3.6.8-1.el6.ius.x86_64.rpm
@@ -32,7 +35,7 @@
 
 
 - name: Install required yum packages
-  yum:
+  ansible.builtin.yum:
     name:
       - /root/python36u-pip-9.0.1-1.ius.el6.noarch.rpm
       - /root/python36u-devel-3.6.8-1.el6.ius.x86_64.rpm
@@ -44,7 +47,7 @@
 
 
 - name: Delete the {{ item }} package from the remote
-  file:
+  ansible.builtin.file:
     path: "/root/{{ item }}"
     state: absent
   with_items:
@@ -57,18 +60,19 @@
 
 
 - name: Install required llvm yum package
-  yum:
+  ansible.builtin.yum:
     name:
       - llvm
     state: present
 
 
 - name: Upgrade pip3.6 to latest version
-  command: "python3.6 -m ensurepip --upgrade"
+  ansible.builtin.command: "python3.6 -m ensurepip --upgrade"
+  changed_when: true
 
 
 - name: Install SDTools python dependencies
-  command: "pip3.6 install {{ item }}"
+  ansible.builtin.command: "pip3.6 install {{ item }}"
   with_items:
     - astropy
     - numpy
@@ -80,5 +84,6 @@
     - statsmodels
     - numba==0.50.1
     - watchdog
-    - extension_helpers 
+    - extension_helpers
     - sunpy
+  changed_when: true

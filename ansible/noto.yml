@@ -3,24 +3,20 @@
 - name: Check presence of dependencies on local repository
   hosts: manager
   tasks:
-    - import_role:
+    - name: Check presence of dependencies on local repository
+      ansible.builtin.import_role:
         name: dependencies
       delegate_to: localhost
-      run_once: True
+      run_once: true
 
 
 - name: Check users presence and eventually ask for their password
   hosts: manager
   tasks:
-    - include_role:
+    - name: Check users presence and eventually ask for their password
+      ansible.builtin.include_role:
         name: ask_password
       with_dict: "{{ users }}"
-
-
-- name: Patch yum sources
-  hosts: acs
-  roles:
-    - yum_patch
 
 
 - name: Configure SELINUX
@@ -75,7 +71,8 @@
 - name: Perform the key exchange procedure
   hosts: manager
   tasks:
-    - include_role:
+    - name: Perform the key exchange procedure
+      ansible.builtin.include_role:
         name: key_exchange
       loop: "{{ key_exchange_users }}"
       loop_control:
@@ -100,9 +97,11 @@
   hosts: manager
   remote_user: root
   tasks:
-    - include_role:
+    - name: Install SDTools
+      ansible.builtin.include_role:
         name: sdtools
-    - include_role:
+    - name: Configure the quicklook
+      ansible.builtin.include_role:
         name: quicklook
       when: quicklook_directories is defined
 
@@ -135,13 +134,6 @@
     - projects
 
 
-- name: Configure the windows management
-  hosts: manager
-  remote_user: root
-  roles:
-    - windows_management
-
-
 - name: Configure the VNC servers
   hosts: manager
   remote_user: root
@@ -153,7 +145,8 @@
   hosts: manager
   remote_user: root
   tasks:
-    - include_role:
+    - name: Deploy DISCOS
+      ansible.builtin.include_role:
         name: deploy
       when: branch is defined or tag is defined
 

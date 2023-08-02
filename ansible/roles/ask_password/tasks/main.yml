@@ -1,13 +1,14 @@
 ---
 
 - name: Check if user '{{ item.value.name }}' already exists
-  command: "getent passwd {{ item.value.uid }}"
+  ansible.builtin.command: "getent passwd {{ item.value.uid }}"
   register: user_exists
+  changed_when: false
   failed_when: false
 
 
-- include_tasks: askpass.yml
+- name: Prompt for password
+  ansible.builtin.include_tasks: askpass.yml
   when:
-    - user_exists.stdout_lines | length == 0
-    - use_default_passwords is not defined
-    - use_default_passwords == true
+    - user_exists.rc == 2
+    - not use_default_passwords

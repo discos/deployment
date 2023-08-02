@@ -1,40 +1,40 @@
 ---
 
 - name: Install NetworkManager yum package
-  yum:
+  ansible.builtin.yum:
     name: NetworkManager
     state: present
 
 
 - name: Disable NetworkManager service
-  service:
+  ansible.builtin.service:
     name: NetworkManager
     state: stopped
-    enabled: no
+    enabled: false
 
 
 - name: Update hostname
-  hostname:
+  ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
 
 
 - name: Copy the hosts file template
-  template:
+  ansible.builtin.template:
     src: hosts
     dest: /etc/hosts
-    mode: 0644
+    mode: "0644"
 
 
 - name: Tune the host searching order
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/host.conf
     state: present
     line: "order hosts,bind"
 
 
 - name: Copy the resolv.conf template
-  template:
+  ansible.builtin.template:
     src: resolv.conf
     dest: /etc/resolv.conf
-    mode: 0644
-    force: yes
+    mode: "0644"
+    force: true
