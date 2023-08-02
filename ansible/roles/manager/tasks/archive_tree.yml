@@ -1,14 +1,14 @@
 ---
 
 - name: Populate the /{{ archive }} directory tree
-  file:
+  ansible.builtin.file:
     path: "/{{ archive }}/{{ item.path }}"
     state: directory
     owner: "{{ user.name }}"
     group: "{{ item.group }}"
     mode: "{{ item.mode }}"
-    recurse: yes
-    follow: yes
+    recurse: true
+    follow: true
   with_items:
     - { path: "data", group: "{{ users_groups.projects }}", mode: "0710" }
     - { path: "extraData", group: "{{ users_groups.projects }}", mode: "0710" }
@@ -18,36 +18,36 @@
 
 
 - name: Set ACLs for the /{{ archive }} directory tree
-  acl:
+  ansible.posix.acl:
     path: "/{{ archive }}/{{ item[0] }}"
     entry: "default:{{ item[1] }}"
     state: present
   with_nested:
-    - [ "data", "extraData", "schedules" ]
-    - [ "user::rwx", "group::---" ]
+    - ["data", "extraData", "schedules"]
+    - ["user::rwx", "group::---"]
 
 
 - name: Render the discos-logrotate template
-  template:
+  ansible.builtin.template:
     src: discos-logrotate
     dest: "/{{ discos_sw_dir }}/config/misc/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0644
-    force: yes
+    mode: "0644"
+    force: true
 
 
 - name: Create the /service/events directory
-  file:
+  ansible.builtin.file:
     path: "/service/events"
     state: directory
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0755
+    mode: "0755"
 
 
 - name: Activate the crontab job for ACS log rotation
-  cron:
+  ansible.builtin.cron:
     name: discos-logrotate
     hour: "23"
     minute: "59"

@@ -1,6 +1,6 @@
 ---
 
 - name: Disable future kernel updates
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/yum.conf
     line: "exclude=kernel*"

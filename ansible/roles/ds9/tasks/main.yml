@@ -1,18 +1,20 @@
 ---
 
 - name: Download {{ ds9 }} archive
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ ds9 }}"
     dest: "{{ local_repository_path }}"
     force: false
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Extract the {{ ds9 }} archive to the remote
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ ds9 }}"
     dest: "/usr/bin/"
-    mode: 0755
+    mode: "0755"

@@ -1,0 +1,5 @@
+---
+
+skip_list:
+  - name[template]  # Complains if we use jinja2 templating inside the name of a task instead of at the end of it
+  - run-once        # Some impossible-to-get-rid-of error when using the 'run_once' keyword

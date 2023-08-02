@@ -3,10 +3,11 @@
 - name: Prompt the user '{{ item.value.name }}' for password
   askpass:
     username: "{{ item.value.name }}"
+  register: typed_password
   run_once: true
+  delegate_to: localhost
 
 
 - name: Update user '{{ item.value.name }}' password
-  set_fact:
-    users: "{{ users | combine({item.key: item.value | combine({'password': typed_password \
-           | password_hash(hashtype='sha512', salt=item.value.name[:8])})}) }}"
+  ansible.builtin.set_fact:
+    users: "{{ users | combine({item.key: item.value | combine({'password': typed_password.password_hash})}) }}"

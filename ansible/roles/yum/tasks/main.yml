@@ -1,13 +1,13 @@
 ---
 
 - name: Remove yum-cron to avoid yum automatic updates
-  yum:
+  ansible.builtin.yum:
     name: yum-cron
     state: absent
 
 
 - name: Remove PackageKit* yum packages
-  yum:
+  ansible.builtin.yum:
     name:
       - PackageKit.i686
       - PackageKit.x86_64
@@ -41,13 +41,13 @@
 
 
 - name: Install epel-release yum package
-  yum:
+  ansible.builtin.yum:
     name: epel-release
     state: present
 
 
 - name: Install common required yum packages
-  yum:
+  ansible.builtin.yum:
     name:
       - openssl
       - procmail

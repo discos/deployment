@@ -1,48 +1,50 @@
 ---
 
 - name: Retrieve {{ username }} user facts
-  user:
+  ansible.builtin.user:
     name: "{{ username }}"
     state: present
-    generate_ssh_key: yes
-  register: user_facts 
+    generate_ssh_key: true
+  register: user_facts
 
 
 - name: Make sure the ssh-required files exists
-  file:
+  ansible.builtin.file:
     path: "{{ user_facts.home }}/.ssh/{{ item }}"
     state: touch
     owner: "{{ username }}"
     group: "{{ user_facts.group }}"
-    mode: 0600
+    mode: "0600"
   with_items:
     - "authorized_keys"
     - "known_hosts"
 
-    
+
 - name: Removing old machine RSA fingerprints from known_hosts file
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "{{ user_facts.home }}/.ssh/known_hosts"
     state: absent
-    regexp: "^{{ hostvars[item].inventory_hostname }},{{ hostvars[item].inventory_hostname_short}},{{ hostvars[item].ansible_host }}(.*)$"
+    regexp: "^{{ hostvars[item].inventory_hostname }},{{ hostvars[item].inventory_hostname_short }},{{ hostvars[item].ansible_host }}(.*)$"
   with_items: "{{ play_hosts }}"
 
 
 - name: Fetch the machine RSA fingerprints
-  command: cat /etc/ssh/ssh_host_rsa_key.pub
+  ansible.builtin.command: cat /etc/ssh/ssh_host_rsa_key.pub
   register: machine_public_key
+  changed_when: false
 
 
 - name: Add machine RSA fingerprints to known_hosts file
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "{{ user_facts.home }}/.ssh/known_hosts"
     state: present
-    line: "{{ hostvars[item].inventory_hostname }},{{ hostvars[item].inventory_hostname_short}},{{ hostvars[item].ansible_host }} {{ hostvars[item].machine_public_key.stdout }}"
+    line: "{{ hostvars[item].inventory_hostname }},{{ hostvars[item].inventory_hostname_short }},\
+           {{ hostvars[item].ansible_host }} {{ hostvars[item].machine_public_key.stdout }}"
   with_items: "{{ play_hosts }}"
 
-    
+
 - name: Remove old public keys from authorized_keys file
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "{{ user_facts.home }}/.ssh/authorized_keys"
     state: absent
     regexp: "^(.*)ansible-generated on {{ hostvars[item].inventory_hostname_short }}$"
@@ -50,8 +52,8 @@
 
 
 - name: Share public key with all machines in current deployment session
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "{{ user_facts.home }}/.ssh/authorized_keys"
     state: present
-    line: "{{ hostvars[item].user_facts.ssh_public_key }}" 
+    line: "{{ hostvars[item].user_facts.ssh_public_key }}"
   with_items: "{{ play_hosts }}"

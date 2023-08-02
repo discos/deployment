@@ -1,13 +1,13 @@
 ---
 
 - name: Populate the {{ discos_sw_dir }} directory tree
-  file:
+  ansible.builtin.file:
     path: "/{{ discos_sw_dir }}/{{ item.path }}"
     state: directory
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: "{{ item.mode }}"
-    follow: True
+    follow: true
   with_items:
     - { path: "config", mode: "0750" }
     - { path: "config/misc", mode: "0750" }
@@ -15,131 +15,131 @@
 
 
 - name: Copy the bashrc template
-  template:
+  ansible.builtin.template:
     src: bashrc
     dest: "/{{ discos_sw_dir }}/config/misc/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0640
-    force: True
+    mode: "0640"
+    force: true
 
 
 - name: Copy the bash_profile template
-  template:
+  ansible.builtin.template:
     src: bash_profile
     dest: "/{{ discos_sw_dir }}/config/misc/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0640
-    force: True
+    mode: "0640"
+    force: true
 
 
 - name: Copy prompt_command.sh
-  template:
+  ansible.builtin.template:
     src: prompt_command.sh
     dest: "/{{ discos_sw_dir }}/config/misc/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0640
-    force: True
+    mode: "0640"
+    force: true
 
 
 - name: Create the branches file
-  file:
+  ansible.builtin.file:
     path: "/{{ discos_sw_dir }}/config/misc/branches"
     state: touch
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0640
- 
- 
+    mode: "0640"
+
+
 - name: Copy the load_branch template
-  template:
+  ansible.builtin.template:
     src: load_branch
     dest: "/{{ discos_sw_dir }}/config/misc/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0640
-    force: False
+    mode: "0640"
+    force: false
 
 
 - name: Create the station file
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/{{ discos_sw_dir }}/config/misc/station"
     line: "{{ item }}"
     state: present
-    create: True
-    mode: 0644
+    create: true
+    mode: "0644"
   loop:
     - "#!/usr/bin/env bash"
     - ""
     - "export STATION={{ station }}"
   when: inventory_dir.split('/')[-1] != 'development'
- 
- 
+
+
 - name: Create the /bin directory for user {{ user.name }}
-  file:
+  ansible.builtin.file:
     path: "/{{ discos_sw_dir }}/{{ user.name }}/bin"
     state: directory
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0700
- 
- 
+    mode: "0700"
+
+
 - name: Render the discos-get template
-  template:
+  ansible.builtin.template:
     src: discos-get
     dest: "/{{ discos_sw_dir }}/{{ user.name }}/bin/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0500
-    force: True
+    mode: "0500"
+    force: true
 
 
 - name: Render the discos-set template
-  template:
+  ansible.builtin.template:
     src: discos-set
     dest: "/{{ discos_sw_dir }}/{{ user.name }}/bin/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0500
-    force: True
- 
- 
+    mode: "0500"
+    force: true
+
+
 - name: Render the _discos-check-branch template
-  template:
+  ansible.builtin.template:
     src: _discos-check-branch
     dest: "/{{ discos_sw_dir }}/{{ user.name }}/bin/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0500
-    force: True
+    mode: "0500"
+    force: true
 
 
 - name: Copy the pyrc template
-  template:
+  ansible.builtin.template:
     src: pyrc
     dest: "/{{ discos_sw_dir }}/{{ item.value.name }}/.pyrc"
     owner: "{{ item.value.name }}"
     group: "{{ item.value.group }}"
-    mode: 0600
-  no_log: True
+    mode: "0600"
+  no_log: true
   with_dict: "{{ users }}"
 
 
 - name: Copy vimrc
-  template:
+  ansible.builtin.template:
     src: vimrc
     dest: "/{{ discos_sw_dir }}/{{ item.value.name }}/.vimrc"
     owner: "{{ item.value.name }}"
     group: "{{ item.value.group }}"
-    mode: 0600
-  no_log: True
+    mode: "0600"
+  no_log: true
   with_dict: "{{ users }}"
 
 
 - name: Add the custom bashrc sourcing to the default one
-  blockinfile:
+  ansible.builtin.blockinfile:
     path: "/{{ discos_sw_dir }}/{{ item.value.name }}/.bashrc"
     state: present
     marker: "######## DISCOS configuration {mark} ########"
@@ -147,12 +147,12 @@
         if [ -f /{{ discos_sw_dir }}/config/misc/bashrc ]; then
             source /{{ discos_sw_dir }}/config/misc/bashrc
         fi
-  no_log: True
+  no_log: true
   with_dict: "{{ users }}"
 
 
 - name: Add the custom bash_profile sourcing to the default one
-  blockinfile:
+  ansible.builtin.blockinfile:
     path: "/{{ discos_sw_dir }}/{{ item.value.name }}/.bash_profile"
     state: present
     marker: "######## DISCOS configuration {mark} ########"
@@ -161,11 +161,11 @@
             source /{{ discos_sw_dir }}/config/misc/bash_profile
         fi
     insertafter: "# .bash_profile"
-  no_log: True
+  no_log: true
   with_dict: "{{ users }}"
 
 
 - name: Source scl_source
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/profile
     line: 'source scl_source enable devtoolset-{{ devtoolset_release }}'

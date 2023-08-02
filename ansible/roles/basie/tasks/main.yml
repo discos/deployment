@@ -1,18 +1,18 @@
 ---
 
 - name: Download the BASIE repository
-  git:
+  ansible.builtin.git:
     repo: "https://github.com/discos/basie.git"
     dest: "/{{ discos_sw_dir }}/basie"
     version: "master"
-    force: yes
-  become: True
+    force: true
+  become: true
   become_user: "{{ user.name }}"
 
 
 - name: Install BASIE
-  command: "{{ item }}"
-  become: True
+  ansible.builtin.command: "{{ item }}"
+  become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
   with_items:
@@ -23,3 +23,4 @@
     - "pyenv local --unset"
   args:
     chdir: "/{{ discos_sw_dir }}/basie/"
+  changed_when: true

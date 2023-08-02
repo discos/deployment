@@ -1,9 +1,10 @@
 ---
 
 - name: Create a temporary directory for the libraries compilation
-  file:
+  ansible.builtin.file:
     path: "{{ remote_build_path }}"
     state: directory
+    mode: "0755"
 
 
 #################################
@@ -11,25 +12,25 @@
 #################################
 
 - name: Check if {{ cfitsio.file }} is installed
-  stat:
+  ansible.builtin.stat:
     path: "/usr/local/include/fitsio.h"
   register: cfitsio_include
 
 
 - name: Check if {{ ccfits.file }} is installed
-  stat:
+  ansible.builtin.stat:
     path: "/usr/local/include/CCfits"
   register: ccfits_include
 
 
 - name: Check if fitsviewer is installed
-  stat:
+  ansible.builtin.stat:
     path: "/usr/local/bin/fv"
   register: fv_binary
 
 
 - name: Check if the cfitsio sources exist in the local repository
-  stat:
+  ansible.builtin.stat:
     path: "{{ local_repository_path }}/{{ cfitsio.file }}"
   delegate_to: localhost
   run_once: true
@@ -37,7 +38,7 @@
 
 
 - name: Check if the ccfits sources exist in the local repository
-  stat:
+  ansible.builtin.stat:
     path: "{{ local_repository_path }}/{{ ccfits.file }}"
   delegate_to: localhost
   run_once: true
@@ -45,7 +46,7 @@
 
 
 - name: Check if the fitsviewer binary exist in the local repository
-  stat:
+  ansible.builtin.stat:
     path: "{{ local_repository_path }}/{{ fv.file }}"
   delegate_to: localhost
   run_once: true
@@ -53,88 +54,96 @@
 
 
 - name: Download {{ cfitsio.file }}
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ cfitsio.file }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - cfitsio_include.stat.exists == False
-    - cfitsio_sources.stat.exists == False
+    - cfitsio_include.stat.exists
+    - cfitsio_sources.stat.exists
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Download {{ ccfits.file }}
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ ccfits.file }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - ccfits_include.stat.exists == False
-    - ccfits_sources.stat.exists == False
+    - ccfits_include.stat.exists
+    - ccfits_sources.stat.exists
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Download {{ fv.file }}
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ fv.file }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - fv_binary.stat.exists == False
-    - fv_archive.stat.exists == False
+    - fv_binary.stat.exists
+    - fv_archive.stat.exists
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Copy {{ cfitsio.file }} to the remote {{ remote_build_path }}
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ cfitsio.file }}"
     dest: "{{ remote_build_path }}"
-  when: cfitsio_include.stat.exists == False
+  when: cfitsio_include.stat.exists
 
 
 - name: Install cfitsio
-  shell: "{{ item }}"
+  ansible.builtin.command: "{{ item }}"
   with_items:
     - "./configure --prefix=/usr/local"
     - "make"
     - "make install"
   args:
     chdir: "{{ remote_build_path }}/{{ cfitsio.build_dir }}"
-  when: cfitsio_include.stat.exists == False
+  when: cfitsio_include.stat.exists
+  changed_when: cfitsio_include.stat.exists
 
 
 - name: Copy {{ ccfits.file }} to the remote {{ remote_build_path }}
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ ccfits.file }}"
     dest: "{{ remote_build_path }}"
-  when: ccfits_include.stat.exists == False
+  when: ccfits_include.stat.exists
 
 
 - name: Install CCfits
-  shell: "source /etc/profile && {{ item }}"
+  ansible.builtin.shell: "source /etc/profile && {{ item }}"
   with_items:
     - "./configure --prefix=/usr/local"
     - "make"
     - "make install"
   args:
     chdir: "{{ remote_build_path }}/{{ ccfits.build_dir }}"
-  when: ccfits_include.stat.exists == False
+  when: ccfits_include.stat.exists
+  changed_when: ccfits_include.stat.exists
 
 
 - name: Export 'PKG_CONFIG_PATH' in order to have access to libcfitsio.so
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/profile
     line: 'export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig'
 
 
 - name: Remove the directory used for the libraries compilation
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   with_items:
@@ -143,19 +152,20 @@
 
 
 - name: Copy {{ fv.file }} to the remote /usr/local/lib
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ fv.file }}"
     dest: "/usr/local/lib"
-  when: fv_binary.stat.exists == False
+  when: fv_binary.stat.exists
 
 
-- lineinfile:
-    path: /usr/local/bin/fv
-    line: '/usr/local/lib/fv5.4/fv'
-    mode: 0755
+- name: Create fv executable
+  ansible.builtin.lineinfile:
+    path: "/usr/local/bin/fv"
+    line: "/usr/local/lib/fv5.4/fv"
+    mode: "0755"
     state: present
-    create: yes
-  when: fv_binary.stat.exists == False
+    create: true
+  when: fv_binary.stat.exists
 
 
 #####################
@@ -163,13 +173,13 @@
 #####################
 
 - name: Check if {{ modbus.file }} is installed
-  stat:
+  ansible.builtin.stat:
     path: "/usr/local/lib/libmodbus.so"
   register: modbus_lib
 
 
 - name: Check if the modbus sources exist in the local repository
-  stat:
+  ansible.builtin.stat:
     path: "{{ local_repository_path }}/{{ modbus.file }}"
   delegate_to: localhost
   run_once: true
@@ -177,38 +187,41 @@
 
 
 - name: Download modbus (if it does not exist in the local repo)
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ modbus.file }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - modbus_sources.stat.exists == False
-    - modbus_lib.stat.exists == False
+    - modbus_sources.stat.exists
+    - modbus_lib.stat.exists
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Copy {{ modbus.file }} to the remote {{ remote_build_path }}
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ modbus.file }}"
     dest: "{{ remote_build_path }}"
-  when: modbus_lib.stat.exists == False
+  when: modbus_lib.stat.exists
 
 
 - name: Install modbus
-  command: "{{ item }}"
+  ansible.builtin.command: "{{ item }}"
   with_items:
     - "./configure --prefix=/usr/local"
     - "make"
     - "make install"
   args:
     chdir: "{{ remote_build_path }}/{{ modbus.build_dir }}"
-  when: modbus_lib.stat.exists == False
+  when: modbus_lib.stat.exists
+  changed_when: modbus_lib.stat.exists
 
 
 - name: Remove the directory used for the libraries compilation
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   with_items:
@@ -220,13 +233,13 @@
 ##############################
 
 - name: Check if gmock is installed
-  stat:
+  ansible.builtin.stat:
     path: "/usr/local/include/gmock"
   register: gmock_lib
 
 
 - name: Check if the {{ googletest_file }} exists in the local repository
-  stat:
+  ansible.builtin.stat:
     path: "{{ local_repository_path }}/{{ googletest_file }}"
   delegate_to: localhost
   run_once: true
@@ -234,113 +247,117 @@
 
 
 - name: Download {{ googletest_file }}
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ googletest_file }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - gmock_lib.stat.exists == False
-    - gmock_sources.stat.exists == False
+    - gmock_lib.stat.exists
+    - gmock_sources.stat.exists
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Copy {{ googletest_file }} to the remote {{ remote_build_path }}
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ googletest_file }}"
     dest: "{{ remote_build_path }}"
-  when: gmock_lib.stat.exists == False
+  when: gmock_lib.stat.exists
 
 
 - name: Create a gmock/build directory
-  file:
+  ansible.builtin.file:
     path: "{{ gmock_build }}/build"
     state: directory
-  when: gmock_lib.stat.exists == False
+    mode: "0755"
+  when: gmock_lib.stat.exists
 
 
 - name: Compile gmock
-  shell: "source /etc/profile && {{ item }}"
+  ansible.builtin.shell: "source /etc/profile && {{ item }}"
   with_items:
-    - 'cmake ..'
-    - 'make'
+    - "cmake .."
+    - "make"
   args:
     chdir: "{{ gmock_build }}/build"
-  when: gmock_lib.stat.exists == False
+  when: gmock_lib.stat.exists
+  changed_when: gmock_lib.stat.exists
 
 
-- file:
-    path: "{{ gmock_build }}/build/libgmock.a"
+- name: Create some gmock files
+  ansible.builtin.file:
+    path: "{{ gmock_build }}/build/{{ item }}"
     mode: "a+x"
-  when: gmock_lib.stat.exists == False
-
-
-- file:
-    path: "{{ gmock_build }}/build/libgmock_main.a"
-    mode: "a+x"
-  when: gmock_lib.stat.exists == False
+  with_items:
+    - "libgmock.a"
+    - "libgmock_main.a"
+  when: gmock_lib.stat.exists
 
 
 - name: Copy the gmock static libraries to /usr/local/lib
-  command: "{{ item.cmd }}"
+  ansible.builtin.command: "{{ item.cmd }}"
   with_items:
     - { cmd: 'cp -r gmock /usr/local/include', subdir: 'include' }
     - { cmd: 'cp libgmock.a /usr/local/lib', subdir: 'build' }
     - { cmd: 'cp libgmock_main.a /usr/local/lib', subdir: 'build' }
   args:
     chdir: "{{ gmock_build }}/{{ item.subdir }}"
-  when: gmock_lib.stat.exists == False
+  when: gmock_lib.stat.exists
+  changed_when: gmock_lib.stat.exists
 
 
 - name: Check if gtest is installed
-  stat:
+  ansible.builtin.stat:
     path: "/usr/local/include/gtest"
   register: gtest_lib
 
 
 - name: Create the gtest build directory
-  file:
+  ansible.builtin.file:
     path: "{{ gtest_build }}/build"
     state: directory
-  when: gtest_lib.stat.exists == False
+    mode: "0755"
+  when: gtest_lib.stat.exists
 
 
 - name: Compile gtest
-  shell: "source /etc/profile && {{ item }}"
+  ansible.builtin.shell: "source /etc/profile && {{ item }}"
   args:
     chdir: "{{ gtest_build }}/build"
   with_items:
-    - 'cmake ..'
-    - 'make'
-  when: gtest_lib.stat.exists == False
+    - "cmake .."
+    - "make"
+  when: gtest_lib.stat.exists
+  changed_when: gtest_lib.stat.exists
 
 
-- file:
-    path: "{{ gtest_build }}/build/libgtest.a"
+- name: Create some gtest files
+  ansible.builtin.file:
+    path: "{{ gtest_build }}/build/{{ item }}"
     mode: "a+x"
-  when: gtest_lib.stat.exists == False
-
-
-- file:
-    path: "{{ gtest_build }}/build/libgtest_main.a"
-    mode: "a+x"
-  when: gtest_lib.stat.exists == False
+  with_items:
+    - "libgtest.a"
+    - "libgtest_main.a"
+  when: gtest_lib.stat.exists
 
 
 - name: Copy the gtest static libraries to /usr/local
-  command: "{{ item.cmd }}"
+  ansible.builtin.command: "{{ item.cmd }}"
   args:
     chdir: "{{ gtest_build }}/{{ item.subdir }}"
   with_items:
     - { cmd: 'cp -r gtest /usr/local/include', subdir: 'include' }
     - { cmd: 'cp libgtest.a /usr/local/lib', subdir: 'build' }
     - { cmd: 'cp libgtest_main.a /usr/local/lib', subdir: 'build' }
-  when: gtest_lib.stat.exists == False
+  when: gtest_lib.stat.exists
+  changed_when: gtest_lib.stat.exists
 
 
 - name: Remove the directory used for the libraries compilation
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   with_items:
@@ -352,13 +369,13 @@
 #####
 
 - name: Check if f2c is installed
-  stat:
+  ansible.builtin.stat:
     path: "/usr/local/include/f2c.h"
   register: f2c_header
 
 
 - name: Check if the f2c sources exist in the local repository
-  stat:
+  ansible.builtin.stat:
     path: "{{ local_repository_path }}/{{ f2c.file }}"
   delegate_to: localhost
   run_once: true
@@ -366,27 +383,29 @@
 
 
 - name: Download f2c
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ f2c.file }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - f2c_header.stat.exists == False
-    - f2c_sources.stat.exists == False
+    - f2c_header.stat.exists
+    - f2c_sources.stat.exists
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Copy f2c to the remote {{ remote_build_path }}
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ f2c.file }}"
     dest: "{{ remote_build_path }}"
-  when: f2c_header.stat.exists == False
+  when: f2c_header.stat.exists
 
 
 - name: Install f2c
-  command: "{{ item }}"
+  ansible.builtin.command: "{{ item }}"
   with_items:
     - "cp makefile.u Makefile"
     - "make"
@@ -394,11 +413,12 @@
     - "cp f2c /usr/local/bin"
   args:
     chdir: "{{ remote_build_path }}/f2c-master/src"
-  when: f2c_header.stat.exists == False
+  when: f2c_header.stat.exists
+  changed_when: f2c_header.stat.exists
 
 
 - name: Remove the directory used for the libraries compilation
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   with_items:
@@ -410,7 +430,7 @@
 #######################
 
 - name: Increment the process stack size in order to compile SRT AS GUI
-  pam_limits:
+  community.general.pam_limits:
     domain: "{{ user.name }}"
     limit_type: '-'
     limit_item: stack
@@ -418,19 +438,19 @@
 
 
 - name: Verify the sip library is not installed
-  yum:
+  ansible.builtin.yum:
     name: sip
     state: absent
 
 
 - name: Check if sip is installed
-  stat:
+  ansible.builtin.stat:
     path: "/alma/{{ acs_tag }}/pyenv/shims/sip"
   register: sip_library
 
 
 - name: Check if the {{ sip_file }}  exists in the local repository
-  stat:
+  ansible.builtin.stat:
     path: "{{ local_repository_path }}/{{ sip_file }}"
   delegate_to: localhost
   run_once: true
@@ -438,28 +458,30 @@
 
 
 - name: Download {{ sip_file }}
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ sip_file }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - sip_sources.stat.exists == False
+    - sip_sources.stat.exists
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Copy {{ sip_file }} to the remote {{ remote_build_path }}
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ sip_file }}"
     dest: "{{ remote_build_path }}"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-  when: sip_library.stat.exists == False
+  when: sip_library.stat.exists
 
 
 - name: Install sip
-  command: "{{ item }}"
+  ansible.builtin.command: "{{ item }}"
   with_items:
     - "python configure.py"
     - "make"
@@ -470,23 +492,24 @@
   become_flags: "-i"
   args:
     chdir: "{{ remote_build_path }}/{{ sip_build_dir }}"
-  when: sip_library.stat.exists == False
+  when: sip_library.stat.exists
+  changed_when: sip_library.stat.exists
 
 
 - name: Verify the PyQt4 library is not installed
-  yum:
+  ansible.builtin.yum:
     name: PyQt4
     state: absent
 
 
 - name: Check if PyQt is installed
-  stat:
+  ansible.builtin.stat:
     path: "/alma/{{ acs_tag }}/pyenv/shims/pyuic4"
   register: pyqt_library
 
 
 - name: Check if the {{ pyqt_file }}  exists in the local repository
-  stat:
+  ansible.builtin.stat:
     path: "{{ local_repository_path }}/{{ pyqt_file }}"
   delegate_to: localhost
   run_once: true
@@ -494,38 +517,41 @@
 
 
 - name: Download {{ pyqt_file }}
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ pyqt_file }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - pyqt_sources.stat.exists == False
+    - pyqt_sources.stat.exists
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Copy {{ pyqt_file }} to the remote {{ remote_build_path }}
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ pyqt_file }}"
     dest: "{{ remote_build_path }}"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-  when: pyqt_library.stat.exists == False
+  when: pyqt_library.stat.exists
 
 
 - name: Configure PyQt
-  shell: "python configure.py --confirm-license --qmake `which qmake`"
+  ansible.builtin.shell: "python configure.py --confirm-license --qmake `which qmake`"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
   args:
     chdir: "{{ remote_build_path }}/{{ pyqt_build_dir }}"
-  when: pyqt_library.stat.exists == False
+  when: pyqt_library.stat.exists
+  changed_when: pyqt_library.stat.exists
 
 
 - name: Remove PrintCurrentPage from source files
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: "{{ item }}"
     state: absent
     regexp: "^.*PrintCurrentPage.*$"
@@ -535,11 +561,11 @@
     - "{{ remote_build_path }}/{{ pyqt_build_dir }}/sip/QtGui/qabstractprintdialog.sip"
   become: true
   become_user: "{{ user.name }}"
-  when: pyqt_library.stat.exists == False
+  when: pyqt_library.stat.exists
 
 
 - name: Install PyQt
-  command: "{{ item }}"
+  ansible.builtin.command: "{{ item }}"
   with_items:
     - "make"
     - "make install"
@@ -549,17 +575,18 @@
   become_flags: "-i"
   args:
     chdir: "{{ remote_build_path }}/{{ pyqt_build_dir }}"
-  when: pyqt_library.stat.exists == False
+  when: pyqt_library.stat.exists
+  changed_when: pyqt_library.stat.exists
 
 
 - name: Check if PyQtQwt is installed
-  stat:
+  ansible.builtin.stat:
     path: "/alma/{{ acs_tag }}/pyenv/versions/3.6.9/share/sip/PyQt4/Qwt"
   register: pyqtqwt_library
 
 
 - name: Check if the {{ pyqtqwt_file }}  exists in the local repository
-  stat:
+  ansible.builtin.stat:
     path: "{{ local_repository_path }}/{{ pyqtqwt_file }}"
   delegate_to: localhost
   run_once: true
@@ -567,51 +594,55 @@
 
 
 - name: Download {{ pyqtqwt_file }}
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ pyqtqwt_file }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - pyqtqwt_sources.stat.exists == False
+    - pyqtqwt_sources.stat.exists
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Copy {{ pyqtqwt_file }} to the remote {{ remote_build_path }}
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ pyqtqwt_file }}"
     dest: "{{ remote_build_path }}"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-  when: pyqtqwt_library.stat.exists == False
+  when: pyqtqwt_library.stat.exists
 
 
 - name: Copy include files
-  copy:
+  ansible.builtin.copy:
     src: "/usr/include/qwt"
     dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/"
-    force: True
+    force: true
     owner: "{{ user.name }}"
-    remote_src: True
-  when: pyqtqwt_library.stat.exists == False
+    mode: "0644"
+    remote_src: true
+  when: pyqtqwt_library.stat.exists
 
 
 - name: Replace include files
-  copy:
+  ansible.builtin.copy:
     src: "{{ item }}"
     dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/qwt/"
-    force: True
+    force: true
     owner: "{{ user.name }}"
-    remote_src: True
+    mode: "0644"
+    remote_src: true
   with_items:
     - "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/qwt_series_data.h"
     - "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/qwt_series_store.h"
-  when: pyqtqwt_library.stat.exists == False
+  when: pyqtqwt_library.stat.exists
 
 
 - name: Patch Qwt_Qt4.sip
-  replace:
+  ansible.builtin.replace:
     dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/sip/Qwt_Qt4.sip"
     regexp: "{{ item.regexp }}"
     replace: "{{ item.replace }}"
@@ -620,19 +651,19 @@
     - { regexp: "%Include qwt_plot_zoomer.sip", replace: "//%Include qwt_plot_zoomer.sip" }
     - { regexp: "%Include qwt_plot_spectrocurve.sip", replace: "//%Include qwt_plot_spectrocurve.sip" }
     - { regexp: "%Include qwt_plot_tradingcurve.sip", replace: "//%Include qwt_plot_tradingcurve.sip" }
-  when: pyqtqwt_library.stat.exists == False
+  when: pyqtqwt_library.stat.exists
 
 
 - name: Patch qwt_plot_renderer.sip
-  replace:
+  ansible.builtin.replace:
     dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/sip/qwt_plot_renderer.sip"
     regexp: "class QPrinter;"
     replace: "//class QPrinter;"
-  when: pyqtqwt_library.stat.exists == False
+  when: pyqtqwt_library.stat.exists
 
 
 - name: Configure PyQtQwt
-  command: "{{ item }}"
+  ansible.builtin.command: "{{ item }}"
   with_items:
     - "python configure.py --pyqt=PyQt4 --qwt-incdir=header/qwt/"
   become: true
@@ -640,19 +671,20 @@
   become_flags: "-i"
   args:
     chdir: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}"
-  when: pyqtqwt_library.stat.exists == False
+  when: pyqtqwt_library.stat.exists
+  changed_when: pyqtqwt_library.stat.exists
 
 
 - name: Patch Makefile
-  replace:
+  ansible.builtin.replace:
     dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/Qwt/Makefile"
     regexp: "-I. -I/usr/include/QtCore"
     replace: "-I. -I/usr/include/Qt -I/usr/include/QtCore"
-  when: pyqtqwt_library.stat.exists == False
+  when: pyqtqwt_library.stat.exists
 
 
 - name: Build and install PyQtQwt
-  command: "{{ item.command }}"
+  ansible.builtin.command: "{{ item.command }}"
   become: "{{ item.become }}"
   become_user: "{{ user.name }}"
   become_flags: "-i"
@@ -665,11 +697,12 @@
     - { become: "true", command: "pyenv rehash" }
   args:
     chdir: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}"
-  when: pyqtqwt_library.stat.exists == False
+  when: pyqtqwt_library.stat.exists
+  changed_when: pyqtqwt_library.stat.exists
 
 
 - name: Remove the temporary directory used for libraries compilation
-  file:
+  ansible.builtin.file:
     path: "{{ remote_build_path }}"
     state: absent
 
@@ -680,7 +713,7 @@
 
 
 - name: Install some third-party Python packages
-  command: "{{ item }}"
+  ansible.builtin.command: "{{ item }}"
   with_items:
     - "pip uninstall -y pyopenssl"
     - "pip install pyopenssl"
@@ -694,6 +727,7 @@
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
+  changed_when: true
 
 
 #########################
@@ -701,7 +735,7 @@
 #########################
 
 - name: Increment the maximum number of user processes in order to run the AS
-  pam_limits:
+  community.general.pam_limits:
     domain: "{{ user.name }}"
     limit_type: '-'
     limit_item: nproc
@@ -713,39 +747,41 @@
 ############
 
 - name: Check if the SlaLibrary is installed
-  stat:
+  ansible.builtin.stat:
     path: "/{{ discos_sw_dir }}/SlaLibrary"
   register: slalibrary_present
 
 
 - name: Download the SlaLibrary archive
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ slalibrary_file }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - slalibrary_present.stat.exists == False
+    - slalibrary_present.stat.exists
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Create the SlaLibrary directory under {{ discos_sw_dir }}
-  file:
+  ansible.builtin.file:
     path: "/{{ discos_sw_dir }}/SlaLibrary"
     state: directory
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0755
+    mode: "0755"
   when:
-    - slalibrary_present.stat.exists == False
+    - slalibrary_present.stat.exists
 
 
 - name: Extract the SlaLibrary archive to the remote
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ slalibrary_file }}"
     dest: "/{{ discos_sw_dir }}/SlaLibrary/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
   when:
-    - slalibrary_present.stat.exists == False
+    - slalibrary_present.stat.exists

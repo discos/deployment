@@ -1,25 +1,27 @@
 ---
 
 - name: Delete any OS welcome message
-  shell: "truncate -s 0 /etc/motd"
+  ansible.builtin.command: "truncate -s 0 /etc/motd"
+  changed_when: true
 
 
 - name: Fetch the local user's public key
-  command: "cat ~/.ssh/id_rsa.pub"
+  ansible.builtin.command: "cat ~/.ssh/id_rsa.pub"
   register: local_public_key
   delegate_to: localhost
   run_once: true
+  changed_when: false
 
 
 - name: Remove the local user's public key from remote .ssh/authorized_hosts file
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "~/.ssh/authorized_keys"
     line: "{{ local_public_key.stdout }}"
     state: absent
 
 
 - name: Remove the remote repository token
-  file:
+  ansible.builtin.file:
     path: "{{ local_repository_path }}/token"
     state: absent
   delegate_to: localhost

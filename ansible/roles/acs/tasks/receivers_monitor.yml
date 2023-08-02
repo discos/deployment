@@ -1,17 +1,17 @@
 ---
 
 - name: Create the /service/receivers directory
-  file:
+  ansible.builtin.file:
     path: "/service/receivers"
     state: directory
-    owner: "{{ user.name }}" 
+    owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0755
-    recurse: True
+    mode: "0755"
+    recurse: true
 
 
-- name: Add receivers monitoring script to rc.local 
-  blockinfile:
+- name: Add receivers monitoring script to rc.local
+  ansible.builtin.blockinfile:
     path: "/etc/rc.local"
     state: present
     marker: "######## Receivers monitoring {mark} ########"

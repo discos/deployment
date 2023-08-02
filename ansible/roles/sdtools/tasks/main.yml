@@ -1,4 +1,6 @@
 ---
 
-- include_tasks: requirements.yml
-- include_tasks: install.yml
+- name: Install requirements
+  ansible.builtin.include_tasks: requirements.yml
+- name: Install SDTools
+  ansible.builtin.include_tasks: install.yml

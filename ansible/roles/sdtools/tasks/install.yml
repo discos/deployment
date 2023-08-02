@@ -1,25 +1,26 @@
 ---
 
 - name: Create the sdtools directory
-  file:
+  ansible.builtin.file:
     path: "/{{ discos_sw_dir }}/sdtools"
     state: directory
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0710
+    mode: "0710"
 
 
 - name: Copy the sdtools-get template
-  template:
+  ansible.builtin.template:
     src: sdtools-get
     dest: "/{{ discos_sw_dir }}/sdtools/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0700
+    mode: "0700"
     force: true
 
 
 - name: Execute the sdtools-get script
-  command: ./sdtools-get -b
+  ansible.builtin.command: ./sdtools-get -b
   args:
     chdir: "/{{ discos_sw_dir }}/sdtools/"
+  changed_when: true

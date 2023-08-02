@@ -2,29 +2,29 @@
 
 
 - name: Patch n1
-  replace:
+  ansible.builtin.replace:
     dest: "/alma/{{ acs_tag }}/TAO/ACE_wrappers/bin/MakeProjectCreator/config/global.features"
     regexp: "xerces3       = 0"
     replace: "xerces3       = 1"
 
 
 - name: Replace buildDDS
-  template:
+  ansible.builtin.template:
     src: "patches/{{ acs_tag }}/buildDDS"
     dest: "{{ remote_build_path }}/acs/ExtProd/INSTALL/"
-    mode: 0755
+    mode: "0755"
     force: true
 
 
 - name: Patch n2
-  replace:
+  ansible.builtin.replace:
     dest: "{{ remote_build_path }}/acs/Makefile"
     regexp: " bulkDataNT "
     replace: " bulkDataNTOpenDDS "
 
 
 - name: Patch n3
-  replace:
+  ansible.builtin.replace:
     dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/{{ item }}"
     regexp: "pfl-basic-4.0.1"
     replace: "pfl-basic-4.1.2"
@@ -35,50 +35,48 @@
     - "cdb_rdb/src/rules.mk"
 
 
-- set_fact:
+- name: Set some paths
+  ansible.builtin.set_fact:
     acs_command_center: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/acscommandcenter/"
-
-
-- set_fact:
     execute_container: "{{ acs_command_center }}/src/alma/acs/commandcenter/engine/ExecuteContainer.java"
     executor: "{{ acs_command_center }}/src/alma/acs/commandcenter/engine/Executor.java"
 
 
 - name: Replace ExecuteContainer.java
-  template:
+  ansible.builtin.template:
     src: "patches/{{ acs_tag }}/ExecuteContainer.java"
     dest: "{{ execute_container }}"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0664
+    mode: "0664"
     backup: false
 
 
 - name: Replace Executor.java
-  template:
+  ansible.builtin.template:
     src: "patches/{{ acs_tag }}/Executor.java"
     dest: "{{ executor }}"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0664
+    mode: "0664"
     backup: false
 
 
 - name: Replace enumpropAlarm.i
-  template:
+  ansible.builtin.template:
     src: "patches/{{ acs_tag }}/enumpropAlarm.i"
     dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/enumprop/ws/include/enumpropAlarm.i"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0664
+    mode: "0664"
     backup: false
 
 
 - name: Replace BaciHelper.py to fix IDL property inheritance issue
-  template:
+  ansible.builtin.template:
     src: "patches/{{ acs_tag }}/BaciHelper.py"
     dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/acspycommon/src/Acspy/Util/BaciHelper.py"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0664
+    mode: "0664"
     backup: false

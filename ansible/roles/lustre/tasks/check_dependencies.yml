@@ -1,78 +1,84 @@
 ---
 
-- set_fact:
+- name: Check which lustre packages to download
+  ansible.builtin.set_fact:
     download_lustre_packages: { client: false, server: false }
 
 
-- set_fact:
+- name: Set the lustre package names
+  ansible.builtin.set_fact:
     download_lustre_packages: "{{ download_lustre_packages | combine(new_item) }}"
   vars:
-      new_item: "{ '{{ hostvars[item].lustre_type }}': true }"
+    new_item: "{ '{{ hostvars[item].lustre_type }}': true }"
   when: hostvars[item].lustre_type is defined
   with_items: "{{ play_hosts }}"
 
 
 - name: Eventually download lustre client packages
+  when: download_lustre_packages.client
   block:
-  - name: Check if lustre client packages exist in the local repository
-    stat:
-      path: "{{ local_repository_path }}/{{ item }}-{{ lustre_client_tail }}"
-    with_items: "{{ lustre_client_files }}"
-    register: lustre_client_files_exists
-  - name: Download lustre client packages
-    get_url:
-      url: "{{ remote_repository_download_url }}/{{ item.item }}-{{ lustre_client_tail }}"
-      dest: "{{ local_repository_path }}"
-      headers:
-        Authorization: "token {{ repository_token }}"
-    with_items: "{{ lustre_client_files_exists.results }}"
-    no_log: True
-    when: item.stat.exists == False
-  when: download_lustre_packages.client == True
+    - name: Check if lustre client packages exist in the local repository
+      ansible.builtin.stat:
+        path: "{{ local_repository_path }}/{{ item }}-{{ lustre_client_tail }}"
+      with_items: "{{ lustre_client_files }}"
+      register: lustre_client_files_exists
+    - name: Download lustre client packages
+      ansible.builtin.get_url:
+        url: "{{ remote_repository_download_url }}/{{ item.item }}-{{ lustre_client_tail }}"
+        dest: "{{ local_repository_path }}"
+        mode: "0644"
+        headers:
+          Authorization: "token {{ repository_token }}"
+      with_items: "{{ lustre_client_files_exists.results }}"
+      no_log: true
+      when: not item.stat.exists
 
 
 - name: Eventually download lustre server packages
+  when: download_lustre_packages.server
   block:
-  - name: Check if e2fsprogs packages exist in the local repository
-    stat:
-      path: "{{ local_repository_path }}/{{ item }}-{{ e2fsprogs_tail }}"
-    with_items: "{{ e2fsprogs_files }}"
-    register: e2fsprogs_files_exists
-  - name: Download e2fsprogs packages
-    get_url:
-      url: "{{ remote_repository_download_url }}/{{ item.item }}-{{ e2fsprogs_tail }}"
-      dest: "{{ local_repository_path }}"
-      headers:
-        Authorization: "token {{ repository_token }}"
-    with_items: "{{ e2fsprogs_files_exists.results }}"
-    no_log: True
-    when: item.stat.exists == False
-  - name: Check if lustre kernel packages exist in the local repository
-    stat:
-      path: "{{ local_repository_path }}/{{ item }}-{{ lustre_server_kernel_tail }}"
-    with_items: "{{ lustre_server_kernel_files }}"
-    register: lustre_server_kernel_files_exists
-  - name: Download lustre kernel packages
-    get_url:
-      url: "{{ remote_repository_download_url }}/{{ item.item }}-{{ lustre_server_kernel_tail }}"
-      dest: "{{ local_repository_path }}"
-      headers:
-        Authorization: "token {{ repository_token }}"
-    with_items: "{{ lustre_server_kernel_files_exists.results }}"
-    no_log: True
-    when: item.stat.exists == False
-  - name: Check if lustre server packages exist in the local repository
-    stat:
-      path: "{{ local_repository_path }}/{{ item }}-{{ lustre_server_tail }}"
-    with_items: "{{ lustre_server_files }}"
-    register: lustre_server_files_exists
-  - name: Download lustre server packages
-    get_url:
-      url: "{{ remote_repository_download_url }}/{{ item.item }}-{{ lustre_server_tail }}"
-      dest: "{{ local_repository_path }}"
-      headers:
-        Authorization: "token {{ repository_token }}"
-    with_items: "{{ lustre_server_files_exists.results }}"
-    no_log: True
-    when: item.stat.exists == False
-  when: download_lustre_packages.server == True
+    - name: Check if e2fsprogs packages exist in the local repository
+      ansible.builtin.stat:
+        path: "{{ local_repository_path }}/{{ item }}-{{ e2fsprogs_tail }}"
+      with_items: "{{ e2fsprogs_files }}"
+      register: e2fsprogs_files_exists
+    - name: Download e2fsprogs packages
+      ansible.builtin.get_url:
+        url: "{{ remote_repository_download_url }}/{{ item.item }}-{{ e2fsprogs_tail }}"
+        dest: "{{ local_repository_path }}"
+        mode: "0644"
+        headers:
+          Authorization: "token {{ repository_token }}"
+      with_items: "{{ e2fsprogs_files_exists.results }}"
+      no_log: true
+      when: not item.stat.exists
+    - name: Check if lustre kernel packages exist in the local repository
+      ansible.builtin.stat:
+        path: "{{ local_repository_path }}/{{ item }}-{{ lustre_server_kernel_tail }}"
+      with_items: "{{ lustre_server_kernel_files }}"
+      register: lustre_server_kernel_files_exists
+    - name: Download lustre kernel packages
+      ansible.builtin.get_url:
+        url: "{{ remote_repository_download_url }}/{{ item.item }}-{{ lustre_server_kernel_tail }}"
+        dest: "{{ local_repository_path }}"
+        mode: "0644"
+        headers:
+          Authorization: "token {{ repository_token }}"
+      with_items: "{{ lustre_server_kernel_files_exists.results }}"
+      no_log: true
+      when: not item.stat.exists
+    - name: Check if lustre server packages exist in the local repository
+      ansible.builtin.stat:
+        path: "{{ local_repository_path }}/{{ item }}-{{ lustre_server_tail }}"
+      with_items: "{{ lustre_server_files }}"
+      register: lustre_server_files_exists
+    - name: Download lustre server packages
+      ansible.builtin.get_url:
+        url: "{{ remote_repository_download_url }}/{{ item.item }}-{{ lustre_server_tail }}"
+        dest: "{{ local_repository_path }}"
+        mode: "0644"
+        headers:
+          Authorization: "token {{ repository_token }}"
+      with_items: "{{ lustre_server_files_exists.results }}"
+      no_log: true
+      when: not item.stat.exists

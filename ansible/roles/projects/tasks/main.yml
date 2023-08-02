@@ -1,61 +1,62 @@
 ---
 
 - name: Install required yum packages
-  yum:
+  ansible.builtin.yum:
     name:
       - sshpass
     state: present
 
 
 - name: Install Python required packages
-  command: "pip install passlib"
-  become: True
+  ansible.builtin.command: "pip install passlib"
+  become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
+  changed_when: true
 
 
 - name: Render the discos-addProject template
-  template:
+  ansible.builtin.template:
     src: discos-addProject
     dest: "/{{ discos_sw_dir }}/{{ user.name }}/bin/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0544
-    force: yes
+    mode: "0544"
+    force: true
   become: true
   become_user: "{{ user.name }}"
 
 
 - name: Render the discos-removeProject template
-  template:
+  ansible.builtin.template:
     src: discos-removeProject
     dest: "/{{ discos_sw_dir }}/{{ user.name }}/bin/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: 0544
-    force: yes
+    mode: "0544"
+    force: true
   become: true
   become_user: "{{ user.name }}"
 
 
 - name: Copy the bashrc template into /etc/skel
-  template:
+  ansible.builtin.template:
     src: bashrc
     dest: /etc/skel/.bashrc
-    mode: 0644
-    force: yes
+    mode: "0644"
+    force: true
 
 
 - name: Copy the bash_profile template into /etc/skel
-  template:
+  ansible.builtin.template:
     src: bash_profile
     dest: /etc/skel/.bash_profile
-    mode: 0644
-    force: yes
+    mode: "0644"
+    force: true
 
 
 - name: Activate the crontab job for home directory backup
-  cron:
+  ansible.builtin.cron:
     name: projects-home-backup
     hour: "23"
     minute: "59"

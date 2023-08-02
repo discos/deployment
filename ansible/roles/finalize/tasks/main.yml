@@ -1,5 +1,12 @@
 ---
 
-- include_tasks: fix_kernel.yml
-- include_tasks: remount.yml
-- include_tasks: cleanup.yml
+- name: Disable kernel updates
+  ansible.builtin.include_tasks: fix_kernel.yml
+
+
+- name: Re-mount some disks
+  ansible.builtin.include_tasks: remount.yml
+
+
+- name: Perform some final cleaning
+  ansible.builtin.include_tasks: cleanup.yml

@@ -1,7 +1,7 @@
 ---
 
-- name: Install ACS related yum-packages
-  yum:
+- name: Install ACS-related yum packages
+  ansible.builtin.yum:
     name:
       - deltarpm
       - epel-release
@@ -91,55 +91,58 @@
 
 
 - name: Install centos-release-scl
-  yum:
+  ansible.builtin.yum:
     name: centos-release-scl
 
 
 - name: Install devtoolset-{{ devtoolset_release }}-gcc
-  yum:
+  ansible.builtin.yum:
     name: devtoolset-{{ devtoolset_release }}-gcc*
     enablerepo: centos-sclo-rh-testing
 
 
 - name: Disable the devtoolset-{{ devtoolset_release }} sudo command
-  file:
+  ansible.builtin.file:
     path: "/opt/rh/devtoolset-8/root/usr/bin/sudo"
-    mode: 0444
+    mode: "0444"
 
 
 - name: Make sure the default git yum package is not installed
-  yum:
+  ansible.builtin.yum:
     name:
       - git
     state: absent
 
 
 - name: Download git224-core-2.24.3-1.el7.ius.x86_64.rpm yum package
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
     dest: "{{ local_repository_path }}"
     force: false
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   delegate_to: localhost
   run_once: true
+  no_log: true
 
 
 - name: Copy git-core to the remote
-  copy:
+  ansible.builtin.copy:
     src: "{{ local_repository_path }}/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
     dest: "/root/"
+    mode: "0644"
 
 
 - name: Install the git224-core-2.24.3-1.el7.ius.x86_64.rpm yum package
-  yum:
+  ansible.builtin.yum:
     name:
-     - "/root/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
-     - git-lfs
+      - "/root/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
+      - git-lfs
     state: present
 
 
 - name: Delete the git224-core-2.24.3-1.el7.ius.x86_64.rpm package from the remote
-  file:
+  ansible.builtin.file:
     path: "/root/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
     state: absent

@@ -1,29 +1,32 @@
 ---
 
 - name: Check if GILDAS archive exists in the local repository
-  stat:
+  ansible.builtin.stat:
     path: "{{ local_repository_path }}/{{ gildas_sources_archive }}"
   delegate_to: localhost
-  run_once: True
+  run_once: true
   register: gildas_file_exists
 
 
 - name: Download GILDAS
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ remote_repository_download_url }}/{{ gildas_sources_archive }}"
     dest: "{{ local_repository_path }}"
+    mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
   delegate_to: localhost
-  run_once: True
-  when: gildas_file_exists.stat.exists == False
+  run_once: true
+  when: gildas_file_exists.stat.exists
+  no_log: true
 
 
 - name: Check if GILDAS is already installed
-  stat:
+  ansible.builtin.stat:
     path: "/{{ discos_sw_dir }}/gildas"
   register: gildas_exe_dir
 
 
-- include_tasks: install.yml
-  when: gildas_exe_dir.stat.exists == False
+- name: Install GILDAS
+  ansible.builtin.include_tasks: install.yml
+  when: gildas_exe_dir.stat.exists
