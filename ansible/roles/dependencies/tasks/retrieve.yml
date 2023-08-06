@@ -1,0 +1,22 @@
+---
+
+- name: Delete the eventually old token
+  ansible.builtin.file:
+    path: "{{ local_repository_path }}/token/token"
+    state: absent
+
+
+- name: Download the token from discos/dependencies repository
+  ansible.builtin.git:
+    repo: "{{ remote_repository_clone_url }}"
+    dest: "{{ local_repository_path }}/token"
+    force: true
+    depth: 1
+    version: token
+
+
+- name: Fetch the repository token value
+  ansible.builtin.set_fact:
+    repository_token: "{{ item }}"
+  with_file: "{{ local_repository_path }}/token/token"
+  no_log: true

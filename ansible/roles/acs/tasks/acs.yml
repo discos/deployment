@@ -94,6 +94,7 @@
     dest: "{{ remote_build_path }}/acs/ExtProd/PRODUCTS/acs-py3.req"
     line: "cryptography==37.0.4"
     state: present
+  when: not target_dir.stat.exists
 
 
 - name: Install ACS ExtProd

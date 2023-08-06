@@ -12,6 +12,7 @@
     dest: "/etc/systemd/system/vncserver@:{{ item.value.name }}.service"
     mode: "0644"
   with_dict: "{{ users }}"
+  no_log: true
 
 
 - name: Run systemd daemon-reload

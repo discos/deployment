@@ -193,6 +193,7 @@ def startVm(machine):
                 else:
                     print('error while starting the requested VM.')
                     return_code = 3
+                sys.stdout.flush()
                 break
             else:
                 sys.stdout.write('.')
@@ -228,6 +229,7 @@ def stopVm(machine):
                 else:
                     print('error while stopping the requested VM.')
                     return_code = 3
+                sys.stdout.flush()
                 break
             else:
                 sys.stdout.write('.')
@@ -266,6 +268,7 @@ def createVm(machine):
                 else:
                     print('error while creating the requested VM.')
                     return_code = 3
+                sys.stdout.flush()
                 break
             else:
                 sys.stdout.write('.')
@@ -317,6 +320,7 @@ def destroyVm(machine):
                 else:
                     print('error while destroying the requested VM.')
                     return_code = 3
+                sys.stdout.flush()
                 break
             else:
                 sys.stdout.write('.')
@@ -353,6 +357,7 @@ def exportVm(machine, outdir=os.environ.get('HOME')):
                 else:
                     print('error while exporting the requested VM.')
                     return_code = code
+                sys.stdout.flush()
                 break
             else:
                 sys.stdout.write('.')
@@ -459,7 +464,7 @@ def injectRSAKey(machines):
     import getpass
     with open('/tmp/ssh_askpass', 'w') as f:
         f.write('#!/bin/bash\necho $DEPLOY_PASSWORD\n')
-    os.chmod('/tmp/ssh_askpass', 700)
+    os.chmod('/tmp/ssh_askpass', 0o700)
     os.environ['SSH_ASKPASS'] = '/tmp/ssh_askpass'
     for machine, ip in machines.items():
         if not sshLogin(ip):
@@ -470,7 +475,7 @@ def injectRSAKey(machines):
             authorizeKey(ip)
             os.unsetenv('DEPLOY_PASSWORD')
             if not sshLogin(ip):
-                deployment.error(
+                error(
                     f'Cannot authenticate to machine {machine}, '
                     f'try again with the correct password.'
                 )

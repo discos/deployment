@@ -1,0 +1,53 @@
+name: DISCOS provisioning and deployment
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+    branches:
+      - 'master'
+  schedule:
+    - cron: '0 2 * * 1'
+
+jobs:
+  workflow:
+    env:
+      REPOSITORY_TOKEN: "${{ secrets.DEPENDENCIES_TOKEN }}"
+    runs-on: macos-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9.4'
+          check-latest: true
+      - name: Install package and dependencies
+        run: |
+          brew install coreutils
+          python -m pip install -r requirements.txt
+          python -m pip install -r test_requirements.txt
+          python setup.py install
+      - name: Restore the local dependencies repository from cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            /Users/runner/.deployment/repository
+          key: cache-local-repository
+      - name: Check if the Ansible procedure is correctly written
+        run: |
+          ansible-lint ansible
+      - name: Provision the virtual machine and deploy DISCOS
+        run: |
+          discos-deploy manager:development --default-passwords -s srt -b centos_7_compatibility
+      - name: Shutdown the virtual machine
+        run: |
+          discos-vms stop
+      - name: Export the virtual machine
+        run: |
+          discos-vms export manager
+      - name: Save the virtual machine as GitHub Action artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: discos_manager
+          path: /Users/runner/discos_manager.ova
