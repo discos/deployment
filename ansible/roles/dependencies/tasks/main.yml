@@ -1,23 +1,20 @@
 ---
 
-- name: Download the token from discos/dependencies repository
-  when: lookup("ansible.builtin.env", "CI") == ""
-  block:
-    - name: Delete the eventually old token
-      ansible.builtin.file:
-        path: "{{ local_repository_path }}/token/token"
-        state: absent
-    - name: Download the token from discos/dependencies repository
-      ansible.builtin.git:
-        repo: "{{ remote_repository_clone_url }}"
-        dest: "{{ local_repository_path }}/token"
-        force: true
-        depth: 1
-        version: token
+- name: Create the local repository
+  ansible.builtin.file:
+    path: "{{ local_repository_path }}"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+  run_once: true
 
 
 - name: Fetch the repository token value
   ansible.builtin.set_fact:
-    repository_token: "{{ item }}"
-  with_file: "{{ local_repository_path }}/token/token"
+    repository_token: "{{ lookup('ansible.builtin.env', 'REPOSITORY_TOKEN', default='') }}"
   no_log: true
+
+
+- name: Retrieve the token from the discos/dependencies repository
+  ansible.builtin.include_tasks: retrieve.yml
+  when: repository_token == ""

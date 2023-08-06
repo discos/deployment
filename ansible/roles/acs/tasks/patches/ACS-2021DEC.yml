@@ -37,9 +37,11 @@
 
 - name: Set some paths
   ansible.builtin.set_fact:
-    acs_command_center: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/acscommandcenter/"
-    execute_container: "{{ acs_command_center }}/src/alma/acs/commandcenter/engine/ExecuteContainer.java"
-    executor: "{{ acs_command_center }}/src/alma/acs/commandcenter/engine/Executor.java"
+    acs_command_center: "{{ item }}"
+    execute_container: "{{ item }}/src/alma/acs/commandcenter/engine/ExecuteContainer.java"
+    executor: "{{ item }}/src/alma/acs/commandcenter/engine/Executor.java"
+  with_items:
+    - "{{ remote_build_path }}/acs/LGPL/CommonSoftware/acscommandcenter/"
 
 
 - name: Replace ExecuteContainer.java

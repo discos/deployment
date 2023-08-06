@@ -17,7 +17,7 @@
       Authorization: "token {{ repository_token }}"
   delegate_to: localhost
   run_once: true
-  when: gildas_file_exists.stat.exists
+  when: not gildas_file_exists.stat.exists
   no_log: true
 
 
@@ -29,4 +29,4 @@
 
 - name: Install GILDAS
   ansible.builtin.include_tasks: install.yml
-  when: gildas_exe_dir.stat.exists
+  when: not gildas_exe_dir.stat.exists

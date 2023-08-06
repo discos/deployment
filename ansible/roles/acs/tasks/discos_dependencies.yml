@@ -61,8 +61,8 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - cfitsio_include.stat.exists
-    - cfitsio_sources.stat.exists
+    - not cfitsio_include.stat.exists
+    - not cfitsio_sources.stat.exists
   delegate_to: localhost
   run_once: true
   no_log: true
@@ -76,8 +76,8 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - ccfits_include.stat.exists
-    - ccfits_sources.stat.exists
+    - not ccfits_include.stat.exists
+    - not ccfits_sources.stat.exists
   delegate_to: localhost
   run_once: true
   no_log: true
@@ -91,8 +91,8 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - fv_binary.stat.exists
-    - fv_archive.stat.exists
+    - not fv_binary.stat.exists
+    - not fv_archive.stat.exists
   delegate_to: localhost
   run_once: true
   no_log: true
@@ -102,7 +102,7 @@
   ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ cfitsio.file }}"
     dest: "{{ remote_build_path }}"
-  when: cfitsio_include.stat.exists
+  when: not cfitsio_include.stat.exists
 
 
 - name: Install cfitsio
@@ -113,15 +113,15 @@
     - "make install"
   args:
     chdir: "{{ remote_build_path }}/{{ cfitsio.build_dir }}"
-  when: cfitsio_include.stat.exists
-  changed_when: cfitsio_include.stat.exists
+  when: not cfitsio_include.stat.exists
+  changed_when: not cfitsio_include.stat.exists
 
 
 - name: Copy {{ ccfits.file }} to the remote {{ remote_build_path }}
   ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ ccfits.file }}"
     dest: "{{ remote_build_path }}"
-  when: ccfits_include.stat.exists
+  when: not ccfits_include.stat.exists
 
 
 - name: Install CCfits
@@ -132,14 +132,14 @@
     - "make install"
   args:
     chdir: "{{ remote_build_path }}/{{ ccfits.build_dir }}"
-  when: ccfits_include.stat.exists
-  changed_when: ccfits_include.stat.exists
+  when: not ccfits_include.stat.exists
+  changed_when: not ccfits_include.stat.exists
 
 
 - name: Export 'PKG_CONFIG_PATH' in order to have access to libcfitsio.so
   ansible.builtin.lineinfile:
-    dest: /etc/profile
-    line: 'export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig'
+    dest: "/etc/profile"
+    line: "export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig"
 
 
 - name: Remove the directory used for the libraries compilation
@@ -155,7 +155,7 @@
   ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ fv.file }}"
     dest: "/usr/local/lib"
-  when: fv_binary.stat.exists
+  when: not fv_binary.stat.exists
 
 
 - name: Create fv executable
@@ -165,7 +165,7 @@
     mode: "0755"
     state: present
     create: true
-  when: fv_binary.stat.exists
+  when: not fv_binary.stat.exists
 
 
 #####################
@@ -194,8 +194,8 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - modbus_sources.stat.exists
-    - modbus_lib.stat.exists
+    - not modbus_sources.stat.exists
+    - not modbus_lib.stat.exists
   delegate_to: localhost
   run_once: true
   no_log: true
@@ -205,7 +205,7 @@
   ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ modbus.file }}"
     dest: "{{ remote_build_path }}"
-  when: modbus_lib.stat.exists
+  when: not modbus_lib.stat.exists
 
 
 - name: Install modbus
@@ -216,8 +216,8 @@
     - "make install"
   args:
     chdir: "{{ remote_build_path }}/{{ modbus.build_dir }}"
-  when: modbus_lib.stat.exists
-  changed_when: modbus_lib.stat.exists
+  when: not modbus_lib.stat.exists
+  changed_when: not modbus_lib.stat.exists
 
 
 - name: Remove the directory used for the libraries compilation
@@ -254,8 +254,8 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - gmock_lib.stat.exists
-    - gmock_sources.stat.exists
+    - not gmock_lib.stat.exists
+    - not gmock_sources.stat.exists
   delegate_to: localhost
   run_once: true
   no_log: true
@@ -265,7 +265,7 @@
   ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ googletest_file }}"
     dest: "{{ remote_build_path }}"
-  when: gmock_lib.stat.exists
+  when: not gmock_lib.stat.exists
 
 
 - name: Create a gmock/build directory
@@ -273,7 +273,7 @@
     path: "{{ gmock_build }}/build"
     state: directory
     mode: "0755"
-  when: gmock_lib.stat.exists
+  when: not gmock_lib.stat.exists
 
 
 - name: Compile gmock
@@ -283,8 +283,8 @@
     - "make"
   args:
     chdir: "{{ gmock_build }}/build"
-  when: gmock_lib.stat.exists
-  changed_when: gmock_lib.stat.exists
+  when: not gmock_lib.stat.exists
+  changed_when: not gmock_lib.stat.exists
 
 
 - name: Create some gmock files
@@ -294,7 +294,7 @@
   with_items:
     - "libgmock.a"
     - "libgmock_main.a"
-  when: gmock_lib.stat.exists
+  when: not gmock_lib.stat.exists
 
 
 - name: Copy the gmock static libraries to /usr/local/lib
@@ -305,8 +305,8 @@
     - { cmd: 'cp libgmock_main.a /usr/local/lib', subdir: 'build' }
   args:
     chdir: "{{ gmock_build }}/{{ item.subdir }}"
-  when: gmock_lib.stat.exists
-  changed_when: gmock_lib.stat.exists
+  when: not gmock_lib.stat.exists
+  changed_when: not gmock_lib.stat.exists
 
 
 - name: Check if gtest is installed
@@ -320,7 +320,7 @@
     path: "{{ gtest_build }}/build"
     state: directory
     mode: "0755"
-  when: gtest_lib.stat.exists
+  when: not gtest_lib.stat.exists
 
 
 - name: Compile gtest
@@ -330,8 +330,8 @@
   with_items:
     - "cmake .."
     - "make"
-  when: gtest_lib.stat.exists
-  changed_when: gtest_lib.stat.exists
+  when: not gtest_lib.stat.exists
+  changed_when: not gtest_lib.stat.exists
 
 
 - name: Create some gtest files
@@ -341,7 +341,7 @@
   with_items:
     - "libgtest.a"
     - "libgtest_main.a"
-  when: gtest_lib.stat.exists
+  when: not gtest_lib.stat.exists
 
 
 - name: Copy the gtest static libraries to /usr/local
@@ -352,8 +352,8 @@
     - { cmd: 'cp -r gtest /usr/local/include', subdir: 'include' }
     - { cmd: 'cp libgtest.a /usr/local/lib', subdir: 'build' }
     - { cmd: 'cp libgtest_main.a /usr/local/lib', subdir: 'build' }
-  when: gtest_lib.stat.exists
-  changed_when: gtest_lib.stat.exists
+  when: not gtest_lib.stat.exists
+  changed_when: not gtest_lib.stat.exists
 
 
 - name: Remove the directory used for the libraries compilation
@@ -390,8 +390,8 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - f2c_header.stat.exists
-    - f2c_sources.stat.exists
+    - not f2c_header.stat.exists
+    - not f2c_sources.stat.exists
   delegate_to: localhost
   run_once: true
   no_log: true
@@ -401,7 +401,7 @@
   ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ f2c.file }}"
     dest: "{{ remote_build_path }}"
-  when: f2c_header.stat.exists
+  when: not f2c_header.stat.exists
 
 
 - name: Install f2c
@@ -413,8 +413,8 @@
     - "cp f2c /usr/local/bin"
   args:
     chdir: "{{ remote_build_path }}/f2c-master/src"
-  when: f2c_header.stat.exists
-  changed_when: f2c_header.stat.exists
+  when: not f2c_header.stat.exists
+  changed_when: not f2c_header.stat.exists
 
 
 - name: Remove the directory used for the libraries compilation
@@ -465,7 +465,7 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - sip_sources.stat.exists
+    - not sip_sources.stat.exists
   delegate_to: localhost
   run_once: true
   no_log: true
@@ -477,7 +477,7 @@
     dest: "{{ remote_build_path }}"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-  when: sip_library.stat.exists
+  when: not sip_library.stat.exists
 
 
 - name: Install sip
@@ -492,8 +492,8 @@
   become_flags: "-i"
   args:
     chdir: "{{ remote_build_path }}/{{ sip_build_dir }}"
-  when: sip_library.stat.exists
-  changed_when: sip_library.stat.exists
+  when: not sip_library.stat.exists
+  changed_when: not sip_library.stat.exists
 
 
 - name: Verify the PyQt4 library is not installed
@@ -524,7 +524,7 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - pyqt_sources.stat.exists
+    - not pyqt_sources.stat.exists
   delegate_to: localhost
   run_once: true
   no_log: true
@@ -536,7 +536,7 @@
     dest: "{{ remote_build_path }}"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-  when: pyqt_library.stat.exists
+  when: not pyqt_library.stat.exists
 
 
 - name: Configure PyQt
@@ -546,8 +546,8 @@
   become_flags: "-i"
   args:
     chdir: "{{ remote_build_path }}/{{ pyqt_build_dir }}"
-  when: pyqt_library.stat.exists
-  changed_when: pyqt_library.stat.exists
+  when: not pyqt_library.stat.exists
+  changed_when: not pyqt_library.stat.exists
 
 
 - name: Remove PrintCurrentPage from source files
@@ -561,7 +561,7 @@
     - "{{ remote_build_path }}/{{ pyqt_build_dir }}/sip/QtGui/qabstractprintdialog.sip"
   become: true
   become_user: "{{ user.name }}"
-  when: pyqt_library.stat.exists
+  when: not pyqt_library.stat.exists
 
 
 - name: Install PyQt
@@ -575,8 +575,8 @@
   become_flags: "-i"
   args:
     chdir: "{{ remote_build_path }}/{{ pyqt_build_dir }}"
-  when: pyqt_library.stat.exists
-  changed_when: pyqt_library.stat.exists
+  when: not pyqt_library.stat.exists
+  changed_when: not pyqt_library.stat.exists
 
 
 - name: Check if PyQtQwt is installed
@@ -601,7 +601,7 @@
     headers:
       Authorization: "token {{ repository_token }}"
   when:
-    - pyqtqwt_sources.stat.exists
+    - not pyqtqwt_sources.stat.exists
   delegate_to: localhost
   run_once: true
   no_log: true
@@ -613,18 +613,18 @@
     dest: "{{ remote_build_path }}"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-  when: pyqtqwt_library.stat.exists
+  when: not pyqtqwt_library.stat.exists
 
 
-- name: Copy include files
+- name: Copy include directory
   ansible.builtin.copy:
     src: "/usr/include/qwt"
     dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/"
     force: true
     owner: "{{ user.name }}"
-    mode: "0644"
+    mode: "0755"
     remote_src: true
-  when: pyqtqwt_library.stat.exists
+  when: not pyqtqwt_library.stat.exists
 
 
 - name: Replace include files
@@ -638,7 +638,7 @@
   with_items:
     - "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/qwt_series_data.h"
     - "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/header/qwt_series_store.h"
-  when: pyqtqwt_library.stat.exists
+  when: not pyqtqwt_library.stat.exists
 
 
 - name: Patch Qwt_Qt4.sip
@@ -651,7 +651,7 @@
     - { regexp: "%Include qwt_plot_zoomer.sip", replace: "//%Include qwt_plot_zoomer.sip" }
     - { regexp: "%Include qwt_plot_spectrocurve.sip", replace: "//%Include qwt_plot_spectrocurve.sip" }
     - { regexp: "%Include qwt_plot_tradingcurve.sip", replace: "//%Include qwt_plot_tradingcurve.sip" }
-  when: pyqtqwt_library.stat.exists
+  when: not pyqtqwt_library.stat.exists
 
 
 - name: Patch qwt_plot_renderer.sip
@@ -659,7 +659,7 @@
     dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/sip/qwt_plot_renderer.sip"
     regexp: "class QPrinter;"
     replace: "//class QPrinter;"
-  when: pyqtqwt_library.stat.exists
+  when: not pyqtqwt_library.stat.exists
 
 
 - name: Configure PyQtQwt
@@ -671,8 +671,8 @@
   become_flags: "-i"
   args:
     chdir: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}"
-  when: pyqtqwt_library.stat.exists
-  changed_when: pyqtqwt_library.stat.exists
+  when: not pyqtqwt_library.stat.exists
+  changed_when: not pyqtqwt_library.stat.exists
 
 
 - name: Patch Makefile
@@ -680,7 +680,7 @@
     dest: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}/Qwt/Makefile"
     regexp: "-I. -I/usr/include/QtCore"
     replace: "-I. -I/usr/include/Qt -I/usr/include/QtCore"
-  when: pyqtqwt_library.stat.exists
+  when: not pyqtqwt_library.stat.exists
 
 
 - name: Build and install PyQtQwt
@@ -697,8 +697,8 @@
     - { become: "true", command: "pyenv rehash" }
   args:
     chdir: "{{ remote_build_path }}/{{ pyqtqwt_build_dir }}"
-  when: pyqtqwt_library.stat.exists
-  changed_when: pyqtqwt_library.stat.exists
+  when: not pyqtqwt_library.stat.exists
+  changed_when: not pyqtqwt_library.stat.exists
 
 
 - name: Remove the temporary directory used for libraries compilation
@@ -759,8 +759,7 @@
     mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
-  when:
-    - slalibrary_present.stat.exists
+  when: not slalibrary_present.stat.exists
   delegate_to: localhost
   run_once: true
   no_log: true
@@ -773,8 +772,7 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: "0755"
-  when:
-    - slalibrary_present.stat.exists
+  when: not slalibrary_present.stat.exists
 
 
 - name: Extract the SlaLibrary archive to the remote
@@ -783,5 +781,4 @@
     dest: "/{{ discos_sw_dir }}/SlaLibrary/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-  when:
-    - slalibrary_present.stat.exists
+  when: not slalibrary_present.stat.exists
