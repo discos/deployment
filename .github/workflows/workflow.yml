@@ -2,10 +2,6 @@ name: DISCOS provisioning and deployment
 
 on:
   workflow_dispatch:
-  push:
-  pull_request:
-    branches:
-      - 'master'
   schedule:
     - cron: '0 2 * * 1'
 
@@ -37,9 +33,9 @@ jobs:
       - name: Check if the Ansible procedure is correctly written
         run: |
           ansible-lint ansible
-      - name: Provision the virtual machine and deploy DISCOS
+      - name: Provision the virtual machine
         run: |
-          discos-deploy manager:development --default-passwords -s srt -b centos_7_compatibility
+          discos-deploy manager:development --default-passwords
       - name: Shutdown the virtual machine
         run: |
           discos-vms stop
