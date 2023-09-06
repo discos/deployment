@@ -4,7 +4,8 @@ import os
 import sys
 import shutil
 import argparse
-import urllib.request
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 import json
 if os.name == 'posix' and sys.version_info[0] < 3:
     import subprocess32 as subprocess
@@ -23,8 +24,33 @@ except IOError:
 
 BRANCH_ROOT = os.environ['HOME']
 stations = { s.lower(): s for s in ['SRT', 'Medicina', 'Noto']}
+BRANCHES = []
+try:
+    request = Request(
+        'https://api.github.com/repos/discos/discos/branches'
+    )
+    BRANCHES += json.loads(urlopen(request).read())
+    request = Request(
+        'https://api.github.com/repos/discos/discos/tags'
+    )
+    BRANCHES += json.loads(urlopen(request).read())
+    BRANCHES = [str(item.get('name')) for item in BRANCHES]
+    BRANCHES.sort()
+except HTTPError:
+    pass
 
 parser = argparse.ArgumentParser()
+parser.add_argument(
+    'branch',
+    type=str,
+    choices=BRANCHES if BRANCHES else None,
+    metavar='BRANCH',
+    help=(
+        'WARNING: remote DISCOS repository unreachable! '
+        'Be sure to type the name of an existing branch if deploying!'
+        if not BRANCHES else '\n'.join(BRANCHES)
+    )
+)
 if not STATION:
     parser.add_argument(
         '-s',
@@ -32,41 +58,14 @@ if not STATION:
         choices=stations.keys(),
         required=True
     )
-group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument('-b', '--branch')
-group.add_argument('-t', '--tag')
 args = parser.parse_args()
-
-
-choices_type = ''
-if args.branch:
-    choices_type = 'branches'
-    args.target = args.branch
-elif args.tag:
-    choices_type = 'tags'
-    args.target = args.tag
-
-request = urllib.request.Request(
-    'https://api.github.com/repos/discos/discos/%s' % choices_type,
-)
-choices = json.loads(urllib.request.urlopen(request).read())
-choices = [str(c.get('name')) for c in choices]
-
-if args.target not in choices:
-    msg = "ERROR: %s %s not found in remote repository!\nChoose between '%s'."
-    if args.branch:
-        msg = msg % ('branch', args.target, "', '".join(choices))
-    elif args.tag:
-        msg = msg % ('tag', args.target, "', '".join(choices))
-    print(msg)
-    sys.exit(1)
 
 
 os.chdir(BRANCH_ROOT)
 if not STATION:
-    branch_name = '%s-%s' % (args.target, args.station)
+    branch_name = '%s-%s' % (args.branch, args.station)
 else:
-    branch_name = args.target
+    branch_name = args.branch
 BRANCH_PATH = os.path.join(BRANCH_ROOT, branch_name)
 
 
@@ -78,7 +77,7 @@ try:
         https_url,
         branch_name,
         '--branch',
-        args.target],
+        args.branch],
         timeout=120,
     )
 except subprocess.TimeoutExpired:
@@ -87,6 +86,8 @@ except subprocess.TimeoutExpired:
     print('\nERROR: timeout expired cloning %s.' % https_url)
     sys.stderr.flush()
     sys.exit(-1)
+if code == 128:
+    print(f'\nERROR: remote branch {branch_name} not found in upstream origin')
 if code:
     sys.exit(code)
 else:
