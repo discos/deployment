@@ -1,5 +1,6 @@
 ---
 
 skip_list:
-  - name[template]  # Complains if we use jinja2 templating inside the name of a task instead of at the end of it
-  - run-once        # Some impossible-to-get-rid-of error when using the 'run_once' keyword
+  - var-naming[no-role-prefix]  # Requires some prefix for some variables which is, in my opinion, too much
+  - name[template]              # Complains if we use jinja2 templating inside the name of a task instead of at the end of it
+  - run-once                    # Some impossible-to-get-rid-of error when using the 'run_once' keyword
