@@ -15,7 +15,7 @@ Vagrant.configure(vagrantfile_api_version) do |config|
     config.vm.provider :virtualbox do |vb|
         vb.customize ["modifyvm", :id, "--ioapic", "on"]
         vb.memory = 8192
-        vb.cpus = 4
+        if ENV["CI"] == "true" then vb.cpus = 3 else vb.cpus = 4 end
         vb.default_nic_type = "virtio"
     end
 
