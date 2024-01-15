@@ -1,5 +1,5 @@
 [storage]
-storage01.srt.inaf.it ansible_host=192.168.200.218
+discos-users.srt.inaf.it ansible_host=192.168.200.218
 
 [manager]
 discos-manager.srt.inaf.it ansible_host=192.168.200.203
