@@ -35,12 +35,9 @@ After=syslog.target network.target
 
 [Service]
 Type=simple
-
-# Clean any existing files in /tmp/.X11-unix environment
-ExecStartPre=/bin/sh -c '/usr/bin/vncserver -kill %i > /dev/null 2>&1 || :'
-ExecStart=/sbin/runuser -l {{ item.value.name }} -c "/usr/bin/vncserver :{{ item.value.vnc_port_offset }} -name {{ inventory_hostname_short }}-{{ item.value.name }} -SecurityTypes None -geometry {{ vnc_resolution }} -depth 32 -AlwaysShared -nolisten tcp -rfbport {{ vnc_starting_port+item.value.vnc_port_offset|int }}"
-PIDFile=/discos-sw/{{ item.value.name }}/.vnc/%H%i.pid
-ExecStop=/bin/sh -c '/usr/bin/vncserver -kill %i > /dev/null 2>&1 || :'
+ExecStart=/usr/sbin/runuser -l {{ item.value.name }} -c "/usr/bin/vncserver :{{ item.value.vnc_port_offset|int }} -name {{ inventory_hostname_short }}_{{ item.value.name }} -SecurityTypes None -geometry 1920x1080 -depth 32 -AlwaysShared -nolisten tcp -rfbport {{ vnc_starting_port+item.value.vnc_port_offset|int }} || :{% if fixed_resolution_vnc %} && /bin/x11vnc -display :{{ item.value.vnc_port_offset|int }} -nowireframe -rfbport {{ vnc_starting_port+fixed_resolution_vnc_offset+item.value.vnc_port_offset|int }} -nopw -forever -shared -bg -localhost -tag {{ inventory_hostname_short }}_{{ item.value.name }}{% endif %}"
+ExecStop=/usr/sbin/runuser -l {{ item.value.name }} -c "{% if fixed_resolution_vnc %}/usr/bin/pkill -s 9 -f 'x11vnc.*{{ inventory_hostname_short }}_{{ item.value.name }}' || : && {% endif %}/usr/bin/vncserver -kill :{{ item.value.vnc_port_offset|int }} || :"
+RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target

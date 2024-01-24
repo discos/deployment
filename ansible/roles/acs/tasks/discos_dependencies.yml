@@ -581,7 +581,7 @@
 
 - name: Check if PyQtQwt is installed
   ansible.builtin.stat:
-    path: "/alma/{{ acs_tag }}/pyenv/versions/3.6.9/share/sip/PyQt4/Qwt"
+    path: "/alma/{{ acs_tag }}/pyenv/versions/3.9.4/share/sip/PyQt4/Qwt"
   register: pyqtqwt_library
 
 
