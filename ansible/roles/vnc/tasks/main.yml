@@ -6,6 +6,13 @@
     state: present
 
 
+- name: Install x11vnc yum package
+  ansible.builtin.yum:
+    name: x11vnc
+    state: present
+  when: fixed_resolution_vnc
+
+
 - name: Configure the VNCSERVERS
   ansible.builtin.template:
     src: vncserver@:user.service
