@@ -3,3 +3,4 @@
 sardara_mount_point: "/roach2_nuraghe/data"
 sardara_ip_address: "dorian"
 sardara_remote_directory: "/raid/roach2_nuraghe"
+fixed_resolution_vnc: true
