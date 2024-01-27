@@ -63,6 +63,35 @@
     force: false
 
 
+- name: Copy the gnome-terminal-profile template
+  ansible.builtin.template:
+    src: gnome-terminal-profile
+    dest: "/{{ discos_sw_dir }}/config/misc/"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: "0640"
+    force: true
+
+
+- name: Copy the dir_colors template
+  ansible.builtin.template:
+    src: dir_colors
+    dest: "/{{ discos_sw_dir }}/config/misc/"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: "0640"
+    force: false
+
+
+- name: Create a symbolic link to dir_colors
+  ansible.builtin.file:
+    src: "/{{ discos_sw_dir }}/config/misc/dir_colors"
+    dest: "/{{ discos_sw_dir }}/{{ item.value.name }}/.dir_colors"
+    state: link
+  no_log: true
+  with_dict: "{{ users }}"
+
+
 - name: Create the station file
   ansible.builtin.lineinfile:
     path: "/{{ discos_sw_dir }}/config/misc/station"
