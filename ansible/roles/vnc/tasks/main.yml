@@ -6,10 +6,8 @@
     state: present
 
 
-- name: Install x11vnc yum package
-  ansible.builtin.yum:
-    name: x11vnc
-    state: present
+- name: Install x11vnc
+  ansible.builtin.include_tasks: x11vnc.yml
   when: fixed_resolution_vnc
 
 
@@ -22,6 +20,15 @@
   no_log: true
 
 
+- name: Stop vncserver service
+  ansible.builtin.systemd:
+    name: "vncserver@:{{ user.name }}.service"
+    state: stopped
+    enabled: true
+  with_dict: "{{ users }}"
+  no_log: true
+
+
 - name: Run systemd daemon-reload
   ansible.builtin.systemd:
     daemon_reload: true
@@ -30,7 +37,7 @@
 - name: Start vncserver service
   ansible.builtin.systemd:
     name: "vncserver@:{{ user.name }}.service"
-    state: restarted
+    state: started
     enabled: true
   with_dict: "{{ users }}"
   no_log: true

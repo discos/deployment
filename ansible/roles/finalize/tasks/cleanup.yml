@@ -26,3 +26,9 @@
     state: absent
   delegate_to: localhost
   run_once: true
+
+
+- name: Remove the temporary directory used for libraries compilation
+  ansible.builtin.file:
+    path: "{{ remote_build_path }}"
+    state: absent

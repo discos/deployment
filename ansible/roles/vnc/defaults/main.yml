@@ -2,5 +2,8 @@
 
 vnc_starting_port: 15000
 vnc_resolution: "1920x1080"
+
 fixed_resolution_vnc: false
 fixed_resolution_vnc_offset: 10
+x11vnc_dir: "x11vnc-custom"
+x11vnc_file: "{{ x11vnc_dir }}.tar.gz"

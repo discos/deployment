@@ -35,8 +35,8 @@ After=syslog.target network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/sbin/runuser -l {{ item.value.name }} -c "/usr/bin/vncserver :{{ item.value.vnc_port_offset|int }} -name {{ inventory_hostname_short }}_{{ item.value.name }} -SecurityTypes None -geometry 1920x1080 -depth 32 -AlwaysShared -nolisten tcp -rfbport {{ vnc_starting_port+item.value.vnc_port_offset|int }} || :{% if fixed_resolution_vnc %} && /bin/x11vnc -display :{{ item.value.vnc_port_offset|int }} -nowireframe -rfbport {{ vnc_starting_port+fixed_resolution_vnc_offset+item.value.vnc_port_offset|int }} -nopw -forever -shared -bg -localhost -tag {{ inventory_hostname_short }}_{{ item.value.name }}{% endif %} || :"
-ExecStop=/usr/sbin/runuser -l {{ item.value.name }} -c "{% if fixed_resolution_vnc %}/usr/bin/pkill -s 9 -f 'x11vnc.*{{ inventory_hostname_short }}_{{ item.value.name }}' || : && {% endif %}/usr/bin/vncserver -kill :{{ item.value.vnc_port_offset|int }} || :"
+ExecStart=/usr/sbin/runuser -l {{ item.value.name }} -c "/usr/bin/vncserver :{{ item.value.vnc_port_offset|int }} -name {{ inventory_hostname_short }}_{{ item.value.name }} -SecurityTypes None -geometry 1920x1080 -depth 32 -AlwaysShared -nolisten tcp {% if inventory_dir[inventory_dir.rfind('/')+1:] != 'development' %}-localhost {% endif %}-rfbport {{ vnc_starting_port+item.value.vnc_port_offset|int }}{% if fixed_resolution_vnc %}; /usr/local/bin/x11vnc -reflect localhost:{{ vnc_starting_port+item.value.vnc_port_offset|int }} -rfbport {{ vnc_starting_port+fixed_resolution_vnc_offset+item.value.vnc_port_offset|int }} -nopw -forever -shared -bg -noxdamage {% if inventory_dir[inventory_dir.rfind('/')+1:] != 'development' %}-localhost {% endif %}-desktop {{ inventory_hostname_short}}_{{ item.value.name }}{% endif %}; :"
+ExecStop=/usr/sbin/runuser -l {{ item.value.name }} -c "{% if fixed_resolution_vnc %}/usr/bin/pkill -s 9 -f 'x11vnc.*{{ inventory_hostname_short }}_{{ item.value.name }}'; {% endif %}/usr/bin/vncserver -kill :{{ item.value.vnc_port_offset|int }}; :"
 RemainAfterExit=yes
 
 [Install]

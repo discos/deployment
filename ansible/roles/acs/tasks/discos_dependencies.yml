@@ -701,12 +701,6 @@
   changed_when: not pyqtqwt_library.stat.exists
 
 
-- name: Remove the temporary directory used for libraries compilation
-  ansible.builtin.file:
-    path: "{{ remote_build_path }}"
-    state: absent
-
-
 #################
 # PYTHON PACKAGES
 #################
