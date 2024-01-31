@@ -198,3 +198,9 @@
   ansible.builtin.lineinfile:
     dest: /etc/profile
     line: 'source scl_source enable devtoolset-{{ devtoolset_release }}'
+
+
+- name: Set the terminal colors
+  ansible.builtin.lineinfile:
+    dest: /etc/profile
+    line: "dbus-launch dconf reset -f /org/gnome/terminal/legacy/profiles:/ && dbus-launch dconf load /org/gnome/terminal/legacy/profiles:/ < /discos-sw/config/misc/gnome-terminal-profile && dbus-launch dconf update"

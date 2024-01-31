@@ -49,3 +49,14 @@
     chdir: "{{ remote_build_path }}/{{ x11vnc_dir }}"
   when: not x11vnc_present.stat.exists
   changed_when: not x11vnc_present.stat.exists
+
+
+- name: Create the /var/log/x11vnc_{{ item.value.name }}.log
+  ansible.builtin.file:
+    path: "/var/log/x11vnc_{{ item.value.name }}.log"
+    state: touch
+    owner: "{{ item.value.name }}"
+    group: "{{ item.value.group }}"
+    mode: "0640"
+  with_dict: "{{ users }}"
+  no_log: true

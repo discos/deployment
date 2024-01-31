@@ -55,6 +55,13 @@
     force: true
 
 
+- name: Create the symbolic link for dir_colors into /etc/skel
+  ansible.builtin.file:
+    src: "/{{ discos_sw_dir }}/config/misc/dir_colors"
+    dest: /etc/skel/.dir_colors
+    state: link
+
+
 - name: Activate the crontab job for home directory backup
   ansible.builtin.cron:
     name: projects-home-backup

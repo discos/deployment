@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-dbus-launch dconf reset -f /org/gnome/terminal/legacy/profiles:/ && dbus-launch dconf load /org/gnome/terminal/legacy/profiles:/ < /{{ discos_sw_dir }}/config/misc/gnome-terminal-profile && dbus-launch dconf update
 
 # Set the STATION
 # ===============
