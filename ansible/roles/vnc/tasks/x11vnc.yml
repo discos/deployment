@@ -39,7 +39,7 @@
 
 
 - name: Install the custom x11vnc
-  ansible.builtin.shell: "{{ item }}"
+  ansible.builtin.shell: "{{ item }};"
   with_items:
     - "autoreconf -fiv"
     - "./configure"
