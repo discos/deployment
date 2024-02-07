@@ -101,6 +101,11 @@ parser.add_argument(
     action='store_true',
     help='only print the final Ansible command'
 )
+parser.add_argument(
+    '-v', '--verbose',
+    action='store_true',
+    help='call Ansible with verbose output'
+)
 args = parser.parse_args()
 
 if env != 'development' and not args.station:
@@ -194,7 +199,10 @@ elif not args.branch:
 
 # Add extra variables to the ansible command
 ansible_cmd += ansible_tags + extra_vars
+if args.verbose:
+    ansible_cmd.append('-vvv')
 ansible_cmd = ' '.join(ansible_cmd)
+
 
 print('Calling Ansible...')
 if args.sim:

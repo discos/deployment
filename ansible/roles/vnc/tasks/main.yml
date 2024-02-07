@@ -1,43 +1,128 @@
 ---
 
-- name: Install tigervnc-server yum package
+- name: Fetch the installed yum packages
   ansible.builtin.yum:
-    name: tigervnc-server
+    list: installed
+  register: package_facts
+
+
+- name: Filter the old tigervnc packages to be removed
+  ansible.builtin.set_fact:
+    old_tigervnc_packages: "{{ package_facts.results |
+                               selectattr('name', 'match', '^tigervnc') |
+                               selectattr('version', 'match', '^((?!1.13).)*$')
+                               | map(attribute='name') | list }}"
+    new_tigervnc_packages: "{{ package_facts.results |
+                               selectattr('name', 'match', '^tigervnc') |
+                               selectattr('version', 'match', '^1.13$')
+                               | map(attribute='name') | list }}"
+
+
+- name: Uninstall the old tigervnc packages
+  ansible.builtin.yum:
+    name: "{{ item }}"
+    state: absent
+  with_items: "{{ old_tigervnc_packages }}"
+
+
+- name: Check if the tigervnc packages esist in the local repository
+  ansible.builtin.stat:
+    path: "{{ local_repository_path }}/{{ item }}"
+  with_items: "{{ tigervnc_packages }}"
+  register: tigervnc_packages_exists
+
+
+- name: Download the tigervnc rpm packages
+  ansible.builtin.get_url:
+    url: "{{ remote_repository_download_url }}/{{ item.item }}"
+    dest: "{{ local_repository_path }}"
+    mode: "0644"
+    headers:
+      Authorization: "token {{ repository_token }}"
+  when: not item.stat.exists
+  with_items: "{{ tigervnc_packages_exists.results }}"
+  no_log: true
+  run_once: true
+  delegate_to: localhost
+
+
+- name: Copy tigervnc rpm packages to the remote
+  ansible.builtin.copy:
+    src: "{{ local_repository_path }}/{{ item }}"
+    dest: "/root/"
+    mode: "0644"
+  with_items: "{{ tigervnc_packages }}"
+
+
+- name: Install tigervnc
+  ansible.builtin.yum:
+    name: "/root/{{ item }}"
     state: present
+  with_items: "{{ tigervnc_packages }}"
 
 
-- name: Install x11vnc
-  ansible.builtin.include_tasks: x11vnc.yml
+- name: Remove the tigervnc rpm packages from the remote
+  ansible.builtin.file:
+    path: "/root/{{ item }}"
+    state: absent
+  with_items: "{{ tigervnc_packages }}"
+
+
+- name: Configure the vncserver mandatory arguments
+  ansible.builtin.lineinfile:
+    path: "/etc/tigervnc/vncserver-config-mandatory"
+    line: "{{ item }}"
+  with_items:
+    - "session=gnome-classic"
+    - "securitytypes=none"
+    - "geometry=1920x1080"
+    - "alwaysshared"
+    - "depth=32"
+    - "useipv6=0"
+
+
+- name: Disable the remote resizing of the resolution for the vncserver
+  ansible.builtin.lineinfile:
+    path: "/etc/tigervnc/vncserver-config-mandatory"
+    line: "{{ item }}"
+  with_items:
+    - "acceptsetdesktopsize=0"
+    - "allowoverride=desktop,acceptpointerevents,sendcuttext,acceptcuttext,sendprimary,setprimary,acceptsetdesktopsize"
   when: fixed_resolution_vnc
 
 
-- name: Configure the VNCSERVERS
-  ansible.builtin.template:
-    src: vncserver@:user.service
-    dest: "/etc/systemd/system/vncserver@:{{ item.value.name }}.service"
+- name: Set the vncservers as localhost only
+  ansible.builtin.lineinfile:
+    path: "/etc/tigervnc/vncserver-config-mandatory"
+    line: "localhost"
+  when: inventory_dir[inventory_dir.rfind('/')+1:] != 'development'
+
+
+- name: Configure the vncserver.users file
+  ansible.builtin.lineinfile:
+    path: "/etc/tigervnc/vncserver.users"
+    line: ":{{ item.value.vnc_port_offset | int }}={{ item.value.name }}"
+  with_dict: "{{ users }}"
+  no_log: true
+
+
+- name: Configure the default ports for each user
+  ansible.builtin.lineinfile:
+    path: "/{{ discos_sw_dir }}/{{ item.value.name }}/.vnc/config"
+    line: "rfbport={{ vnc_starting_port + item.value.vnc_port_offset | int }}"
+    create: true
     mode: "0644"
+  become: true
+  become_user: "{{ item.value.name }}"
+  become_flags: "-i"
   with_dict: "{{ users }}"
   no_log: true
 
 
-- name: Stop vncserver service
+- name: Start the VNC servers
   ansible.builtin.systemd:
-    name: "vncserver@:{{ user.name }}.service"
-    state: stopped
-    enabled: true
-  with_dict: "{{ users }}"
-  no_log: true
-
-
-- name: Run systemd daemon-reload
-  ansible.builtin.systemd:
-    daemon_reload: true
-
-
-- name: Start vncserver service
-  ansible.builtin.systemd:
-    name: "vncserver@:{{ user.name }}.service"
-    state: started
+    name: "vncserver@:{{ item.value.vnc_port_offset | int }}.service"
+    state: restarted
     enabled: true
   with_dict: "{{ users }}"
   no_log: true

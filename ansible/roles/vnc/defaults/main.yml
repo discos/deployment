@@ -2,8 +2,9 @@
 
 vnc_starting_port: 15000
 vnc_resolution: "1920x1080"
-
 fixed_resolution_vnc: false
-fixed_resolution_vnc_offset: 10
-x11vnc_dir: "x11vnc-custom"
-x11vnc_file: "{{ x11vnc_dir }}.tar.gz"
+tigervnc_packages:
+  - "tigervnc-license-1.13.1-1.el7.noarch.rpm"
+  - "tigervnc-selinux-1.13.1-1.el7.noarch.rpm"
+  - "tigervnc-server-minimal-1.13.1-1.el7.x86_64.rpm"
+  - "tigervnc-server-1.13.1-1.el7.x86_64.rpm"
