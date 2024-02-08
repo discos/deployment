@@ -2,11 +2,10 @@ import sys
 import os
 import time
 import subprocess
+import getpass
 from argparse import Namespace
-try:
-    from subprocess import DEVNULL
-except ImportError:
-    DEVNULL = open(os.devnull, 'wb')
+STDOUT = sys.stdout
+STDERR = sys.stderr
 
 DEPLOYMENT_DIR = os.path.join(os.environ.get('HOME'), '.deployment')
 ANSIBLE_DIR = os.path.join(DEPLOYMENT_DIR, 'ansible')
@@ -119,8 +118,8 @@ def sshLogin(ip, user='root'):
             'PasswordAuthentication=false',
             '"exit"'
         ],
-        stdout=DEVNULL,
-        stderr=DEVNULL
+        stdout=STDOUT,
+        stderr=STDERR
     )
     if sp.returncode == 0:
         return True
@@ -137,8 +136,8 @@ def ping(ip):
             ip,
             '22'
         ],
-        stdout=DEVNULL,
-        stderr=DEVNULL
+        stdout=STDOUT,
+        stderr=STDERR
     )
     if sp.returncode == 0:
         return True
@@ -181,7 +180,7 @@ def startVm(machine):
         cmd = subprocess.Popen(
             ['vagrant', 'up', machine],
             stdout=subprocess.PIPE,
-            stderr=DEVNULL,
+            stderr=STDOUT,
             cwd=os.path.join(os.environ.get('HOME'), '.deployment')
         )
         while True:
@@ -217,7 +216,7 @@ def stopVm(machine):
         cmd = subprocess.Popen(
             ['vagrant', 'halt', machine],
             stdout=subprocess.PIPE,
-            stderr=DEVNULL,
+            stderr=STDERR,
             cwd=os.path.join(os.environ.get('HOME'), '.deployment')
         )
         while True:
@@ -255,8 +254,8 @@ def createVm(machine):
         sys.stdout.flush()
         cmd = subprocess.Popen(
             ['vagrant', 'up', machine],
-            stdout=DEVNULL,
-            stderr=DEVNULL,
+            stdout=STDOUT,
+            stderr=STDERR,
             cwd=os.path.join(os.environ.get('HOME'), '.deployment')
         )
         while True:
@@ -307,8 +306,8 @@ def destroyVm(machine):
         sys.stdout.flush()
         cmd = subprocess.Popen(
             ['vagrant', 'destroy', '-f', machine],
-            stdout=DEVNULL,
-            stderr=DEVNULL,
+            stdout=STDOUT,
+            stderr=STDERR,
             cwd=os.path.join(os.environ.get('HOME'), '.deployment')
         )
         while True:
@@ -345,8 +344,8 @@ def exportVm(machine, outdir=os.environ.get('HOME')):
         sys.stdout.flush()
         cmd = subprocess.Popen(
             ['vboxmanage', 'export', f'discos_{machine}', '-o', outfile],
-            stdout=DEVNULL,
-            stderr=DEVNULL
+            stdout=STDOUT,
+            stderr=STDERR
         )
         while True:
             t0 = time.time()
@@ -367,10 +366,10 @@ def exportVm(machine, outdir=os.environ.get('HOME')):
 
 def _vagrantList():
     cmd = subprocess.Popen(
-        "grep 'vb\.name' Vagrantfile | awk '{print $NF}' | sed 's/\"//g'",
+        r"grep 'vb\.name' Vagrantfile | awk '{print $NF}' | sed 's/\"//g'",
         shell=True,
         stdout=subprocess.PIPE,
-        stderr=DEVNULL,
+        stderr=STDERR,
         cwd=os.path.join(os.environ.get('HOME'), '.deployment')
     )
     machines = cmd.stdout.readlines()
@@ -381,7 +380,7 @@ def _vboxList():
         "vboxmanage list vms | awk '{print $1}' | sed 's/\"//g'",
         shell=True,
         stdout=subprocess.PIPE,
-        stderr=DEVNULL,
+        stderr=STDERR,
     )
     machines = cmd.stdout.readlines()
     return [m.decode().strip().replace('discos_', '') for m in machines]
@@ -420,18 +419,18 @@ def generateRSAKey(
     )
     public_key = cmd.stdout.readline().decode()
     import socket
-    if os.getlogin() + '@' + socket.gethostname() not in public_key:
+    if getpass.getuser() + '@' + socket.gethostname() not in public_key:
         if not os.path.exists(file_name):
             subprocess.run(
                 f"ssh-keygen -q -f {file_name} -t rsa -P ''",
-                stdout=DEVNULL,
-                stderr=DEVNULL,
+                stdout=STDOUT,
+                stderr=STDERR,
                 shell=True
             )
     subprocess.call(
         ['ssh-add', f'{file_name}'],
-        stdout=DEVNULL,
-        stderr=DEVNULL
+        stdout=STDOUT,
+        stderr=STDERR
     )
 
 def updateKnownHosts(
@@ -444,20 +443,20 @@ def updateKnownHosts(
     for ip in ips:
         subprocess.run(
             ['ssh-keygen', '-R', ip],
-            stdout=DEVNULL,
-            stderr=DEVNULL
+            stdout=STDOUT,
+            stderr=STDERR
         )
         subprocess.run(
             ['ssh-keyscan', '-t', 'rsa', '-H', ip],
-            stderr=DEVNULL,
+            stderr=STDERR,
             stdout=open(file_name, 'a')
         )
 
 def authorizeKey(ip):
     subprocess.call(
         ['setsid', 'ssh-copy-id', f'root@{ip}'],
-        stdout=DEVNULL,
-        stderr=DEVNULL,
+        stdout=STDOUT,
+        stderr=STDERR
     )
 
 def injectRSAKey(machines):
