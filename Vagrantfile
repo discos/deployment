@@ -15,10 +15,9 @@ Vagrant.configure(vagrantfile_api_version) do |config|
     config.vm.provider :virtualbox do |vb|
         vb.customize ["modifyvm", :id, "--ioapic", "on"]
         vb.memory = 8192
-        if ENV["CI"] == "true" then vb.cpus = 3 else vb.cpus = 4 end
+        vb.cpus = 4
         vb.default_nic_type = "virtio"
     end
-
 
     config.vm.provision "file", run: "always", source: "#{ENV['HOME']}/.ssh/id_rsa.pub", destination: "/tmp/id_rsa.pub"
     config.vm.provision "shell", run: "always", "inline": <<-SCRIPT
