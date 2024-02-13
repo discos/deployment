@@ -9,8 +9,8 @@
     mode: "{{ item.mode }}"
     follow: true
   with_items:
-    - { path: "config", mode: "0750" }
-    - { path: "config/misc", mode: "0750" }
+    - { path: "config", mode: "0755" }
+    - { path: "config/misc", mode: "0755" }
     - { path: "introots", mode: "0711" }
 
 
@@ -69,7 +69,7 @@
     dest: "/{{ discos_sw_dir }}/config/misc/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: "0640"
+    mode: "0644"
     force: true
 
 
@@ -79,7 +79,7 @@
     dest: "/{{ discos_sw_dir }}/config/misc/"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: "0640"
+    mode: "0644"
     force: false
 
 

@@ -7,9 +7,16 @@ discos-manager.srt.inaf.it ansible_host=192.168.200.203
 [console]
 discos-console.srt.inaf.it ansible_host=192.168.200.206
 
+[training]
+discos-training.srt.inaf.it ansible_host=192.168.200.205
+
 [acs:children]
 manager
 console
+
+[acs_meta:children]
+acs
+training
 
 [discos:children]
 storage

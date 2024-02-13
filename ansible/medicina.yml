@@ -103,7 +103,7 @@
 
 
 - name: Apply Sardara configuration to ACS nodes
-  hosts: acs
+  hosts: acs_meta
   remote_user: root
   tasks:
     - name: Apply Sardara configuration to ACS nodes
@@ -116,7 +116,7 @@
 
 
 - name: Apply ACS configuration to ACS nodes
-  hosts: acs
+  hosts: acs_meta
   remote_user: root
   roles:
     - acs
@@ -171,14 +171,14 @@
 
 
 - name: Configure the VNC servers
-  hosts: acs
+  hosts: acs_meta
   remote_user: root
   roles:
     - vnc
 
 
 - name: Deploy DISCOS
-  hosts: acs
+  hosts: acs_meta
   remote_user: root
   tasks:
     - name: Deploy DISCOS

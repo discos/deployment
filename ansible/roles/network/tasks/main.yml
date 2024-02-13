@@ -32,9 +32,38 @@
     line: "order hosts,bind"
 
 
+- name: Install the dnsmasq yum package
+  ansible.builtin.yum:
+    name: dnsmasq
+    state: present
+
+
 - name: Copy the resolv.conf template
   ansible.builtin.template:
     src: resolv.conf
     dest: /etc/resolv.conf
     mode: "0644"
     force: true
+
+
+- name: Copy the resolv.dnsmasq template
+  ansible.builtin.template:
+    src: resolv.dnsmasq
+    dest: /etc/resolv.dnsmasq
+    mode: "0644"
+    force: true
+
+
+- name: Copy the dnsmasq.conf template
+  ansible.builtin.template:
+    src: dnsmasq.conf
+    dest: /etc/dnsmasq.conf
+    mode: "0644"
+    force: true
+
+
+- name: Start and enable the dnsmasq service
+  ansible.builtin.service:
+    name: dnsmasq
+    state: restarted
+    enabled: true

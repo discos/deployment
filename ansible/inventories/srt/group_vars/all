@@ -12,19 +12,23 @@ lustre_server_ip: 192.168.25.218
 nis_server_ip: 192.168.200.218
 
 OAC_nameservers:
-  - '192.167.8.208    # OAC'
+  - '192.167.8.208  # OAC'
 
 SRT_nameservers:
-  - '192.168.203.1    # SRT'
+  - '192.168.203.1  # SRT'
 
 IRA_nameservers:
-  - '192.167.165.11   # IRA'
+  - '192.167.165.11 # IRA'
 
 GARR_nameservers:
-  - '193.206.141.38   # GARR'
-  - '193.206.141.42   # GARR'
+  - '193.206.141.38 # GARR'
+  - '193.206.141.42 # GARR'
 
-resolv_nameservers: "{{ OAC_nameservers + SRT_nameservers + IRA_nameservers + GARR_nameservers }}"
+GOOGLE_nameservers:
+  - "8.8.8.8        # Google DNS #1"
+  - "8.8.4.4        # Google DNS #2"
+
+resolv_nameservers: "{{ OAC_nameservers + SRT_nameservers + IRA_nameservers + GARR_nameservers + GOOGLE_nameservers}}"
 
 host_list:
   - { hostname: "dorian", ip_address: "192.168.200.216" }

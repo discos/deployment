@@ -66,7 +66,7 @@
       - wget
       - tree
       - xterm
-      - xorg-x11-font*
+      - xorg-x11-fonts-misc
       - gsl
       - gsl-devel
       - gdb

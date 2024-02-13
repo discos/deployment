@@ -55,6 +55,7 @@ def parseInventory(inventory):
     groups = {}
     clusters = []
     hosts_file = os.path.join(INVENTORIES_DIR, inventory, 'hosts')
+    current_group = None
     with open(hosts_file) as f:
         for line in f:
             if line.startswith('#'):
@@ -65,8 +66,11 @@ def parseInventory(inventory):
                     current_group = line[line.find('[')+1:line.find(']')]
                 else:
                     # Cluster line
-                    current_group = line[line.find('[')+1:line.find(':')]
-                    groups[current_group] = []
+                    if '_meta' not in line:
+                        current_group = line[line.find('[')+1:line.find(':')]
+                        groups[current_group] = []
+                    else:
+                        current_group = None
             elif 'ansible_host' in line:
                 # Host line
                 hostname, ansible_host = line.split()
