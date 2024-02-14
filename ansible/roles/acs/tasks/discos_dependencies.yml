@@ -736,6 +736,17 @@
     value: '63266'
 
 
+- name: Increment the number of instances for inotify
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "1048576"
+    state: present
+    reload: true
+  with_items:
+    - "fs.inotify.max_user_watches"
+    - "fs.inotify.max_user_instances"
+
+
 ############
 # SlaLibrary
 ############
