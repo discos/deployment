@@ -183,16 +183,16 @@
     recurse: true
 
 
-# - name: Copy the acsStartContainer with debugger
-#   ansible.builtin.template:
-#     src: acsStartContainerGdb
-#     dest: "/alma/{{ acs_tag }}/ACSSW/bin/"
-#     owner: "{{ user.name }}"
-#     group: "{{ user.group }}"
-#     mode: "0755"
-#   become: true
-#   become_user: "{{ user.name }}"
-#   become_flags: "-i"
+- name: Copy the acsStartContainer with debugger
+  ansible.builtin.template:
+    src: acsStartContainerGdb
+    dest: "/alma/{{ acs_tag }}/ACSSW/bin/"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: "0755"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
 
 
 ##################################

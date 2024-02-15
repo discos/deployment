@@ -109,7 +109,7 @@ echo $CONTAINER_PID >> "`getInstanceDirName $ACS_INSTANCE`/$ACS_PID_DIR/$CONTAIN
 #-----------------------------------------------------------------------
 # Now run the container
 ACS_LOG_INFO "acsStartContainer" "Running the container with these arguments: '$COMMANDLINE'"
-gdb -args $COMMANDLINE
+gdb -ex run -args $COMMANDLINE
 ACS_LOG_INFO  "acsStartContainer" "Container: '$CONTAINERNAME' exited with code: $?."
 
 #-----------------------------------------------------------------------
