@@ -74,9 +74,9 @@ def add_remote(server_ip, user, pwd):
 
     subprocess.call([
         'sudo',
-        'service',
-        'ypbind',
-        'stop'
+        'systemctl',
+        'stop',
+        'ypbind.service'
     ], stdout=FNULL)
 
     subprocess.call([
@@ -90,9 +90,9 @@ def add_remote(server_ip, user, pwd):
 
     subprocess.call([
         'sudo',
-        'service',
-        'ypbind',
-        'start'
+        'systemctl',
+        'restart',
+        'ypbind.service'
     ], stdout=FNULL)
 
 def add_local(user, pwd):

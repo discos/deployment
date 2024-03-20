@@ -12,3 +12,5 @@ archive: "discos-archive"
 
 local_repository_path: "{{ lookup('env','HOME') }}/.deployment/repository"
 remote_repository_download_url: "https://raw.githubusercontent.com/discos/dependencies/discos_provisioning_centos7"
+
+remote_build_path: "/tmp/builds"

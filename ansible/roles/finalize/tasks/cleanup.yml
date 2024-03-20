@@ -5,6 +5,12 @@
   changed_when: true
 
 
+- name: Remove the temporary directory used for libraries compilation
+  ansible.builtin.file:
+    path: "{{ remote_build_path }}"
+    state: absent
+
+
 - name: Fetch the local user's public key
   ansible.builtin.command: "cat ~/.ssh/id_rsa.pub"
   register: local_public_key
@@ -26,9 +32,3 @@
     state: absent
   delegate_to: localhost
   run_once: true
-
-
-- name: Remove the temporary directory used for libraries compilation
-  ansible.builtin.file:
-    path: "{{ remote_build_path }}"
-    state: absent

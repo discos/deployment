@@ -25,7 +25,9 @@ if [ ! -L $HOME/extraData ]; then
 fi
 
 if [ ! -L $HOME/logs ]; then
-    ln -sfn /{{ archive }}/logs logs
+    if [ -d /{{ archive }}/logs ]; then
+        ln -sfn /{{ archive }}/logs logs
+    fi
 fi
 
 {% if inventory_dir.split('/')[-1] == 'srt' %}

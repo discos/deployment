@@ -89,6 +89,19 @@
         loop_var: username
 
 
+- name: Configure NIS
+  hosts: all
+  remote_user: root
+  tasks:
+    - name: Configure NIS
+      ansible.builtin.include_role:
+        name: nis
+      when:
+        - nis_domain_name is defined
+        - network_ip_address is defined
+        - nis_server_ip is defined
+
+
 - name: Apply ACS configuration to ACS nodes
   tags: provision
   hosts: acs_meta

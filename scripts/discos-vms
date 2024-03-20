@@ -33,7 +33,20 @@ parser.add_argument(
     choices=machines,
     default=None
 )
+parser.add_argument(
+    '-v', '--verbose',
+    action='store_true',
+    help='call Ansible with verbose output'
+)
 args = parser.parse_args()
+
+if not args.verbose:
+    try:
+        from subprocess import DEVNULL
+    except ImportError:
+        DEVNULL = open(os.devnull, 'wb')
+    deployment.STDOUT = DEVNULL
+    deployment.STDERR = DEVNULL
 
 if not args.machine:
     args.machine = machines

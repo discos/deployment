@@ -53,9 +53,9 @@ def remove_remote(server_ip, user):
 
     subprocess.call([
         'sudo',
-        'service',
-        'ypbind',
-        'stop'
+        'systemctl',
+        'stop',
+        'ypbind.service'
     ], stdout=FNULL)
 
     subprocess.call([
@@ -69,9 +69,9 @@ def remove_remote(server_ip, user):
 
     subprocess.call([
         'sudo',
-        'service',
-        'ypbind',
-        'start'
+        'systemctl',
+        'restart',
+        'ypbind.service'
     ], stdout=FNULL)
 
     subprocess.call([

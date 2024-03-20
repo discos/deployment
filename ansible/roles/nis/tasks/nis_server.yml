@@ -18,6 +18,21 @@
     - "255.0.0.0 127.0.0.1"
 
 
+- name: Comment yp Makefile original MINUID
+  ansible.builtin.replace:
+    path: "/var/yp/Makefile"
+    regexp: '^(MINUID=\$.*)$'
+    replace: '# \1'
+
+
+- name: Fix the yp Makefile MINUID
+  ansible.builtin.lineinfile:
+    path: "/var/yp/Makefile"
+    state: present
+    line: "MINUID={{ observer.uid + 1 }}"
+    insertbefore: "^MINGID.*"
+
+
 - name: Start rpcbind service
   ansible.builtin.service:
     name: rpcbind
@@ -52,20 +67,15 @@
 
 
 - name: Apply a patch to the ypinit script
-  ansible.builtin.lineinfile:
+  ansible.builtin.replace:
     path: '/usr/lib64/yp/ypinit'
     regexp: '{{ item.original }}'
-    line: '{{ item.new }}'
+    replace: '{{ item.new }}'
   with_items:
-    - { original: 'while read h', new: 'while false' }
-    - { original: 'read hostlist_ok', new: '#read hostlist_ok' }
+    - { original: ' while read h', new: ' while false' }
+    - { original: ' read hostlist_ok', new: ' #read hostlist_ok' }
 
 
 - name: Set up NIS maps
   ansible.builtin.command: "/usr/lib64/yp/ypinit -m"
-  changed_when: true
-
-
-- name: Restore the original ypinit script
-  ansible.builtin.command: "mv /usr/lib64/yp/ypinit.bak /usr/lib64/yp/ypinit"
   changed_when: true
