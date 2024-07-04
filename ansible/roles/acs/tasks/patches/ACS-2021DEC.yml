@@ -82,3 +82,10 @@
     group: "{{ user.group }}"
     mode: "0664"
     backup: false
+
+
+- name: Patch acsstartupProcesses
+  ansible.builtin.replace:
+    path: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/acsstartup/src/acsstartupProcesses"
+    regexp: "^COMMAND_PIDS=.*$"
+    replace: "COMMAND_PIDS=`pgrep -f -l $COMMAND | grep -w ${COMMAND:0:15} | grep -v $SAFE_LIST_REGEX | awk '{print $1}'`"
