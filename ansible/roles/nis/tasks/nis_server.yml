@@ -1,7 +1,7 @@
 ---
 
 - name: Install ypserv yum package
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: ypserv
     state: present
 

@@ -438,7 +438,7 @@
 
 
 - name: Verify the sip library is not installed
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: sip
     state: absent
 
@@ -497,7 +497,7 @@
 
 
 - name: Verify the PyQt4 library is not installed
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: PyQt4
     state: absent
 

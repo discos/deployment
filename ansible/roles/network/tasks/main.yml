@@ -1,7 +1,7 @@
 ---
 
 - name: Install NetworkManager yum package
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: NetworkManager
     state: present
 
@@ -33,7 +33,7 @@
 
 
 - name: Install the dnsmasq yum package
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: dnsmasq
     state: present
 

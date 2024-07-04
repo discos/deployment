@@ -1,7 +1,7 @@
 ---
 
 - name: Install rpcbind yum package
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: rpcbind
     state: present
 

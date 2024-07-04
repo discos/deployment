@@ -1,7 +1,7 @@
 ---
 
 - name: Install required yum packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - sshpass
     state: present

@@ -9,7 +9,7 @@
 
 
 - name: Install lustre yum packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ lustre_client_files | map('regex_replace', '(.*)', '/tmp/\\1-' + lustre_client_tail) | list }}"
     state: present
     validate_certs: false
