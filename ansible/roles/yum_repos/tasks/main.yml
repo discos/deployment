@@ -1,0 +1,24 @@
+---
+
+- name: Disable Base repositories
+  ansible.builtin.replace:
+    path: /etc/yum.repos.d/CentOS-Base.repo
+    regexp: "gpgcheck=1[\n]gpgkey"
+    replace: |-
+      gpgcheck=1
+      enabled=0
+      gpgkey
+
+
+- name: Add Vault repositories
+  ansible.builtin.yum_repository:
+    name: "Vault-{{ item.name }}"
+    file: "CentOS-Vault"
+    description: "Vault - CentOS$releasever - {{ item.name | capitalize }}"
+    baseurl: "http://vault.centos.org/centos/$releasever/{{ item.url }}/$basearch/"
+    gpgcheck: true
+    gpgkey: "file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-$releasever"
+  with_items:
+    - { name: "base", url: "os" }
+    - { name: "updates", url: "updates" }
+    - { name: "extras", url: "extras" }

@@ -15,7 +15,7 @@ export QTLIB=$QTDIR/lib
 export QTINC=/usr/include/Qt
 export qt_prefix=$QTLIB
 export PATH=$PATH:$QTDIR/bin:$HOME/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib64:$QTLIB
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib64/:/usr/lib64:$QTLIB
 export PYTHONSTARTUP=$HOME/.pyrc
 export EDITOR=vi
 

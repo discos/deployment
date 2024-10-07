@@ -21,6 +21,14 @@
       with_dict: "{{ users }}"
 
 
+- name: Patch yum repositories
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - yum_repos
+
+
 - name: Configure SELINUX
   tags: provision
   hosts: manager
