@@ -39,9 +39,6 @@ jobs:
         run: |
           wget https://download.virtualbox.org/virtualbox/7.0.14/virtualbox-7.0_7.0.14-161095~Ubuntu~jammy_amd64.deb
           sudo apt install ./virtualbox-7.0_7.0.14-161095~Ubuntu~jammy_amd64.deb
-      - name: Run the ssh agent
-        run: |
-          ssh-agent -s
       - name: Restore the local dependencies repository from cache
         uses: actions/cache@v4
         with:
@@ -50,7 +47,7 @@ jobs:
           key: cache-local-repository
       - name: Provision the virtual machine
         run: |
-          discos-deploy manager:development --default-passwords
+          discos-deploy manager:development --default-passwords --verbose
       - name: Shutdown the virtual machine
         run: |
           discos-vms stop
