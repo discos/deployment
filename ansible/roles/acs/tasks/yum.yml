@@ -95,6 +95,18 @@
     name: centos-release-scl
 
 
+- name: Patch the centos-sclo repo addresses
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { path: "/etc/yum.repos.d/CentOS-SCLo-scl.repo", regexp: "^mirrorlist", replace: "# mirrorlist" }
+    - { path: "/etc/yum.repos.d/CentOS-SCLo-scl.repo", regexp: "^#\\s*baseurl=http://mirror", replace: "baseurl=http://vault" }
+    - { path: "/etc/yum.repos.d/CentOS-SCLo-scl-rh.repo", regexp: "^mirrorlist", replace: "# mirrorlist" }
+    - { path: "/etc/yum.repos.d/CentOS-SCLo-scl-rh.repo", regexp: "^#\\s*baseurl=http://mirror", replace: "baseurl=http://vault" }
+
+
 - name: Install devtoolset-{{ devtoolset_release }}-gcc
   ansible.builtin.yum:
     name: devtoolset-{{ devtoolset_release }}-gcc*
