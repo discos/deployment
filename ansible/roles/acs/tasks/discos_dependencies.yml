@@ -709,15 +709,12 @@
 - name: Install some third-party Python packages
   ansible.builtin.command: "{{ item }}"
   with_items:
+    - "pip install --upgrade pip"
     - "pip uninstall -y pyopenssl"
     - "pip install pyopenssl"
     - "pip install pbr"
-    - "pip install mock==1.1.1"
+    - "pip install mock"
     - "pip install jinja2"
-    - "pip install subprocess32"
-    - "pip install d2to1"
-    - "pip install stsci.distutils"
-    - "pip install pyfits"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"

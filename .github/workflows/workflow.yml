@@ -47,7 +47,7 @@ jobs:
           key: cache-local-repository
       - name: Provision the virtual machine
         run: |
-          discos-deploy manager:development --default-passwords --verbose
+          discos-deploy manager:development --default-passwords
       - name: Shutdown the virtual machine
         run: |
           discos-vms stop

@@ -17,7 +17,7 @@
   become_flags: "-i"
   with_items:
     - "pip install -r requirements.txt"
-    - "python setup.py install"
+    - "pip install ."
     - "pyenv rehash"
   args:
     chdir: "/{{ discos_sw_dir }}/simulators/"
