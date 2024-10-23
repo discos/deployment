@@ -51,11 +51,17 @@ jobs:
       - name: Shutdown the virtual machine
         run: |
           discos-vms stop
+      - name: Set the filename
+        id: filename
+        run: echo "::set-output name=filename::discos_manager-$(date '+%Y%m%d-%H%M%S').ova"
       - name: Export the virtual machine
         run: |
           discos-vms export manager
-      - name: Save the virtual machine as GitHub Action artifact
-        uses: actions/upload-artifact@v4
+          mv discos_manager.ova ${{ steps.filename.outputs.filename }}
+      - name: Upload the virtual machine to Google Drive
+        uses: Fork-on-the-Table-Collective/upload-to-download-from-gdrive@v2.0.0
         with:
-          name: discos_manager
-          path: /home/runner/discos_manager.ova
+          credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          actionType: upload
+          localPath: ${{ steps.filename.outputs.filename }}
+          googleFolderId: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
