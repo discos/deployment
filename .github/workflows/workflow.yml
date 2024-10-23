@@ -53,11 +53,11 @@ jobs:
           discos-vms stop
       - name: Set the filename
         id: filename
-        run: echo "::set-output name=filename::discos_manager-$(date '+%Y%m%d-%H%M%S').ova"
+        run: echo "::set-output name=filename::/home/runner/discos_manager-$(date '+%Y%m%d-%H%M%S').ova"
       - name: Export the virtual machine
         run: |
           discos-vms export manager
-          mv discos_manager.ova ${{ steps.filename.outputs.filename }}
+          mv /home/runner/discos_manager.ova ${{ steps.filename.outputs.filename }}
       - name: Upload the virtual machine to Google Drive
         uses: Fork-on-the-Table-Collective/upload-to-download-from-gdrive@v2.0.0
         with:
