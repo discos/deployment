@@ -53,15 +53,14 @@ jobs:
           discos-vms stop
       - name: Set the filename
         id: filename
-        run: echo "::set-output name=filename::/home/runner/discos_manager-$(date '+%Y%m%d-%H%M%S').ova"
+        run: echo "filename=/home/runner/discos_manager-$(date '+%Y%m%d-%H%M%S').ova" >> $GITHUB_OUTPUT
       - name: Export the virtual machine
         run: |
           discos-vms export manager
           mv /home/runner/discos_manager.ova ${{ steps.filename.outputs.filename }}
       - name: Upload the virtual machine to Google Drive
-        uses: Fork-on-the-Table-Collective/upload-to-download-from-gdrive@v2.0.0
+        uses: willo32/google-drive-upload-action@v1
         with:
+          target: ${{ steps.filename.outputs.filename }}
           credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-          actionType: upload
-          localPath: ${{ steps.filename.outputs.filename }}
-          googleFolderId: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          parent_folder_id: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
