@@ -9,6 +9,9 @@ jobs:
   workflow:
     env:
       REPOSITORY_TOKEN: "${{ secrets.DEPENDENCIES_TOKEN }}"
+      GH_TOKEN: "${{ secrets.REPOSITORY_PUSH_ACCESS }}"
+      GOOGLE_DRIVE_TOKEN: "${{ secrets.GOOGLE_DRIVE_TOKEN }}"
+      GOOGLE_DRIVE_FILE_ID: "${{ secrets.GOOGLE_DRIVE_FILE_ID }}"
     runs-on: ubuntu-latest
     steps:
       - name: Free up space
@@ -51,16 +54,11 @@ jobs:
       - name: Shutdown the virtual machine
         run: |
           discos-vms stop
-      - name: Set the filename
-        id: filename
-        run: echo "filename=/home/runner/discos_manager-$(date '+%Y%m%d-%H%M%S').ova" >> $GITHUB_OUTPUT
-      - name: Export the virtual machine
+      - name: Export the virtual machine and upload it to Google Drive
         run: |
           discos-vms export manager
-          mv /home/runner/discos_manager.ova ${{ steps.filename.outputs.filename }}
       - name: Upload the virtual machine to Google Drive
-        uses: willo32/google-drive-upload-action@v1
-        with:
-          target: ${{ steps.filename.outputs.filename }}
-          credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-          parent_folder_id: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+        run: |
+          pip install -r .github/utils/upload_requirements.txt
+          python .github/utils/upload_to_gdrive.py
+          gh secret set GOOGLE_DRIVE_TOKEN < token.json
