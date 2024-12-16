@@ -11,6 +11,8 @@ lustre_server_ip: 192.168.25.218
 
 nis_server_ip: 192.168.200.218
 
+archive_server_ip: 192.168.203.36
+
 OAC_nameservers:
   - '192.167.8.208  # OAC'
 

@@ -8,6 +8,7 @@ import subprocess
 import time
 import random
 import string
+import pwd as pwd_module
 from threading import Thread
 from passlib.hash import md5_crypt
 
@@ -25,49 +26,57 @@ parser.add_argument(
     default=False,
     help='ask for a custom password instead of an auto-generated one'
 )
+parser.add_argument(
+    '--uid',
+    type=int,
+    default=None,
+    help="force the new user's UID to be the one given from command line"
+)
 args = parser.parse_args()
 
 FNULL = open(os.devnull, 'w')
 
 {% if nis_server_ip is defined %}
-server_ip = '{{ nis_server_ip }}'
+nis_server_ip = '{{ nis_server_ip }}'
 {% else %}
-server_ip = None
+nis_server_ip = None
+{% endif %}
+
+{% if fs_server_ip is defined %}
+fs_server_ip = '{{ archive_server_ip }}'
+{% else %}
+fs_server_ip = None
 {% endif %}
 
 cmd = ['getent', 'passwd', args.user]
-if server_ip:
-    cmd = ['ssh', server_ip] + cmd
+if nis_server_ip:
+    cmd = ['ssh', nis_server_ip] + cmd
 
 user_absent = subprocess.call(cmd, stdout=FNULL)
 
 if not user_absent:
-    print("Project user '%s' already present!" % args.user)
+    print(f"Project user '{args.user}' already present!")
     sys.exit(1)
 
-def add_remote(server_ip, user, pwd):
-    subprocess.call([
-        'sudo',
-        'ssh',
-        server_ip,
-        'useradd',
-        '-g',
-        'projects',
-        '-G',
-        'projects,users',
-        '-M',
-        '-n',
-        '-s',
-        '/bin/bash',
-        '-p',
-        "'%s'" % pwd,
-        user
-    ], stdout=FNULL)
+if args.uid:
+    cmd = ['getent', 'passwd', f'{args.uid}']
+    if nis_server_ip:
+        cmd = ['ssh', nis_server_ip] + cmd
+
+    uid_absent = subprocess.call(cmd, stdout=FNULL)
+
+    if not uid_absent:
+        print(f"UID '{args.uid}' already present!")
+        sys.exit(1)
+
+def add_remote(user, useradd, nis_server_ip):
+    useradd = ['sudo', 'ssh', nis_server_ip] + useradd + ['-M', user]
+    subprocess.call(useradd, stdout=FNULL)
 
     subprocess.call([
         'sudo',
         'ssh',
-        server_ip,
+        nis_server_ip,
         '/usr/lib64/yp/ypinit',
         '-m'
     ], stdout=FNULL)
@@ -82,7 +91,7 @@ def add_remote(server_ip, user, pwd):
     subprocess.call([
         'sudo',
         'ssh',
-        server_ip,
+        nis_server_ip,
         'systemctl',
         'restart',
         'ypserv'
@@ -95,43 +104,60 @@ def add_remote(server_ip, user, pwd):
         'ypbind.service'
     ], stdout=FNULL)
 
-def add_local(user, pwd):
-    subprocess.call([
-        'sudo',
-        'useradd',
-        '-g',
-        'projects',
-        '-G',
-        'projects,users',
-        '-m',
-        '-n',
-        '-s',
-        '/bin/bash',
-        '-p',
-        pwd,
-        user
-    ], stdout=FNULL)
-
-def add_user(server_ip, user, pwd):
-    if server_ip:
-        add_remote(server_ip, user, pwd)
-    else:
-        add_local(user, pwd)
-
+def dir_remote(user, fs_server_ip):
+    uid = pwd_module.getpwnam(user).pw_uid
     paths = {
-        '/{{ archive }}/schedules/%s' % user: [
-            'u:%s:rwx' % user,
-            'd:u:%s:rwx' % getpass.getuser()
+        f'/{{ archive }}/schedules/{user}': [
+            f'u:{uid}:rwx',
+            f'd:u:{getpass.getuser()}:rwx'
         ],
-        '/{{ archive }}/data/%s' % user: [
-            'u:%s:r-x' % user,
-            'd:u:%s:rwx' % getpass.getuser(),
-            'd:u:%s:r-x' % user
+        f'/{{ archive }}/data/{user}': [
+            f'u:{uid}:r-x',
+            f'd:u:{getpass.getuser()}:rwx',
+            f'd:u:{uid}:r-x'
         ],
-        '/{{ archive }}/extraData/%s' % user: [
-            'u:%s:r-x' % user,
-            'd:u:%s:rwx' % getpass.getuser(),
-            'd:u:%s:r-x' % user
+        f'/{{ archive }}/extraData/{user}': [
+            f'u:{uid}:r-x',
+            f'd:u:{getpass.getuser()}:rwx',
+            f'd:u:{uid}:r-x'
+        ]
+    }
+
+    for path in paths.keys():
+        try:
+            os.stat(path)
+        except:
+            os.mkdir(path)
+        for acl in paths[path]:
+            subprocess.call([
+                'sudo',
+                'ssh',
+                fs_server_ip,
+                'setfacl',
+                '-m',
+                acl,
+                path
+            ], stdout=FNULL)
+
+def add_local(user, useradd):
+    useradd = ['sudo'] + useradd + ['-m', user]
+    subprocess.call(useradd, stdout=FNULL)
+
+def dir_local(user):
+    paths = {
+            f'/{{ archive }}/schedules/{user}': [
+            f'u:{user}:rwx',
+            f'd:u:{getpass.getuser()}:rwx'
+        ],
+            f'/{{ archive }}/data/{user}': [
+            f'u:{user}:r-x',
+            f'd:u:{getpass.getuser()}:rwx',
+            f'd:u:{user}:r-x'
+        ],
+            f'/{{ archive }}/extraData/{user}': [
+            f'u:{user}:r-x',
+            f'd:u:{getpass.getuser()}:rwx',
+            f'd:u:{user}:r-x'
         ]
     }
 
@@ -143,6 +169,32 @@ def add_user(server_ip, user, pwd):
         for acl in paths[path]:
             subprocess.call(['setfacl', '-m', acl, path], stdout=FNULL)
 
+def add_user(nis_server_ip, fs_server_ip, user, pwd, uid):
+    useradd = [
+        'useradd',
+        '-g',
+        'projects',
+        '-G',
+        'projects,users',
+        '-n',
+        '-s',
+        '/bin/bash',
+        '-p',
+        f"'{pwd}'" if nis_server_ip else f'{pwd}'
+    ]
+    if uid:
+        useradd += ['-u', f'{uid}']
+
+    if nis_server_ip:
+        add_remote(user, useradd, nis_server_ip)
+    else:
+        add_local(user, useradd)
+
+    if fs_server_ip:
+        dir_remote(user, fs_server_ip)
+    else:
+        dir_local(user)
+
     subprocess.call([
         'sudo',
         'su',
@@ -152,38 +204,46 @@ def add_user(server_ip, user, pwd):
         'date>>discosUser'
     ], stdout=FNULL)
 
-try:
-    if args.ask_password:
-        password = getpass.getpass('Type a password for user %s: ' % args.user)
-        if password != getpass.getpass('Confirm password: '):
-            print("Typed passwords don't match, retry!")
-            sys.exit(2)
-    else:
-        password = (
-            'p'
-            + args.user.replace('-', '').zfill(4)
-            + '-'
-            + ''.join([random.choice(string.ascii_letters) for x in range(4)])
+if __name__ == '__main__':
+    try:
+        if args.ask_password:
+            password = getpass.getpass(
+                f'Type a password for user {args.user}: '
+            )
+            if password != getpass.getpass('Confirm password: '):
+                print("Typed passwords don't match, retry!")
+                sys.exit(2)
+        else:
+            password = (
+                'p'
+                + args.user.replace('-', '').zfill(4)
+                + '-'
+                + ''.join(
+                    [random.choice(string.ascii_letters) for x in range(4)]
+                )
+            )
+
+        pwd = md5_crypt.using(salt=args.user[8:], salt_size=8).hash(password)
+
+        subprocess.call(['sudo', '-k'])
+        if subprocess.call(['sudo', 'true']):
+            sys.exit(0)
+
+        sys.stdout.write(f"Adding '{args.user}' to project users")
+        sys.stdout.flush()
+
+        t = Thread(
+            target=add_user,
+            args=(nis_server_ip, fs_server_ip, args.user, pwd, args.uid)
         )
+        t.daemon = True
+        t.start()
 
-    pwd = md5_crypt.using(salt=args.user[8:], salt_size=8).hash(password)
-
-    subprocess.call(['sudo', '-k'])
-    if subprocess.call(['sudo', 'true']):
+        while t.is_alive():
+                sys.stdout.write('...')
+                sys.stdout.flush()
+                time.sleep(1)
+        print('done!')
+        print(f'The password for user "{args.user}" is "{password}", enjoy!')
+    except KeyboardInterrupt:
         sys.exit(0)
-
-    sys.stdout.write("Adding '%s' to project users" % args.user)
-    sys.stdout.flush()
-
-    t = Thread(target=add_user, args=(server_ip, args.user, pwd))
-    t.daemon = True
-    t.start()
-
-    while t.is_alive():
-            sys.stdout.write('...')
-            sys.stdout.flush()
-            time.sleep(1)
-    print('done!')
-    print('The password for user "%s" is "%s", enjoy!' % (args.user, password))
-except KeyboardInterrupt:
-    sys.exit(0)
