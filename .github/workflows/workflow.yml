@@ -11,7 +11,7 @@ jobs:
       REPOSITORY_TOKEN: "${{ secrets.DEPENDENCIES_TOKEN }}"
       GH_TOKEN: "${{ secrets.GH_WORKFLOWS_TOKEN }}"
       GOOGLE_DRIVE_TOKEN: "${{ secrets.GOOGLE_DRIVE_TOKEN }}"
-      GOOGLE_DRIVE_FILE_ID: "${{ secrets.GOOGLE_DRIVE_FILE_ID }}"
+      PROVISIONED_VM_GDRIVE_ID: "${{ secrets.PROVISIONED_VM_GDRIVE_ID }}"
     runs-on: ubuntu-latest
     steps:
       - name: Free up space

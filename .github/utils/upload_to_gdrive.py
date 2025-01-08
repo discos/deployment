@@ -22,7 +22,7 @@ if creds.expired and creds.refresh_token:
 service = build('drive', 'v3', credentials=creds)
 media = MediaFileUpload(FILE_PATH, resumable=True)
 service.files().update(
-    fileId=os.environ.get('GOOGLE_DRIVE_FILE_ID'),
+    fileId=os.environ.get('PROVISIONED_VM_GDRIVE_ID'),
     media_body=media,
     fields='id'
 ).execute()
