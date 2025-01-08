@@ -12,6 +12,7 @@ jobs:
       GH_TOKEN: "${{ secrets.GH_WORKFLOWS_TOKEN }}"
       GOOGLE_DRIVE_TOKEN: "${{ secrets.GOOGLE_DRIVE_TOKEN }}"
       PROVISIONED_VM_GDRIVE_ID: "${{ secrets.PROVISIONED_VM_GDRIVE_ID }}"
+      PROVISIONED_ARCHIVE_GDRIVE_ID: "${{ secrets.PROVISIONED_ARCHIVE_GDRIVE_ID }}"
     runs-on: ubuntu-latest
     steps:
       - name: Free up space
@@ -54,10 +55,11 @@ jobs:
       - name: Shutdown the virtual machine
         run: |
           discos-vms stop
-      - name: Export the virtual machine and upload it to Google Drive
+      - name: Export the virtual machine and its Vagrant configuration
         run: |
           discos-vms export manager
-      - name: Upload the virtual machine to Google Drive
+          tar -czvf vagrant.tar.gz .deployment/.vagrant
+      - name: Upload the virtual machine and its Vagrant configuration to Google Drive
         run: |
           pip install -r .github/utils/upload_requirements.txt
           python .github/utils/upload_to_gdrive.py
