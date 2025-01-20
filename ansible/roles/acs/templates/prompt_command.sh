@@ -18,6 +18,18 @@ if [ -f /{{ discos_sw_dir }}/config/misc/load_branch ]; then
     source /{{ discos_sw_dir }}/config/misc/load_branch
 fi
 
+# Set the STATION
+# ===============
+if [ -n "${DISCOS_BRANCH}" ]; then
+    if [ -f $INTROOT/.station ]; then
+        source $INTROOT/.station
+    fi
+else
+    if [ ! -f /{{ discos_sw_dir }}/config/misc/station ]; then
+        unset STATION
+    fi
+fi
+
 # Load ACS definitions
 # ====================
 if [ -f /{{ discos_sw_dir }}/config/acs/.bash_profile.acs ]; then
@@ -26,19 +38,13 @@ fi
 
 export ACS_TMP=/service/acstmp/{{ inventory_hostname_short }}
 
+# Set the CDB
+# ===========
 if [ -n "${DISCOS_BRANCH}" ]; then
-    if [ -f $INTROOT/.station ]; then
-        source $INTROOT/.station
-    fi
-
     if [ $CDB = "test" ]; then
         export ACS_CDB=/{{ discos_sw_dir }}/{{ user.name }}/$DISCOS_BRANCH/$STATION
     else
         export ACS_CDB=/{{ discos_sw_dir }}/{{ user.name }}/$DISCOS_BRANCH/$STATION/Configuration
-    fi
-else
-    if [ ! -f /{{ discos_sw_dir }}/config/misc/station ]; then
-        unset STATION
     fi
 fi
 
