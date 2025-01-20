@@ -13,7 +13,7 @@ jobs:
       GOOGLE_DRIVE_TOKEN: "${{ secrets.GOOGLE_DRIVE_TOKEN }}"
       PROVISIONED_VM_GDRIVE_ID: "${{ secrets.PROVISIONED_VM_GDRIVE_ID }}"
       PROVISIONED_ARCHIVE_GDRIVE_ID: "${{ secrets.PROVISIONED_ARCHIVE_GDRIVE_ID }}"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Free up space
         uses: jlumbroso/free-disk-space@main
