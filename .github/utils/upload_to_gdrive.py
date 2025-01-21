@@ -8,7 +8,10 @@ import os
 TOKEN_FILE = 'token.json'
 VM_FILE_PATH = '/home/runner/discos_manager.ova'
 ARCHIVE_FILE_PATH = '/home/runner/vagrant.tar.gz'
-SCOPES = ['https://www.googleapis.com/auth/drive.file']
+SCOPES = [
+    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/drive.file'
+]
 
 # Create the token file from the GH Secret
 with open(TOKEN_FILE, 'w') as tokenfile:
