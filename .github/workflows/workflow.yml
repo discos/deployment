@@ -45,7 +45,7 @@ jobs:
         run: |
           python -m pip install -r requirements.txt
           python -m pip install -r test_requirements.txt
-          pip install -e .
+          pip install .
       - name: Check if the Ansible procedure is correctly written
         run: |
           ansible-lint ansible
@@ -62,6 +62,8 @@ jobs:
         working-directory: /home/runner
       - name: Upload the virtual machine and its Vagrant configuration to Google Drive
         run: |
-          pip install -r .github/utils/upload_requirements.txt
+          pip install -r .github/utils/gdrive_requirements.txt
           python .github/utils/upload_to_gdrive.py
+      - name: Update the Google Drive token
+        run: |
           gh secret set GOOGLE_DRIVE_TOKEN --org discos --visibility selected --repos discos,deployment < token.json
