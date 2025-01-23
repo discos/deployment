@@ -23,7 +23,7 @@ except IOError:
     pass
 
 BRANCH_ROOT = os.environ['HOME']
-stations = { s.lower(): s for s in ['SRT', 'Medicina', 'Noto']}
+STATIONS = ['SRT', 'Medicina', 'Noto']
 BRANCHES = []
 try:
     request = Request(
@@ -55,7 +55,8 @@ if not STATION:
     parser.add_argument(
         '-s',
         '--station',
-        choices=stations.keys(),
+        choices=STATIONS,
+        metavar='STATION',
         required=True
     )
 args = parser.parse_args()
@@ -63,7 +64,7 @@ args = parser.parse_args()
 
 os.chdir(BRANCH_ROOT)
 if not STATION:
-    branch_name = '%s-%s' % (args.branch, args.station)
+    branch_name = '%s-%s' % (args.branch, args.station.lower())
 else:
     branch_name = args.branch
 BRANCH_PATH = os.path.join(BRANCH_ROOT, branch_name)
@@ -123,7 +124,7 @@ else:
     if not STATION:
         # Create the .station file
         with open(os.path.join(introot, '.station'), 'w') as f:
-            f.write('export STATION=%s' % stations[args.station])
+            f.write('export STATION=%s' % args.station)
     print('Introot created into %s' % introot)
 
 

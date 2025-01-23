@@ -16,7 +16,7 @@ class TestDeployCLI(unittest.TestCase):
 
     def test_too_much_separators(self):
         """Too much : separators"""
-        cmd = BASECMD + ['large:development:srt']
+        cmd = BASECMD + ['large:development:SRT']
         pipes = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = pipes.communicate()
         self.assertRegex(err, b'You must specify an available system.')
@@ -58,7 +58,7 @@ class TestDeployCLI(unittest.TestCase):
             '--branch',
             'stable',
             '--station',
-            'srt'
+            'SRT'
         ]
         pipes = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = pipes.communicate()
@@ -78,13 +78,13 @@ class TestDeployCLI(unittest.TestCase):
         )
 
     def test_deploy_wrong_station(self):
-        """Deploy onto SRT with '--station=medicina'"""
+        """Deploy onto SRT with '--station=Medicina'"""
         cmd = BASECMD + [
-            'acs:srt',
+            'acs:SRT',
             '--branch',
             'stable',
             '--station',
-            'medicina'
+            'Medicina'
         ]
         pipes = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = pipes.communicate()
