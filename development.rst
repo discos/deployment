@@ -72,8 +72,8 @@ the ``--station`` argument, followed by the name of the desired station.
 
 .. code-block:: shell
 
-  $ discos-deploy discos:development --tag discos1.0-rc02 --station noto
+  $ discos-deploy discos:development --tag discos1.0-rc02 --station Noto
 
-You can choose a station among ``medicina``, ``noto`` and ``srt``.
+You can choose a station among ``Medicina``, ``Noto`` and ``SRT``.
 The ``discos-get`` command gets executed on all machines of the system at the
 same time.
