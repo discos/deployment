@@ -1,0 +1,8 @@
+[Unit]
+Description=DISCOS quicklook
+
+[Service]
+WorkingDirectory=/{{ discos_sw_dir }}/quicklook
+Type=simple
+ExecStart=/bin/bash -c 'source ~/.bashrc && exec SDTmonitor -c monitor_config.ini {% if quicklook_polling %}--polling {% endif %}-w {{ quicklook_workers }} {{ quicklook_directories | join(' ') }}'
+User={{ user.name }}
