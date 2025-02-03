@@ -50,3 +50,9 @@
   with_items:
     - "[Default Applications]"
     - "text/html=firefox.desktop"
+
+
+- name: Allow all users to have access to Python executables
+  ansible.builtin.lineinfile:
+    dest: /etc/profile
+    line: 'export PATH=/alma/{{ acs_tag }}/pyenv/shims:$PATH'
