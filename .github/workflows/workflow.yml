@@ -28,12 +28,6 @@ jobs:
         run: |
           wget https://download.virtualbox.org/virtualbox/7.0.14/virtualbox-7.0_7.0.14-161095~Ubuntu~jammy_amd64.deb
           sudo apt install ./virtualbox-7.0_7.0.14-161095~Ubuntu~jammy_amd64.deb
-      - name: Restore the local dependencies repository from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /home/runner/.deployment/repository
-          key: cache-local-repository
       - name: Clone the repository
         uses: actions/checkout@v4
       - name: Set up Python

@@ -186,5 +186,8 @@
 
 - name: Source scl_source
   ansible.builtin.lineinfile:
-    dest: /etc/profile
+    dest: "{{ item }}"
     line: 'source scl_source enable devtoolset-{{ devtoolset_release }}'
+  with_items:
+    - "/etc/profile"
+    - "/etc/bashrc"
