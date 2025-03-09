@@ -1,43 +1,45 @@
 ---
 
 - name: Install quicklook python dependencies
-  ansible.builtin.command: "pip3.6 install {{ item }}"
+  ansible.builtin.command: "pip install {{ item }}"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
   with_items:
-    - Zdaemon
+    - watchdog
     - tornado
   changed_when: true
 
 
-- name: Copy the quicklook service template
+- name: Copy the quicklook service unit file
   ansible.builtin.template:
-    src: quicklook
-    dest: /etc/rc.d/init.d/quicklook
-    mode: "0755"
+    src: quicklook.service
+    dest: /usr/lib/systemd/system/quicklook.service
+    mode: "0644"
     force: true
 
 
-- name: Create the sdtools/quicklook directories
+- name: Create the quicklook directory
   ansible.builtin.file:
-    path: "{{ item.path }}"
+    path: "/{{ discos_sw_dir }}/quicklook"
     state: directory
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: "{{ item.mode }}"
-  with_items:
-    - { path: "/{{ discos_sw_dir }}/sdtools/quicklook", mode: "0710" }
-    - { path: "/{{ discos_sw_dir }}/sdtools/quicklook/conf", mode: "0700" }
-    - { path: "/{{ discos_sw_dir }}/sdtools/quicklook/page", mode: "0750" }
+    mode: "0755"
 
 
-- name: Copy the quicklook configuration files
+- name: Copy the quicklook configuration file
   ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "/{{ discos_sw_dir }}/sdtools/quicklook/conf"
+    src: "monitor_config.ini"
+    dest: "/{{ discos_sw_dir }}/quicklook"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
-    mode: "{{ item.mode }}"
+    mode: "0640"
     force: true
-  with_items:
-    - { src: "monitor_config.ini", mode: "0640" }
-    - { src: "service.conf", mode: "0640" }
-    - { src: "service.sh", mode: "0740" }
+
+
+- name: Start the quicklook service
+  ansible.builtin.systemd:
+    name: "quicklook.service"
+    state: restarted
+    enabled: true

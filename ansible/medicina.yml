@@ -1,6 +1,7 @@
 ---
 
 - name: Check presence of dependencies on local repository
+  tags: provision
   hosts: all
   tasks:
     - name: Check presence of dependencies on local repository
@@ -11,6 +12,7 @@
 
 
 - name: Check users presence and eventually ask for their password
+  tags: provision
   hosts: all
   tasks:
     - name: Check users presence and eventually ask for their password
@@ -19,7 +21,16 @@
       with_dict: "{{ users }}"
 
 
+- name: Patch yum repositories
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - yum_repos
+
+
 - name: Configure SELINUX
+  tags: provision
   hosts: all
   remote_user: root
   roles:
@@ -27,6 +38,7 @@
 
 
 - name: Install yum packages
+  tags: provision
   hosts: all
   remote_user: root
   roles:
@@ -34,6 +46,7 @@
 
 
 - name: Configure network
+  tags: provision
   hosts: all
   remote_user: root
   roles:
@@ -41,6 +54,7 @@
 
 
 - name: Configure firewall
+  tags: provision
   hosts: all
   remote_user: root
   roles:
@@ -48,6 +62,7 @@
 
 
 - name: Configure SSH
+  tags: provision
   hosts: all
   remote_user: root
   roles:
@@ -55,6 +70,7 @@
 
 
 - name: Configure time
+  tags: provision
   hosts: all
   remote_user: root
   roles:
@@ -62,6 +78,7 @@
 
 
 - name: Configure users and groups
+  tags: provision
   hosts: all
   remote_user: root
   roles:
@@ -69,6 +86,7 @@
 
 
 - name: Perform the key exchange procedure
+  tags: provision
   hosts: all
   tasks:
     - name: Perform the key exchange procedure
@@ -102,20 +120,8 @@
       when: lustre_server_ip is defined
 
 
-- name: Apply Sardara configuration to ACS nodes
-  hosts: acs_meta
-  remote_user: root
-  tasks:
-    - name: Apply Sardara configuration to ACS nodes
-      ansible.builtin.include_role:
-        name: sardara
-      when:
-        - sardara_mount_point is defined
-        - sardara_ip_address is defined
-        - sardara_remote_directory is defined
-
-
 - name: Apply ACS configuration to ACS nodes
+  tags: provision
   hosts: acs_meta
   remote_user: root
   roles:
@@ -123,47 +129,47 @@
 
 
 - name: Configure the manager machine
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
     - manager
 
 
-- name: Install single dish tools
-  hosts: console
-  remote_user: root
-  tasks:
-    - name: Install SDTools
-      ansible.builtin.include_role:
-        name: sdtools
-    - name: Configure the quicklook
-      ansible.builtin.include_role:
-        name: quicklook
-      when: quicklook_directories is defined
-
-
-- name: Install basie
+- name: Install BASIE
+  tags: provision
   hosts: console
   remote_user: root
   roles:
     - basie
 
 
-- name: Install GILDAS
-  hosts: console
-  remote_user: root
-  roles:
-    - gildas
-
-
 - name: Install SAOImageDS9
+  tags: provision
   hosts: console
   remote_user: root
   roles:
     - ds9
 
 
+- name: Install srt-single-dish-tools
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - sdtools
+
+
+- name: Configure the quicklook
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - quicklook
+
+
 - name: Apply configuration for project users
+  tags: provision
   hosts: console
   remote_user: root
   roles:
@@ -171,6 +177,7 @@
 
 
 - name: Configure the VNC servers
+  tags: provision
   hosts: acs_meta
   remote_user: root
   roles:
@@ -178,16 +185,15 @@
 
 
 - name: Deploy DISCOS
+  tags: deploy
   hosts: acs_meta
   remote_user: root
-  tasks:
-    - name: Deploy DISCOS
-      ansible.builtin.include_role:
-        name: deploy
-      when: branch is defined or tag is defined
+  roles:
+    - deploy
 
 
 - name: Finalize the installation
+  tags: provision
   hosts: all
   remote_user: root
   roles:
