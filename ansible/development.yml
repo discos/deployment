@@ -145,6 +145,14 @@
     - sdtools
 
 
+- name: Configure the quicklook
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - quicklook
+
+
 - name: Apply configuration for project users
   tags: provision
   hosts: manager
