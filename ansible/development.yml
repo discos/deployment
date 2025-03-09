@@ -137,6 +137,14 @@
     - ds9
 
 
+- name: Install srt-single-dish-tools
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - sdtools
+
+
 - name: Apply configuration for project users
   tags: provision
   hosts: manager
