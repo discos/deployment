@@ -45,7 +45,11 @@ jobs:
           ansible-lint ansible
       - name: Provision the virtual machine
         run: |
-          discos-deploy manager:development --default-passwords
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            discos-deploy manager:development --default-passwords -v
+          else
+            discos-deploy manager:development --default-passwords
+          fi
       - name: Shutdown the virtual machine
         run: |
           discos-vms stop
