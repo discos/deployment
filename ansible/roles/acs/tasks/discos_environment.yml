@@ -170,24 +170,9 @@
   with_dict: "{{ users }}"
 
 
-- name: Add the custom bash_profile sourcing to the default one
-  ansible.builtin.blockinfile:
-    path: "/{{ discos_sw_dir }}/{{ item.value.name }}/.bash_profile"
-    state: present
-    marker: "######## DISCOS configuration {mark} ########"
-    block: |
-        if [ -f /{{ discos_sw_dir }}/config/misc/bash_profile ]; then
-            source /{{ discos_sw_dir }}/config/misc/bash_profile
-        fi
-    insertafter: "# .bash_profile"
-  no_log: true
-  with_dict: "{{ users }}"
-
-
 - name: Source scl_source
   ansible.builtin.lineinfile:
     dest: "{{ item }}"
     line: 'source scl_source enable devtoolset-{{ devtoolset_release }}'
   with_items:
-    - "/etc/profile"
     - "/etc/bashrc"
