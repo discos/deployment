@@ -8,7 +8,7 @@ set ai ts=4 sts=4 et sw=4
 autocmd FileType python set ai ts=4 sts=4 et sw=4 tw=79
 autocmd FileType rst set ai ts=4 sts=4 et sw=4 tw=79
 autocmd FileType yaml,yml setlocal ai ts=2 sts=2 et sw=2
-autocmd BufEnter *.i :setlocal filetype=cpp
+autocmd BufEnter *.i,*.tpp :setlocal filetype=cpp
 autocmd BufEnter *.midl :setlocal filetype=idl
 
 set backspace=2

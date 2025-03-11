@@ -54,5 +54,5 @@
 
 - name: Allow all users to have access to Python executables
   ansible.builtin.lineinfile:
-    dest: /etc/profile
+    dest: /etc/bashrc
     line: 'export PATH=/alma/{{ acs_tag }}/pyenv/shims:$PATH'
