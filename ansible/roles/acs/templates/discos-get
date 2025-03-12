@@ -136,5 +136,5 @@ with open('/{{ discos_sw_dir }}/config/misc/branches', 'a+') as f:
 
 
 # Set the active branch
-if subprocess.call(['discos-set', branch_name]):
+if subprocess.call(['discos-set', branch_name, '--cdb', 'test']):
     sys.exit(code)
