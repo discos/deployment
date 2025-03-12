@@ -30,6 +30,14 @@ else
     unset STATION
 fi
 
+export ACS_TMP=/service/acstmp/{{ inventory_hostname_short }}
+
+# Load ACS definitions
+# ====================
+if [ -f /{{ discos_sw_dir }}/config/acs/.bash_profile.acs ]; then
+    source /{{ discos_sw_dir }}/config/acs/.bash_profile.acs
+fi
+
 # Set the CDB
 # ===========
 if [ -n "${DISCOS_BRANCH}" ]; then
@@ -38,14 +46,6 @@ if [ -n "${DISCOS_BRANCH}" ]; then
     else
         export ACS_CDB=/{{ discos_sw_dir }}/{{ user.name }}/$DISCOS_BRANCH/$STATION/Configuration
     fi
-fi
-
-export ACS_TMP=/service/acstmp/{{ inventory_hostname_short }}
-
-# Load ACS definitions
-# ====================
-if [ -f /{{ discos_sw_dir }}/config/acs/.bash_profile.acs ]; then
-    source /{{ discos_sw_dir }}/config/acs/.bash_profile.acs
 fi
 
 # Set the prompt
