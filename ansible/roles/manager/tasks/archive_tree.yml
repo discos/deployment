@@ -7,7 +7,7 @@
     owner: "{{ user.name }}"
     group: "{{ item.group }}"
     mode: "{{ item.mode }}"
-    recurse: true
+    recurse: false
     follow: true
   with_items:
     - { path: "data", group: "{{ users_groups.projects }}", mode: "0710" }
