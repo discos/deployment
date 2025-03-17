@@ -24,7 +24,7 @@
     state: present
   with_nested:
     - ["data", "extraData", "schedules"]
-    - ["user::rwx", "group::---"]
+    - ["user::rwx", "group::--x"]
 
 
 - name: Render the discos-logrotate template
