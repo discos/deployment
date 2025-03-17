@@ -24,16 +24,6 @@
     force: true
 
 
-- name: Copy the bash_profile template
-  ansible.builtin.template:
-    src: bash_profile
-    dest: "/{{ discos_sw_dir }}/config/misc/"
-    owner: "{{ user.name }}"
-    group: "{{ user.group }}"
-    mode: "0640"
-    force: true
-
-
 - name: Copy prompt_command.sh
   ansible.builtin.template:
     src: prompt_command.sh
