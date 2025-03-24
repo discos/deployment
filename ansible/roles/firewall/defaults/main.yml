@@ -1,4 +1,4 @@
 ---
 
 firewall_state: stopped
-firewall_enabled: no
+firewall_enabled: false

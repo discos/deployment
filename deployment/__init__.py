@@ -1,14 +1,25 @@
-from __future__ import print_function
 import sys
-import inspect
+import os
+import time
+import subprocess
+import getpass
+from argparse import Namespace
+STDOUT = sys.stdout
+STDERR = sys.stderr
+
+DEPLOYMENT_DIR = os.path.join(os.environ.get('HOME'), '.deployment')
+ANSIBLE_DIR = os.path.join(DEPLOYMENT_DIR, 'ansible')
+INVENTORIES_DIR = os.path.join(ANSIBLE_DIR, 'inventories')
+os.environ['ANSIBLE_CONFIG'] = os.path.join(ANSIBLE_DIR, 'ansible.cfg')
 
 def error(msg, choices=(), name='', code=1):
+    import inspect
     choices_msg = ''
     if choices:
         if len(msg) > 0:
             choices_msg = ' '
-        choices_msg += 'Allowed values of {}:\n'.format(name)
-    print('ERROR: {}{}'.format(msg, choices_msg), file=sys.stderr)
+        choices_msg += f'Allowed values of {name}:\n'
+    print(f'ERROR: {msg}{choices_msg}', file=sys.stderr)
     if choices:
         for choice in choices:
             print(' '*2, choice, file=sys.stderr)
@@ -21,39 +32,30 @@ def error(msg, choices=(), name='', code=1):
         stack += 1
     doc = caller_module.__doc__
     if doc:
-        print('\n{}'.format(doc), file=sys.stderr)
+        print(f'\n{doc}', file=sys.stderr)
     sys.exit(code)
 
-import os
-import time
-import subprocess
-import pexpect
-from threading import Thread
-from pexpect import pxssh
-from argparse import Namespace
-from multiprocessing import Process
-try:
-    from subprocess import DEVNULL
-except ImportError:
-    DEVNULL = open(os.devnull, 'wb')
+def getEnvironments():
+    inventories = {}
+    systems = []
+    for env in os.listdir(INVENTORIES_DIR):
+        if not os.path.isfile(os.path.join(INVENTORIES_DIR, env)):
+            h, g, c = parseInventory(env)
+            inventories[env] = {}
+            inventories[env]['hosts'] = h
+            inventories[env]['groups'] = g
+            inventories[env]['clusters'] = c
 
-DEPLOYMENT_DIR = os.path.join(os.environ['HOME'], '.deployment')
-ANSIBLE_DIR = os.path.join(DEPLOYMENT_DIR, 'ansible')
-INVENTORIES_DIR = os.path.join(ANSIBLE_DIR, 'inventories')
-os.environ['ANSIBLE_CONFIG'] = os.path.join(ANSIBLE_DIR, 'ansible.cfg')
-
-def getInventories():
-    inventories = []
-    for item in os.listdir(INVENTORIES_DIR):
-        if not os.path.isfile(os.path.join(INVENTORIES_DIR, item)):
-            inventories.append(item)
-    return inventories
+            for cluster in c:
+                systems.append(f'{cluster}:{env}')
+    return (inventories, systems)
 
 def parseInventory(inventory):
     hosts = {}
     groups = {}
     clusters = []
     hosts_file = os.path.join(INVENTORIES_DIR, inventory, 'hosts')
+    current_group = None
     with open(hosts_file) as f:
         for line in f:
             if line.startswith('#'):
@@ -64,8 +66,11 @@ def parseInventory(inventory):
                     current_group = line[line.find('[')+1:line.find(']')]
                 else:
                     # Cluster line
-                    current_group = line[line.find('[')+1:line.find(':')]
-                    groups[current_group] = []
+                    if '_meta' not in line:
+                        current_group = line[line.find('[')+1:line.find(':')]
+                        groups[current_group] = []
+                    else:
+                        current_group = None
             elif 'ansible_host' in line:
                 # Host line
                 hostname, ansible_host = line.split()
@@ -86,216 +91,312 @@ def parseInventory(inventory):
     clusters = list(hosts.keys()) + list(groups.keys())
     return hosts, groups, clusters 
 
-def sshCommand(ssh, command):
-    rc = 0
-    output = ''
+def getBranches():
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError
+    import json
+    branches = []
     try:
-        ssh.sendline(command)
-        while not ssh.prompt():
-            time.sleep(0.05)
-        output = ssh.before.decode().split('\r\n')[1:-1]
-        ssh.sendline('echo $?')
-        while not ssh.prompt():
-            time.sleep(0.05)
-        rc = not bool(int(ssh.before.decode().split('\r\n')[1:-1][0]))
-    except pexpect.exceptions.EOF:
+        request = Request(
+            'https://api.github.com/repos/discos/discos/branches'
+        )
+        branches += json.loads(urlopen(request).read())
+        request = Request(
+            'https://api.github.com/repos/discos/discos/tags'
+        )
+        branches += json.loads(urlopen(request).read())
+        branches = [str(item.get('name')) for item in branches]
+        branches.sort()
+    except HTTPError:
         pass
-    return Namespace(rc=rc, stdout=output)
+    return branches
 
-def sshLogin(ip, password=None):
-    try:
-        ssh = pxssh.pxssh(timeout=0.2)
-        if not password:
-            ssh.login(ip, 'root')
-        else:
-            ssh.login(ip, 'root', password)
-        sshCommand(ssh, 'unset HISTFILE')
-        return ssh
-    except pxssh.ExceptionPxssh:
-        return None
+def sshLogin(ip, user='root'):
+    sp = subprocess.run(
+        [
+            'timeout',
+            '2' if os.environ.get('CI') else '0.5',
+            'ssh',
+            f'{user}@{ip}',
+            '-o',
+            'PasswordAuthentication=false',
+            '"exit"'
+        ],
+        stdout=STDOUT,
+        stderr=STDERR
+    )
+    if sp.returncode == 0:
+        return True
+    else:
+        return False
 
 def ping(ip):
-    def loginTry(ip):
-        try:
-            ssh = pxssh.pxssh()
-            ssh.login(ip, 'root')
-            ssh.logout()
-        except pxssh.ExceptionPxssh as err:
-            if str(err) == 'Could not establish connection to host':
-                time.sleep(4)
-
-    p = Process(target=loginTry, args=(ip,))
-    p.start()
-    p.join(3)
-    if p.is_alive():
-        p.terminate()
+    sp = subprocess.run(
+        [
+            'timeout',
+            '1' if os.environ.get('CI') else '0.1',
+            'nc',
+            '-z',
+            ip,
+            '22'
+        ],
+        stdout=STDOUT,
+        stderr=STDERR
+    )
+    if sp.returncode == 0:
+        return True
+    else:
         return False
-    return True
 
 def getIp(machine, inventory='development'):
     hosts, _, _ = parseInventory(inventory)
     try:
         return hosts[machine]['ip']
     except KeyError:
-        error('No IP associated with machine {}!'.format(machine))
+        error(f'No IP associated with machine {machine}!')
 
-def _startVm(machine):
-    machine_id = 'discos_{}'.format(machine)
-    ip = getIp(machine)
-    subprocess.call(
-        ['VBoxManage', 'startvm', machine_id, '--type', 'headless'],
-        stdout=DEVNULL,
-        stderr=DEVNULL
-    )
-    state = 0
-    while state >= 0:
-        if state == 0:
-            if ping(ip):
-                state = 1
-        elif state == 1:
-            ssh = sshLogin(ip, 'vagrant')
-            if ssh:
-                ssh.logout()
-                state = -1
-        time.sleep(0.5)
-    return
+def statusVm(machine):
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine not in machineList():
+        print(f'Machine {machine} not created.')
+    elif isRunning(machine):
+        print(f'Machine {machine} is running.')
+    else:
+        print(f'Machine {machine} powered off.')
+    return return_code 
 
 def startVm(machine):
-    if isRunning(machine):
-        print('Machine {} is already running.'.format(machine))
-        return
-    sys.stdout.write('Starting machine {}'.format(machine))
-    sys.stdout.flush()
-    t = Thread(target=_startVm, args=(machine,))
-    t.start()
-    while t.is_alive():
-        t0 = time.time()
-        sys.stdout.write('.')
-        sys.stdout.flush()
-        time.sleep(max(0, 1 - (time.time() - t0)))
-    print('done.')
-
-def _stopVm(machine):
-    ip = getIp(machine)
-    state = 0
-    while state >= 0:
-        if state == 0:
-            if ping(ip):
-                state = 1
-        elif state == 1:
-            ssh = sshLogin(ip, 'vagrant')
-            if ssh:
-                sshCommand(ssh, 'shutdown -P now')
-                ssh.logout()
-                state = 2
-        elif state == 2:
-            if not isRunning(machine):
-                state = -1
-        time.sleep(0.5)
-    return
-
-def stopVm(machine):
-    if not isRunning(machine):
-        print('Machine {} is not running.'.format(machine))
-        return
-    sys.stdout.write('Powering off machine {}'.format(machine))
-    sys.stdout.flush()
-    t = Thread(target=_stopVm, args=(machine,))
-    t.start()
-    while t.is_alive():
-        t0 = time.time()
-        sys.stdout.write('.')
-        sys.stdout.flush()
-        time.sleep(max(0, 1 - (time.time() - t0)))
-    print('done.')
-
-def _restartVm(machine):
-    ip = getIp(machine)
-    state = 0
-    while state >= 0:
-        if state == 0:
-            if ping(ip):
-                state = 1
-        elif state == 1:
-            ssh = sshLogin(ip, 'vagrant')
-            if ssh:
-                sshCommand(ssh, 'reboot now')
-                ssh.logout()
-                state = 2
-        elif state == 2:
-            if not ping(ip):
-                state = 3
-        elif state == 3:
-            if ping(ip):
-                state = 4
-        elif state == 4:
-            ssh = sshLogin(ip, 'vagrant')
-            if ssh:
-                ssh.logout()
-                state = -1
-        time.sleep(0.5)
-    return
-
-def restartVm(machine):
-    if not isRunning(machine):
-        startVm(machine)
-        return
-    sys.stdout.write('Restarting machine {}'.format(machine))
-    sys.stdout.flush()
-    t = Thread(target=_restartVm, args=(machine,))
-    t.start()
-    while t.is_alive():
-        t0 = time.time()
-        sys.stdout.write('.')
-        sys.stdout.flush()
-        time.sleep(max(0, 1 - (time.time() - t0)))
-    print('done.')
-
-def createVm(machine):
-    if machine in machineList():
-        if not isRunning(machine):
-            startVm(machine)
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine not in machineList():
+        print(f'Machine {machine} not created.')
+        return_code = 2
+    elif isRunning(machine):
+        print(f'Machine {machine} is already running.')
     else:
-        sys.stdout.write('Creating machine {}'.format(machine))
+        sys.stdout.write(f'Starting machine {machine}')
         sys.stdout.flush()
-        proc = subprocess.Popen(
+        cmd = subprocess.Popen(
             ['vagrant', 'up', machine],
             stdout=subprocess.PIPE,
-            stderr=DEVNULL,
-            cwd=os.path.join(os.environ['HOME'], '.deployment')
+            stderr=STDOUT,
+            cwd=os.path.join(os.environ.get('HOME'), '.deployment')
         )
         while True:
             t0 = time.time()
-            code = proc.poll()
+            code = cmd.poll()
             if code is not None:
                 if code == 0:
                     print('done.')
-                return code
+                else:
+                    print('error while starting the requested VM.')
+                    return_code = 3
+                sys.stdout.flush()
+                break
             else:
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 time.sleep(max(0, 1 - (time.time() - t0)))
-    return 0
+    return return_code
 
-def vagrantList():
-    machines = []
-    for line in open(os.path.join(DEPLOYMENT_DIR, 'Vagrantfile'), 'r'):
-        if 'config.vm.define' in line:
-            machines.append(line.split()[1].strip('"'))
-    return machines
+def stopVm(machine):
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine not in machineList():
+        print(f'Machine {machine} not created.')
+        return_code = 2
+    elif not isRunning(machine):
+        print(f'Machine {machine} is not running.')
+    else:
+        sys.stdout.write(f'Powering off machine {machine}')
+        sys.stdout.flush()
+        cmd = subprocess.Popen(
+            ['vagrant', 'halt', machine],
+            stdout=subprocess.PIPE,
+            stderr=STDERR,
+            cwd=os.path.join(os.environ.get('HOME'), '.deployment')
+        )
+        while True:
+            t0 = time.time()
+            code = cmd.poll()
+            if code is not None:
+                if code == 0:
+                    print('done.')
+                else:
+                    print('error while stopping the requested VM.')
+                    return_code = 3
+                sys.stdout.flush()
+                break
+            else:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(max(0, 1 - (time.time() - t0)))
+    return return_code
+
+def restartVm(machine):
+    if isRunning(machine):
+        stopVm(machine)
+    startVm(machine)
+
+def createVm(machine):
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine in machineList():
+        print(f'Machine {machine} already created.')
+        return_code = 2
+    else:
+        sys.stdout.write(f'Creating machine {machine}')
+        sys.stdout.flush()
+        cmd = subprocess.Popen(
+            ['vagrant', 'up', machine],
+            stdout=STDOUT,
+            stderr=STDERR,
+            cwd=os.path.join(os.environ.get('HOME'), '.deployment')
+        )
+        while True:
+            t0 = time.time()
+            code = cmd.poll()
+            if code is not None:
+                if code == 0:
+                    print('done.')
+                else:
+                    print('error while creating the requested VM.')
+                    return_code = 3
+                sys.stdout.flush()
+                break
+            else:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(max(0, 1 - (time.time() - t0)))
+    return return_code
+
+def destroyVm(machine):
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine not in machineList():
+        print(f'Machine {machine} not created.')
+    else:
+        valid = {"yes": True, "y": True, "ye": True, "no": False, "n": False}
+        prompted = 0
+        choice = False
+        while True:
+            if prompted == 3:
+                return return_code
+            prompted += 1
+            sys.stdout.write(
+                f'Are you sure you want to destroy machine {machine}? [y/N]: '
+            )
+            sys.stdout.flush()
+            choice = input().lower()
+            if choice not in valid.keys():
+                continue
+            else:
+                choice = False if choice == '' else valid[choice]
+                break
+        if choice == False:
+            return return_code
+        sys.stdout.write(f'Destroying machine {machine}')
+        sys.stdout.flush()
+        cmd = subprocess.Popen(
+            ['vagrant', 'destroy', '-f', machine],
+            stdout=STDOUT,
+            stderr=STDERR,
+            cwd=os.path.join(os.environ.get('HOME'), '.deployment')
+        )
+        while True:
+            t0 = time.time()
+            code = cmd.poll()
+            if code is not None:
+                if code == 0:
+                    print('done.')
+                else:
+                    print('error while destroying the requested VM.')
+                    return_code = 3
+                sys.stdout.flush()
+                break
+            else:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(max(0, 1 - (time.time() - t0)))
+    return return_code
+
+def exportVm(machine, outdir=os.environ.get('HOME')):
+    return_code = 0
+    if machine not in _vagrantList():
+        print(f'Machine {machine} unknown.')
+        return_code = 1
+    elif machine not in machineList():
+        print(f'Machine {machine} not created.')
+        return_code = 2
+    elif isRunning(machine):
+        print(f'Machine {machine} is running. Stop it and try again.')
+        return_code = 3
+    else:
+        outfile = os.path.join(outdir, f'discos_{machine}.ova')
+        sys.stdout.write(f'Exporting machine {machine} as {outfile}')
+        sys.stdout.flush()
+        cmd = subprocess.Popen(
+            ['vboxmanage', 'export', f'discos_{machine}', '-o', outfile],
+            stdout=STDOUT,
+            stderr=STDERR
+        )
+        while True:
+            t0 = time.time()
+            code = cmd.poll()
+            if code is not None:
+                if code == 0:
+                    print('done.')
+                else:
+                    print('error while exporting the requested VM.')
+                    return_code = code
+                sys.stdout.flush()
+                break
+            else:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(max(0, 1 - (time.time() - t0)))
+    return return_code
+
+def _vagrantList():
+    cmd = subprocess.Popen(
+        r"grep 'vb\.name' Vagrantfile | awk '{print $NF}' | sed 's/\"//g'",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=STDERR,
+        cwd=os.path.join(os.environ.get('HOME'), '.deployment')
+    )
+    machines = cmd.stdout.readlines()
+    return [m.decode().strip().replace('discos_', '') for m in machines]
+
+def _vboxList():
+    cmd = subprocess.Popen(
+        "vboxmanage list vms | awk '{print $1}' | sed 's/\"//g'",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=STDERR,
+    )
+    machines = cmd.stdout.readlines()
+    return [m.decode().strip().replace('discos_', '') for m in machines]
 
 def machineList(inventory='development'):
     machines = []
     if inventory == 'development':
-        cmd = subprocess.Popen(
-            'VBoxManage list vms'.split(),
-            stdout=subprocess.PIPE
-        )
-        for line in cmd.stdout:
-            line = line.decode()
-            if 'discos_' in line:
-                m_name = line.split()[0].strip('"').replace('discos_', '')
-                machines.append(m_name)
+        vagrant_vms = _vagrantList()
+        vbox_vms = _vboxList()
+        machines = [
+            m.replace('discos_', '') for m in vagrant_vms if m in vbox_vms
+        ]
     else:
         h, _, _ = parseInventory(inventory)
         machines = h.keys()
@@ -303,66 +404,82 @@ def machineList(inventory='development'):
 
 def isRunning(name, inventory='development'):
     if name not in machineList():
-        error('Machine {} unknown!'.format(name))
+        error(f'Machine {name} unknown!')
     return ping(getIp(name, inventory))
 
-def _initSSHDir(ssh_dir=os.path.join(os.environ['HOME'], '.ssh')):
+def _initSSHDir(ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')):
     if not os.path.exists(ssh_dir):
         os.mkdir(ssh_dir, 0o700)
 
-def getRSAKey(
+def generateRSAKey(
         key_file='id_rsa',
-        ssh_dir=os.path.join(os.environ['HOME'], '.ssh')
+        ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')
     ):
-    _initSSHDir(ssh_dir)
     file_name = os.path.join(ssh_dir, key_file)
-    if not os.path.exists(file_name):
-        subprocess.call(
-            "ssh-keygen -f {} -t rsa -N '' -q".format(file_name),
-            shell=True
-        )
-    public_key = open(file_name + '.pub').read().strip()
-    return public_key
+    _initSSHDir(ssh_dir)
+    cmd = subprocess.Popen(
+        ['ssh-add', '-L'],
+        stdout=subprocess.PIPE
+    )
+    public_key = cmd.stdout.readline().decode()
+    import socket
+    if getpass.getuser() + '@' + socket.gethostname() not in public_key:
+        if not os.path.exists(file_name):
+            subprocess.run(
+                f"ssh-keygen -q -f {file_name} -t rsa -P ''",
+                stdout=STDOUT,
+                stderr=STDERR,
+                shell=True
+            )
+    subprocess.call(
+        ['ssh-add', f'{file_name}'],
+        stdout=STDOUT,
+        stderr=STDERR
+    )
 
 def updateKnownHosts(
         ips,
         known_hosts='known_hosts',
-        ssh_dir=os.path.join(os.environ['HOME'], '.ssh')
+        ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')
     ):
     _initSSHDir(ssh_dir)
     file_name = os.path.join(ssh_dir, known_hosts)
     for ip in ips:
-        subprocess.call(
+        subprocess.run(
             ['ssh-keygen', '-R', ip],
-            stdout=DEVNULL,
-            stderr=DEVNULL
+            stdout=STDOUT,
+            stderr=STDERR
         )
-        subprocess.call(
-            ['ssh-keyscan', '-H', ip],
-            stderr=DEVNULL,
+        subprocess.run(
+            ['ssh-keyscan', '-t', 'rsa', '-H', ip],
+            stderr=STDERR,
             stdout=open(file_name, 'a')
         )
 
-def detachFromNM(ssh, interface):
-    sshCommand(
-        ssh,
-        """sed -i -e 's/NM_CONTROLLED="yes"/NM_CONTROLLED="no"/g'"""
-        + """ /etc/sysconfig/network-scripts/ifcfg-%s""" % interface
+def authorizeKey(ip):
+    subprocess.call(
+        ['setsid', 'ssh-copy-id', f'root@{ip}'],
+        stdout=STDOUT,
+        stderr=STDERR
     )
 
-def authorizeKey(ssh, public_key):
-    sshCommand(ssh, 'usermod -m -d /vagrant vagrant')
-    sshCommand(ssh, 'mkdir .ssh')
-    sshCommand(ssh, 'chmod 0700 .ssh')
-    auth_file = sshCommand(ssh, 'cat .ssh/authorized_keys')
-    found = False
-    if auth_file.rc:
-        for line in auth_file.stdout:
-            if public_key in line:
-                found = True
-    if not auth_file.rc or not found:
-        sshCommand(
-            ssh,
-            'echo "{}" >> .ssh/authorized_keys'.format(public_key)
-        )
-        sshCommand(ssh, 'chmod 0600 .ssh/authorized_keys')
+def injectRSAKey(machines):
+    import getpass
+    with open('/tmp/ssh_askpass', 'w') as f:
+        f.write('#!/bin/bash\necho $DEPLOY_PASSWORD\n')
+    os.chmod('/tmp/ssh_askpass', 0o700)
+    os.environ['SSH_ASKPASS'] = '/tmp/ssh_askpass'
+    for machine, ip in machines.items():
+        if not sshLogin(ip):
+            # Cannot authenticate, we need to exchange the public key
+            os.environ['DEPLOY_PASSWORD'] = getpass.getpass(
+                f"Type the password for user 'root' on machine {machine}: "
+            )
+            authorizeKey(ip)
+            os.unsetenv('DEPLOY_PASSWORD')
+            if not sshLogin(ip):
+                error(
+                    f'Cannot authenticate to machine {machine}, '
+                    f'try again with the correct password.'
+                )
+    os.remove('/tmp/ssh_askpass')

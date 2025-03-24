@@ -1,8 +1,0 @@
-[manager]
-discos-manager.noto.ira.inaf.it ansible_host=192.167.187.17
-
-[acs:children]
-manager
-
-[discos:children]
-acs

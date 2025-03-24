@@ -117,7 +117,7 @@ public class Executor {
          // login
          // ------
          boolean isAuthenticated = conn.authenticateWithPassword(username, password);
-			if (isAuthenticated == false)
+			if (isAuthenticated)
 				throw new IOException("Authentication failed");
          remoteFlow.success(RemoteFlow.LOG_IN);
 

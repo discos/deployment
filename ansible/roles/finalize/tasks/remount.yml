@@ -1,7 +1,7 @@
 ---
 
 - name: Force lustre remount to correctly start services
-  systemd:
+  ansible.builtin.systemd:
     name: lustre
     state: restarted
   when:

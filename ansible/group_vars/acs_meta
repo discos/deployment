@@ -1,0 +1,12 @@
+---
+
+acs_tag: "ACS-2021DEC"
+
+lustre_type: "client"
+
+nis_type: "client"
+
+firewall_packages:
+  - iptables-services
+
+use_default_passwords: false

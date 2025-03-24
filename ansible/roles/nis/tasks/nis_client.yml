@@ -1,33 +1,36 @@
 ---
 
 - name: Install ypbind yum package
-  yum:
+  ansible.builtin.yum:
     name: ypbind
     state: present
 
 
 - name: Configure NIS on client machines
-  command: "authconfig --enablenis --nisdomain={{ nis_domain_name }} --nisserver={{ nis_server_ip }} {% if nis_create_home == True %}--enablemkhomedir {% endif %}--update"
+  ansible.builtin.command: "authconfig --enablenis --nisdomain={{ nis_domain_name }} --nisserver={{ nis_server_ip }}\
+           {% if nis_create_home == True %}--enablemkhomedir {% endif %}--update"
+  changed_when: true
 
 
 - name: Set NISTIMEOUT to 10 seconds
-  lineinfile:
-    path: /etc/sysconfig/ypbind
-    line: NISTIMEOUT=10
+  ansible.builtin.lineinfile:
+    path: "/etc/sysconfig/ypbind"
+    line: "NISTIMEOUT=10"
     state: present
-    create: True
+    create: true
+    mode: "0644"
 
 
 - name: Start rpcbind service
-  service:
+  ansible.builtin.service:
     name: rpcbind
     state: started
-    enabled: yes
+    enabled: true
 
 
 - name: Start ypbind service
-  service:
+  ansible.builtin.service:
     name: ypbind
     state: started
-    enabled: yes
+    enabled: true
   failed_when: false

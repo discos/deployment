@@ -1,0 +1,29 @@
+---
+
+network_domain_name: "noto.ira.inaf.it"
+
+ntp_servers:
+  - "192.167.187.78"
+
+NOTO_nameservers:
+  - '192.167.187.99   # NOTO'
+IRA_nameservers:
+  - '192.167.165.11   # IRA'
+GARR_nameservers:
+  - '193.206.141.38   # GARR'
+  - '193.206.141.42   # GARR'
+
+resolv_nameservers: "{{ NOTO_nameservers + IRA_nameservers + GARR_nameservers }}"
+
+host_list:
+  - { hostname: "euser", ip_address: "192.167.187.16" }
+
+key_exchange_users:
+  - "{{ user.name }}"
+
+quicklook_directories:
+  - "/{{ archive }}/data"
+
+quicklook_server_port: 8080
+
+users: { user: "{{ user }}" }

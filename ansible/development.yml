@@ -1,23 +1,36 @@
 ---
 
 - name: Check presence of dependencies on local repository
+  tags: provision
   hosts: manager
   tasks:
-    - import_role:
+    - name: Check presence of dependencies on local repository
+      ansible.builtin.import_role:
         name: dependencies
       delegate_to: localhost
-      run_once: True
+      run_once: true
 
 
 - name: Check users presence and eventually ask for their password
+  tags: provision
   hosts: manager
   tasks:
-    - include_role:
+    - name: Check users presence and eventually ask for their password
+      ansible.builtin.include_role:
         name: ask_password
       with_dict: "{{ users }}"
 
 
+- name: Patch yum repositories
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - yum_repos
+
+
 - name: Configure SELINUX
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -25,6 +38,7 @@
 
 
 - name: Install yum packages
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -32,6 +46,7 @@
 
 
 - name: Configure network
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -39,6 +54,7 @@
 
 
 - name: Configure firewall
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -46,6 +62,7 @@
 
 
 - name: Configure SSH
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -53,6 +70,7 @@
 
 
 - name: Configure time
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -60,6 +78,7 @@
 
 
 - name: Configure users and groups
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -67,9 +86,11 @@
 
 
 - name: Perform the key exchange procedure
+  tags: provision
   hosts: manager
   tasks:
-    - include_role:
+    - name: Perform the key exchange procedure
+      ansible.builtin.include_role:
         name: key_exchange
       loop: "{{ key_exchange_users }}"
       loop_control:
@@ -77,6 +98,7 @@
 
 
 - name: Apply ACS configuration to ACS nodes
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -84,6 +106,7 @@
 
 
 - name: Configure the manager machine
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -91,6 +114,7 @@
 
 
 - name: Install BASIE
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -98,6 +122,7 @@
 
 
 - name: Install DISCOS Simulators
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -105,27 +130,39 @@
 
 
 - name: Install SAOImageDS9
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
     - ds9
 
 
+- name: Install srt-single-dish-tools
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - sdtools
+
+
+- name: Configure the quicklook
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - quicklook
+
+
 - name: Apply configuration for project users
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
     - projects
 
 
-- name: Configure the windows management
-  hosts: manager
-  remote_user: root
-  roles:
-    - windows_management
-
-
 - name: Configure the VNC servers
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
@@ -133,15 +170,15 @@
 
 
 - name: Deploy DISCOS
+  tags: deploy
   hosts: manager
   remote_user: root
-  tasks:
-    - include_role:
-        name: deploy
-      when: branch is defined or tag is defined
+  roles:
+    - deploy
 
 
 - name: Finalize the installation
+  tags: provision
   hosts: manager
   remote_user: root
   roles:

@@ -1,50 +1,48 @@
 ---
 
 - name: Copy lustre client packages to the remote
-  copy:
+  ansible.builtin.copy:
     src: "{{ local_repository_path }}/{{ item }}-{{ lustre_client_tail }}"
     dest: "/tmp/"
+    mode: "0644"
   with_items: "{{ lustre_client_files }}"
 
 
 - name: Install lustre yum packages
-  yum:
+  ansible.builtin.yum:
     name: "{{ lustre_client_files | map('regex_replace', '(.*)', '/tmp/\\1-' + lustre_client_tail) | list }}"
     state: present
-    validate_certs: no
+    validate_certs: false
 
 
 - name: Delete lustre packages from the remote
-  file:
+  ansible.builtin.file:
     path: "/tmp/{{ item }}-{{ lustre_client_tail }}"
     state: absent
   with_items: "{{ lustre_client_files }}"
 
 
 - name: Add lustre configuration into modprobe.d
-  lineinfile:
-    path: /etc/modprobe.d/lustre.conf
+  ansible.builtin.lineinfile:
+    path: "/etc/modprobe.d/lustre.conf"
     line: "options lnet networks=tcp"
     state: present
-    create: yes
+    create: true
+    mode: "0644"
 
 
-#- name: Load lustre modules
-#  modprobe:
-#    name: lnet
-#    state: present
-# Workaround to avoid a known Ansible bug introduced in v2.8
 - name: Load lustre modules
-  command: "modprobe -v lnet"
+  ansible.builtin.command: "modprobe -v lnet"
+  changed_when: true
 
 
 - name: Add lustre modules to startup modules
-  lineinfile:
-    path: /etc/sysconfig/modules/lustre.modules
+  ansible.builtin.lineinfile:
+    path: "/etc/sysconfig/modules/lustre.modules"
     line: "{{ item.line }}"
     state: present
-    create: yes
-    mode: 0755
+    create: true
+    mode: "0755"
     insertbefore: "{{ item.before }}"
   with_items:
     - { line: '#!/bin/sh', before: "BOF" }
@@ -52,16 +50,16 @@
 
 
 - name: Copy the lustre-client-service template
-  template:
+  ansible.builtin.template:
     src: lustre-client-service
-    dest: /etc/rc.d/init.d/lustre
-    mode: 0755
-    force: yes
+    dest: "/etc/rc.d/init.d/lustre"
+    mode: "0755"
+    force: true
 
 
 - name: Configure the clients lustre service
-  file:
-    src: /etc/rc.d/init.d/lustre
+  ansible.builtin.file:
+    src: "/etc/rc.d/init.d/lustre"
     dest: "/etc/rc.d/{{ item }}"
     state: link
     force: true

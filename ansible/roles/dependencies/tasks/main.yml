@@ -1,29 +1,20 @@
 ---
 
-- name: Check if the token for the dependencies repository is missing
-  stat:
-    path: "{{ local_repository_path }}/token/token"
-  register: token_present
-
-
-- name: Delete the eventual token directory in case the token is missing
-  file:
-    path: "{{ local_repository_path }}/token"
-    state: absent
-  when: token_present.stat.exists == False
-
-
-- name: Download the repository token
-  git:
-    repo: "{{ remote_repository_clone_url }}"
-    dest: "{{ local_repository_path }}/token"
-    force: True
-    depth: 1
-  when: token_present.stat.exists == False
+- name: Create the local repository
+  ansible.builtin.file:
+    path: "{{ local_repository_path }}"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+  run_once: true
 
 
 - name: Fetch the repository token value
-  set_fact:
-    repository_token: "{{ item }}"
-  with_file: "{{ local_repository_path }}/token/token"
-  no_log: True
+  ansible.builtin.set_fact:
+    repository_token: "{{ lookup('ansible.builtin.env', 'REPOSITORY_TOKEN', default='') }}"
+  no_log: true
+
+
+- name: Retrieve the token from the discos/dependencies repository
+  ansible.builtin.include_tasks: retrieve.yml
+  when: repository_token == ""

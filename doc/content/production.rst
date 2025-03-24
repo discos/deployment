@@ -7,23 +7,23 @@ Production
 Machines deployment
 ===================
 To deploy the system in production, you have to specify a *cluster* of machines,
-followed by the name of the station, you can choose among ``medicina``,
-``noto`` or ``srt``:
+followed by the name of the station, you can choose among ``Medicina``,
+``Noto`` or ``SRT``:
 
 .. code-block:: shell
 
-  $ discos-deploy discos:srt
+  $ discos-deploy discos:SRT
 
 As mentioned in the :ref:`deploy_development` section, the ``discos`` *cluster*
 makes the automatic procedure provision the whole DISCOS system, composed by
 all the required station machines. If you only want to deploy a single machine,
 change the cluster from ``discos`` to the related machine name. For instance,
 in the following case we are deploying only the ``console`` machine for the
-``srt`` station:
+``SRT`` station:
 
 .. code-block:: shell
 
-  $ discos-deploy console:srt
+  $ discos-deploy console:SRT
 
 
 DISCOS setup
@@ -65,7 +65,7 @@ tag you want to install on the machines:
 
 .. code-block:: shell
 
-   $ discos-deploy discos:srt --tag discos1.0-rc02
+   $ discos-deploy discos:SRT --tag discos1.0-rc02
 
 
 .. note:: Since you are performing the deployment procedure on station

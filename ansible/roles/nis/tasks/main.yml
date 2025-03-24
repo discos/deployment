@@ -1,25 +1,28 @@
 ---
 
 - name: Install rpcbind yum package
-  yum:
+  ansible.builtin.yum:
     name: rpcbind
     state: present
 
 
 - name: Set ypdomainname
-  command: "ypdomainname {{ nis_domain_name }}"
+  ansible.builtin.command: "ypdomainname {{ nis_domain_name }}"
+  changed_when: true
 
 
 - name: Set NISDOMAIN
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/sysconfig/network
     state: present
     line: "NISDOMAIN={{ nis_domain_name }}"
 
 
-- include_tasks: nis_server.yml
+- name: Configure NIS server
+  ansible.builtin.include_tasks: nis_server.yml
   when: nis_type == "server"
 
 
-- include_tasks: nis_client.yml
+- name: Configure NIS clients
+  ansible.builtin.include_tasks: nis_client.yml
   when: nis_type == "client"

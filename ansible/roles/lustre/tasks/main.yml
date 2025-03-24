@@ -1,19 +1,28 @@
 ---
 
-- include_tasks: check_interfaces.yml
+- name: Check the network interfaces for lustre
+  ansible.builtin.include_tasks: check_interfaces.yml
 
-- include_tasks: check_dependencies.yml
+- name: Check if we have lustre dependencies
   delegate_to: localhost
   run_once: true
+  block:
+    - name: Check if we have lustre dependencies
+      ansible.builtin.include_tasks: check_dependencies.yml
 
-- include_tasks: lustre_clients.yml
+
+- name: Check if we need to configure a lustre server or client
+  ansible.builtin.include_tasks: lustre_clients.yml
   when: lustre_type == "client"
 
-- block:
-  - name: Check if lustre is already configured on server
-    stat:
-      path: /usr/lib/systemd/system/lustre.service
-    register: lustre_configured
-  - include_tasks: lustre_server.yml
-    when: not lustre_configured.stat.exists
+
+- name: Configure lustre on the server
   when: lustre_type == "server"
+  block:
+    - name: Check if lustre is already configured on server
+      ansible.builtin.stat:
+        path: /usr/lib/systemd/system/lustre.service
+      register: lustre_configured
+    - name: Configure lustre on the server
+      ansible.builtin.include_tasks: lustre_server.yml
+      when: not lustre_configured.stat.exists

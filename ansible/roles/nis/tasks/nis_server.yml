@@ -1,67 +1,81 @@
 ---
 
 - name: Install ypserv yum package
-  yum:
+  ansible.builtin.yum:
     name: ypserv
     state: present
 
 
 - name: Set yp securenets
-  lineinfile:
-    path: /var/yp/securenets
+  ansible.builtin.lineinfile:
+    path: "/var/yp/securenets"
     state: present
     line: "{{ item }}"
-    create: yes
+    create: true
+    mode: "0644"
   with_items:
     - "255.255.255.0 {{ network_ip_address.split('/')[0] }}"
     - "255.0.0.0 127.0.0.1"
 
-    
+
+- name: Comment yp Makefile original MINUID
+  ansible.builtin.replace:
+    path: "/var/yp/Makefile"
+    regexp: '^(MINUID=\$.*)$'
+    replace: '# \1'
+
+
+- name: Fix the yp Makefile MINUID
+  ansible.builtin.lineinfile:
+    path: "/var/yp/Makefile"
+    state: present
+    line: "MINUID={{ observer.uid + 1 }}"
+    insertbefore: "^MINGID.*"
+
+
 - name: Start rpcbind service
-  service:
+  ansible.builtin.service:
     name: rpcbind
     state: started
-    enabled: yes
+    enabled: true
 
 
 - name: Start ypserv service
-  service:
+  ansible.builtin.service:
     name: ypserv
     state: started
-    enabled: yes
+    enabled: true
 
 
 - name: Start ypxfrd service
-  service:
+  ansible.builtin.service:
     name: ypxfrd
     state: started
-    enabled: yes
+    enabled: true
 
 
 - name: Start yppasswdd
-  service:
+  ansible.builtin.service:
     name: yppasswdd
     state: started
-    enabled: yes
+    enabled: true
 
 
 - name: Perform a backup of the ypinit script
-  command: "cp /usr/lib64/yp/ypinit /usr/lib64/yp/ypinit.bak"
+  ansible.builtin.command: "cp /usr/lib64/yp/ypinit /usr/lib64/yp/ypinit.bak"
+  changed_when: true
 
 
 - name: Apply a patch to the ypinit script
-  lineinfile:
+  ansible.builtin.replace:
     path: '/usr/lib64/yp/ypinit'
     regexp: '{{ item.original }}'
-    line: '{{ item.new }}'
+    replace: '{{ item.new }}'
   with_items:
-    - { original: 'while read h', new: 'while false' }
-    - { original: 'read hostlist_ok', new: '#read hostlist_ok' }
+    - { original: ' while read h', new: ' while false' }
+    - { original: ' read hostlist_ok', new: ' #read hostlist_ok' }
 
-    
+
 - name: Set up NIS maps
-  command: "/usr/lib64/yp/ypinit -m"
-
-
-- name: Restore the original ypinit script
-  command: "mv /usr/lib64/yp/ypinit.bak /usr/lib64/yp/ypinit"
+  ansible.builtin.command: "/usr/lib64/yp/ypinit -m"
+  changed_when: true

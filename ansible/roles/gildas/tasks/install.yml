@@ -1,44 +1,46 @@
 ---
 
 - name: Install some GILDAS dependencies
-  yum:
+  ansible.builtin.yum:
     name:
-     - gcc-gfortran
-     - lpr
+      - gcc-gfortran
+      - lpr
     state: present
 
 
 - name: Extract the GILDAS archive
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ local_repository_path }}/{{ gildas_sources_archive }}"
     dest: "/{{ discos_sw_dir }}"
-  become: True
+  become: true
   become_user: "{{ user.name }}"
 
 
 - name: Install GILDAS
-  shell: "source admin/gildas-env.sh && make && make install"
+  ansible.builtin.shell: "source admin/gildas-env.sh && make && make install"
   args:
     chdir: "/{{ discos_sw_dir }}/gildas-src-{{ gildas_release }}"
-  become: True
+  become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
+  changed_when: true
 
 
 - name: Rename the gildas-exe directory
-  command: "mv gildas-exe-{{ gildas_release }} gildas"
+  ansible.builtin.command: "mv gildas-exe-{{ gildas_release }} gildas"
   args:
     chdir: "/{{ discos_sw_dir }}"
+  changed_when: true
 
 
 - name: Remove the gildas-src directory
-  file:
+  ansible.builtin.file:
     path: "/{{ discos_sw_dir }}/gildas-src-{{ gildas_release }}"
     state: absent
 
 
 - name: Add GILDAS initialization to bash profile
-  template:
+  ansible.builtin.template:
     src: gildas.sh
     dest: "/etc/profile.d/gildas.sh"
-    mode: 0644
+    mode: "0644"

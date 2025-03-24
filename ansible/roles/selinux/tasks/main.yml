@@ -1,18 +1,18 @@
 ---
 
 - name: Install SELINUX python bindings
-  yum:
+  ansible.builtin.yum:
     name: python3-libselinux
     state: present
 
 
 - name: Disable SELINUX
-  selinux:
+  ansible.posix.selinux:
     state: disabled
   register: selinux_state
 
 
 - name: Reboot the machine if required
-  reboot:
+  ansible.builtin.reboot:
     msg: 'SELINUX disabled.'
   when: selinux_state.reboot_required

@@ -1,0 +1,12 @@
+[Unit]
+Description=Remote desktop tunneling service (SSH tunnels for VNC)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bash -c 'source $(grep "%i" /etc/passwd | cut -d: -f6)/.vnc/tunnel-config; && ssh -N -R $GATEWAYPORT:localhost:$LOCALPORT {{ vnc_gateway_user }}@{{ vnc_gateway_ip_address }}'
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

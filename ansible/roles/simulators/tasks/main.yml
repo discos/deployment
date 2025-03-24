@@ -1,23 +1,24 @@
 ---
 
 - name: Download the DISCOS Simulators repository
-  git:
+  ansible.builtin.git:
     repo: "https://github.com/discos/simulators.git"
     dest: "/{{ discos_sw_dir }}/simulators"
     version: "master"
-    force: yes
-  become: True
+    force: true
+  become: true
   become_user: "{{ user.name }}"
 
 
 - name: Install DISCOS Simulators
-  command: "{{ item }}"
-  become: True
+  ansible.builtin.command: "{{ item }}"
+  become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
   with_items:
     - "pip install -r requirements.txt"
-    - "python setup.py install"
+    - "pip install ."
     - "pyenv rehash"
   args:
     chdir: "/{{ discos_sw_dir }}/simulators/"
+  changed_when: true

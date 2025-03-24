@@ -6,3 +6,4 @@ dist/
 discos_deployment.egg-info/
 .python-version
 TODO*
+*.swp

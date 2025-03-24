@@ -1,0 +1,2 @@
+LOCALPORT={{ vnc_starting_port+item.value.vnc_port_offset|int }}
+GATEWAYPORT={{ vnc_gateway_starting_port+item.value.vnc_gateway_port_offset|int }}

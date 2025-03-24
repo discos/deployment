@@ -1,3 +1,4 @@
 ---
 
-- include_tasks: archive_tree.yml
+- name: Configure the archive directory
+  ansible.builtin.include_tasks: archive_tree.yml

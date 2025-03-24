@@ -2,244 +2,234 @@
 """Some command line examples:
 
   $ discos-deploy discos:development
-  $ discos-deploy discos:srt
-  $ discos-deploy manager:medicina --branch master
-  $ discos-deploy manager:noto --tag discos1.0-rc02
+  $ discos-deploy discos:SRT
+  $ discos-deploy manager:Medicina --branch master
+  $ discos-deploy manager:Noto --branch discos1.0-rc02
   $ discos-deploy console:development --no-vagrant
-  $ discos-deploy manager:development --branch master --station srt
+  $ discos-deploy manager:development --branch master --station SRT
 """
 
-from __future__ import print_function
 import sys
 import subprocess
 import os
 import argparse
-import getpass
 import deployment
+import json
 
-STATIONS = { 'srt': 'SRT', 'medicina': 'Medicina', 'noto': 'Noto' }
-ENVIRONMENTS = deployment.getInventories()
-
-inventories = {}
-systems = []
-for env in ENVIRONMENTS:
-    h, g, c = deployment.parseInventory(env)
-    inventories[env] = {}
-    inventories[env]['hosts'] = h
-    inventories[env]['groups'] = g
-    inventories[env]['clusters'] = c
-
-    for cluster in c:
-        systems.append('{}:{}'.format(cluster, env))
+STATIONS = {
+    'SRT': 'SRT',
+    'Medicina': 'Medicina',
+    'Noto': 'Noto'
+}
+INVENTORIES, SYSTEMS = deployment.getEnvironments()
+BRANCHES = deployment.getBranches()
+cluster = ''
+env = ''
 
 parser = argparse.ArgumentParser(
-    description='Make a DISCOS environment. {}'.format(__doc__),
-    formatter_class=argparse.RawTextHelpFormatter)
+    description=(f'Make a DISCOS environment. {__doc__}'),
+    formatter_class=argparse.RawTextHelpFormatter
+)
+
+def system(_system):
+    if _system not in SYSTEMS:
+        parser.error(f"argument SYSTEM: unknown SYSTEM: {_system}")
+    try:
+        global cluster, env
+        cluster, env = _system.split(':')
+    except:
+        pass
+    return _system
+
+def station(_station):
+    if _station not in STATIONS.keys():
+        parser.error(
+            f"argument -s/--station: unknown station: '{_station}' "
+            f"(choose from: '" + "', '".join(STATIONS.keys()) + ")'"
+        )
+    elif env != 'development' and _station != env:
+        parser.error(
+            f"argument -s/--station: argument defaulted to '{env}' from "
+            f"'{cluster}:{env}' choice, you cannot specify a different value"
+        )
+    return _station
+
 parser.add_argument(
     'system',
-    help='{0}, {1}, ...'.format(*systems)
+    type=system,
+    choices=SYSTEMS,
+    metavar='SYSTEM',
+    help='\n' + '\n'.join(SYSTEMS)
 )
 parser.add_argument(
     '-s',
     '--station',
+    type=station,
     choices=STATIONS.keys(),
+    metavar='STATION',
     default=None,
-    help='the desired station'
+    help='\n'.join(STATIONS.keys())
 )
-group = parser.add_mutually_exclusive_group()
-group.add_argument(
+parser.add_argument(
     '-b',
     '--branch',
-    help='the desired DISCOS branch to be deployed on the machines'
-)
-group.add_argument(
-    '-t',
-    '--tag',
-    help='the desired DISCOS tag to be deployed on the machines'
+    type=str,
+    choices=BRANCHES if BRANCHES else None,
+    metavar='BRANCH',
+    help=(
+        'WARNING: remote DISCOS repository unreachable! '
+        'Be sure to type the name of an existing branch if deploying!'
+        if not BRANCHES else '\n'.join(BRANCHES)
+    )
 )
 parser.add_argument(
     '--no-vagrant',
     action='store_true',
-    help='forces the process to not use Vagrant with development machines'
+    help=(
+        'forces the process to not use Vagrant '
+        'when provisioning development machines'
+    )
+)
+parser.add_argument(
+    '--deploy-only',
+    action='store_true',
+    help='only deploy the DISCOS Control Software'
+)
+parser.add_argument(
+    '--default-passwords',
+    action='store_true',
+    help='use the default passwords for the DISCOS users'
 )
 parser.add_argument(
     '--sim',
     action='store_true',
-    help='simulation mode'
+    help='only print the final Ansible command'
+)
+parser.add_argument(
+    '-v', '--verbose',
+    action='store_true',
+    help='call Ansible with verbose output'
 )
 args = parser.parse_args()
 
-# Check if the system cluster:environment exists
-if args.system.count(':') != 1:
-    e = ENVIRONMENTS[-1]  # A random environment
-    c = inventories[e]['clusters'][-1]  # A random cluster
-    msg = (
-        'You must specify an available system.\n'
-        + 'e.g. if the cluster is "{0}" '
-        + 'and the environment is "{1}",\n'
-        + 'the system is "{0}:{1}", and the command will be:'
-        + '\n\n  $ discos-deploy {0}:{1}.\n\n'
+if not args.verbose:
+    try:
+        from subprocess import DEVNULL
+    except ImportError:
+        DEVNULL = open(os.devnull, 'wb')
+    deployment.STDOUT = DEVNULL
+    deployment.STDERR = DEVNULL
+
+if env != 'development' and not args.station:
+    args.station = env
+
+if args.branch and not args.station:
+    parser.error(
+        f"argument -s/--station: argument is required "
+        f"when deploying a DISCOS branch or tag"
     )
-    deployment.error(
-        msg.format(*[c, e]),
-        choices=systems,
-        name='system'
+
+if args.deploy_only and not args.branch:
+    parser.error(
+        f"argument -b/--branch: argument is required "
+        f"when deploying a DISCOS branch or tag"
     )
+
+# Retrieve inventory and playbook
+inventory = os.path.join(deployment.INVENTORIES_DIR, env)
+playbook = os.path.join(deployment.ANSIBLE_DIR, env + '.yml')
+
+# Collect machines to be provisioned or deployed on in the current process
+machines = {}
+if cluster in INVENTORIES[env]['groups']:
+    for machine in INVENTORIES[env]['groups'][cluster]:
+        machines[machine] = INVENTORIES[env]['hosts'][machine]['ip']
 else:
-    cluster_arg, env_arg = args.system.split(':')
-    if env_arg in ENVIRONMENTS:
-        allowed_clusters = inventories[env_arg]['clusters']
-        c = allowed_clusters[-1]  # A random cluster
-        # wrong_cluster:right_env
-        if cluster_arg not in allowed_clusters:
-            msg = (
-                'Cluster "{}" not found in the "{}" environment.\n'
-            ).format(cluster_arg, env_arg)
-            deployment.error(
-                msg,
-                allowed_clusters,
-                name='cluster (in {})'.format(env_arg)
-            )
-    else:
-        all_clusters = []
-        for env in ENVIRONMENTS:
-            for cluster in inventories[env]['clusters']:
-                if cluster not in all_clusters:
-                    all_clusters.append(cluster)
-        # right_cluster:wrong_env
-        if cluster_arg in all_clusters:
-            msg = (
-                'Environment "{}" not found in {}.\nPlease use a right '
-                + 'cluster:environment combination, like:\n{}, {}, {}, ...'
-            )
-            deployment.error(
-                msg.format(
-                    env_arg, ENVIRONMENTS, systems[0], systems[-1], systems[-2]
-                )
-            )
-        # wrong_cluster:wrong_env
-        if cluster_arg not in all_clusters:
-            deployment.error(
-                'System "{}:{}" not recognized.\n'.format(cluster_arg, env_arg),
-                systems,
-                name='system'
-            )
+    machines[cluster] = INVENTORIES[env]['hosts'][cluster]['ip']
 
-inventory = os.path.join(deployment.INVENTORIES_DIR, env_arg)
-playbook = os.path.join(deployment.ANSIBLE_DIR, env_arg + '.yml')
-
-# Machines to provision in the current process
-current_machines = []
-if cluster_arg in inventories[env_arg]['groups']:
-    current_machines = inventories[env_arg]['groups'][cluster_arg]
-else:
-    current_machines.append(cluster_arg)
-
-extra_vars = []
-if env_arg != 'development':
-    extra_vars.append('station={}'.format(STATIONS[env_arg]))
-
-if args.branch or args.tag:
-    if env_arg == 'development':
-        if not args.station:
-            deployment.error(
-                "When deploying onto 'development' environment, "
-                + "'--station' argument must be specified."
-            )
-        elif args.station not in STATIONS.keys():
-            deployment.error('Unknown station `{}`.'.format(args.station))
-        extra_vars.append('cdb=test')
-        extra_vars.append('station={}'.format(STATIONS[args.station]))
-    else:
-        if args.station and args.station != env_arg:
-            deployment.error(
-                "With '{}' environment, '--station'".format(env_arg)
-                + "argument defaults to '{}', ".format(env_arg)
-                + 'you cannot specify a different station.'
-            )
-        extra_vars.append('cdb=telescope')
-    if args.branch:
-        extra_vars.append('branch={}'.format(args.branch))
-    else:
-        extra_vars.append('tag={}'.format(args.tag))
-
-root_pwds = {}
-ips = {}
-for machine in current_machines:
-    # Initialize a root password for each machine
-    root_pwds[machine] = ''
-    if env_arg == 'development' and not args.no_vagrant:
-        root_pwds[machine] = 'vagrant'
-    # Get the ip of each current machine
-    ips[machine] = inventories[env_arg]['hosts'][machine]['ip']
-
-# Check machine availability
-for machine in current_machines:
-    if env_arg == 'development' and not args.no_vagrant:
-        if not args.sim:
-            reachable = deployment.ping(ips[machine])
-            if not reachable:
-                # Create/bring up virtual machines
+if not args.sim:
+    # Generate the RSA key pair if needed
+    deployment.generateRSAKey()
+    # Check if the chosen machines are reachable
+    for machine, ip in machines.items():
+        if env == 'development' and not args.no_vagrant:
+            # Start or create the virtual machine
+            code = 0
+            action = 'starting'
+            if machine not in deployment.machineList():
                 code = deployment.createVm(machine)
-                if code:
-                    deployment.error(
-                        'Encountered some problems while starting '
-                        + 'machine {}.'.format(machine),
-                        code=code
-                    )
+                action = 'creating'
+            elif not deployment.ping(ip):
+                code = deployment.startVm(machine)
+            if code != 0:
+                deployment.error(
+                    f'Encountered some problems while '
+                    f'{action} machine {machine}.',
+                    code=code
+                )
         else:
-            print('Starting machine {}....done.'.format(machine))
-    elif not args.sim:
-        reachable = deployment.ping(ips[machine])
-        if not reachable:
-            deployment.error(
-                'Machine {} not reachable.'.format(machine)
-                + ' Check your configuration and retry.'
-            )
-
-if not args.sim:
-    # Get or generate the RSA public key
-    public_key = deployment.getRSAKey()
+            if not deployment.ping(ip):
+                deployment.error(
+                    f'Machine {machine} unreachable.'
+                    f' Check your network and ssh configurations and retry.'
+                )
     # Add the IPs to known_hosts
-    deployment.updateKnownHosts(ips.values())
+    deployment.updateKnownHosts(machines.values())
+    # Ask for root password
+    deployment.injectRSAKey(machines)
 
-# Ask for root password
-if not args.sim:
-    for machine in current_machines:
-        root_pwd = root_pwds[machine]
-        ip = inventories[env_arg]['hosts'][machine]['ip']
-        ssh = deployment.sshLogin(ip)
-        if not ssh:
-            ssh = deployment.sshLogin(ip, root_pwds[machine])
-        if not ssh:
-            # Cannot authenticate, it means we have to ask for password
-            root_pwd = getpass.getpass(
-                '\nType the root password for machine {}: '.format(machine)
-            )
-            ssh = deployment.sshLogin(ip, root_pwd)
-        if not ssh:
-            deployment.error(
-                'Cannot authenticate to machine {}'.format(machine)
-                + ', try again.'
-            )
-        else:
-            deployment.authorizeKey(ssh, public_key)
-            if env_arg == 'development' and not args.no_vagrant:
-                deployment.detachFromNM(ssh, 'eth0')
-            ssh.logout()
-
-# Call ansible
+# Create the ansible command
 ansible_cmd = [
     'ansible-playbook', playbook,
     '--inventory-file', inventory,
-    '--limit', cluster_arg
+    '--limit', cluster
 ]
 
-if extra_vars:
-    ansible_cmd += ['--extra-vars', ' '.join(extra_vars)]
+extra_vars = {}
+if args.default_passwords:
+    extra_vars['use_default_passwords'] = True
+if args.station:
+    extra_vars['station'] = STATIONS[args.station]
+    if env == 'development':
+        extra_vars['cdb'] = 'test'
+    else:
+        extra_vars['cdb'] = 'telescope'
+if args.branch:
+    extra_vars['branch'] = args.branch
 
-print('\nCalling ansible...')
-if args.sim:
-    print(' '.join(ansible_cmd))
+if extra_vars:
+    extra_vars = ['--extra-vars', f"'{json.dumps(extra_vars)}'"]
 else:
-    subprocess.call(ansible_cmd)
+    extra_vars = []
+
+# Check if we want provision only or deployment only
+ansible_tags = []
+if args.deploy_only:
+    ansible_tags = ['--tags', "'deploy'"]
+elif not args.branch:
+    ansible_tags = ['--skip-tags', "'deploy'"]
+
+# Add extra variables to the ansible command
+ansible_cmd += ansible_tags + extra_vars
+if args.verbose:
+    ansible_cmd.append('-vv')
+ansible_cmd = ' '.join(ansible_cmd)
+
+
+print('Calling Ansible...')
+if args.sim:
+    print(ansible_cmd)
+    sys.exit(0)
+
+process = subprocess.Popen(
+    ansible_cmd,
+    shell=True,
+    stdin=sys.stdin,
+    stdout=sys.stdout,
+    stderr=sys.stderr
+)
+try:
+    process.wait()
+except KeyboardInterrupt:
+    pass
+sys.exit(process.returncode)

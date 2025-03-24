@@ -5,7 +5,6 @@
   $ discos-login -u root manager
   $ discos-login -u observer console
 """
-from __future__ import print_function
 import subprocess
 from argparse import ArgumentParser
 import deployment

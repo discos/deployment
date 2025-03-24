@@ -1,10 +1,25 @@
 ---
 
-- include_tasks: yum.yml
-- include_tasks: discos_environment.yml
-- include_tasks: acs.yml
-- include_tasks: discos_dependencies.yml
-- include_tasks: utilities.yml
-- include_tasks: receivers_monitor.yml
-  when:
-    - monitor_receivers == True
+- name: Install ACS yum packages
+  ansible.builtin.include_tasks: yum.yml
+
+
+- name: Configure the DISCOS environment
+  ansible.builtin.include_tasks: discos_environment.yml
+
+
+- name: Install ACS
+  ansible.builtin.include_tasks: acs.yml
+
+
+- name: Install the DISCOS dependencies
+  ansible.builtin.include_tasks: discos_dependencies.yml
+
+
+- name: Install some utilities
+  ansible.builtin.include_tasks: utilities.yml
+
+
+- name: Configure the monitoring for the receivers
+  ansible.builtin.include_tasks: receivers_monitor.yml
+  when: monitor_receivers
