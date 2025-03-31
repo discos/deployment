@@ -13,7 +13,7 @@ jobs:
       GOOGLE_DRIVE_TOKEN: "${{ secrets.GOOGLE_DRIVE_TOKEN }}"
       PROVISIONED_VM_GDRIVE_ID: "${{ secrets.PROVISIONED_VM_GDRIVE_ID }}"
       PROVISIONED_ARCHIVE_GDRIVE_ID: "${{ secrets.PROVISIONED_ARCHIVE_GDRIVE_ID }}"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Free up space
         uses: jlumbroso/free-disk-space@main
@@ -26,8 +26,7 @@ jobs:
           sudo apt update && sudo apt install vagrant
       - name: Install VirtualBox
         run: |
-          wget https://download.virtualbox.org/virtualbox/7.0.14/virtualbox-7.0_7.0.14-161095~Ubuntu~jammy_amd64.deb
-          sudo apt install ./virtualbox-7.0_7.0.14-161095~Ubuntu~jammy_amd64.deb
+          sudo apt install virtualbox
       - name: Clone the repository
         uses: actions/checkout@v4
       - name: Set up Python
@@ -45,7 +44,11 @@ jobs:
           ansible-lint ansible
       - name: Provision the virtual machine
         run: |
-          discos-deploy manager:development --default-passwords
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            discos-deploy manager:development --default-passwords -v
+          else
+            discos-deploy manager:development --default-passwords
+          fi
       - name: Shutdown the virtual machine
         run: |
           discos-vms stop
