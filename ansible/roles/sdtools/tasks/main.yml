@@ -10,6 +10,13 @@
   become_user: "{{ user.name }}"
 
 
+- name: Install some yum packages dependencies
+  ansible.builtin.yum:
+    name:
+      - fftw
+      - fftw-devel
+
+
 - name: Install SDTools
   ansible.builtin.command: "pip install .[all]"
   become: true
