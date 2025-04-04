@@ -20,11 +20,6 @@ creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
 if creds.expired and creds.refresh_token:
     creds.refresh(Request())
 
-# Download the VM
-creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
-if creds.expired and creds.refresh_token:
-    creds.refresh(Request())
-
 service = build('drive', 'v3', credentials=creds)
 
 downloader = MediaIoBaseDownload(
