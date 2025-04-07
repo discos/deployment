@@ -84,6 +84,8 @@
       - bluefish
       - dejavu-sans-mono-fonts
       - bash-completion
+      - zeromq
+      - zeromq-devel
       - "@X Window System"
       - "@GNOME"
       - "@fonts"
