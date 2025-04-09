@@ -86,7 +86,6 @@
       - bash-completion
       - zeromq
       - zeromq-devel
-      - cppzmq-devel
       - "@X Window System"
       - "@GNOME"
       - "@fonts"
