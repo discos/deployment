@@ -6,10 +6,10 @@ on:
     branches:
       - master
     paths:
-      - 'doc/*'
+      - 'doc/**'
 
 jobs:
-  updatedoc:
+  update-local-doc:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: "${{ secrets.GH_WORKFLOWS_TOKEN }}"
@@ -17,13 +17,28 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: 3
-        check-latest: true
     - name: Split subtree and push to doc branch
       run: |
         git subtree split --prefix=doc -b doc
-        git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+        git checkout doc
+        rm -rf conf.py doc_requirements.txt .gitignore Makefile _static _templates
+        git add -u
+        git commit --amend --no-edit
         git push --force origin doc:doc
+
+  update-remote-doc:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: "${{ secrets.GH_WORKFLOWS_TOKEN }}"
+    needs: update-local-doc
+    steps:
+    - name: Checkout the doc repository
+      uses: actions/checkout@v4
+      with:
+        repository: discos/doc
+        ref: fix-issue-47
+    - name: Update the doc repository
+      run: |
+        git subtree pull --prefix=developer/howto/installing ${{ github.repositoryUrl }} doc --squash --message \
+          "Merging updates from deployment repository:\n\n$(curl -s https://api.github.com/repos/${{ github.repository }}/commits?sha=doc\&per_page=1 | jq -r '.[0].commit.message')"
+        git push origin fix-issue-47
