@@ -30,17 +30,18 @@ jobs:
 
   update-remote-doc:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: "${{ secrets.GH_WORKFLOWS_TOKEN }}"
     needs: update-local-doc
     steps:
     - name: Checkout the doc repository
       uses: actions/checkout@v4
       with:
         repository: discos/doc
-        ref: fix-issue-47
+        fetch-depth: 0
+        token: "${{ secrets.GH_WORKFLOWS_TOKEN }}"
     - name: Update the doc repository
       run: |
-        git subtree pull --prefix=developer/howto/installing https://github.com/${{ github.repository }}.git doc --squash --message \
-          "Merging updates from deployment repository:\n\n$(curl -s https://api.github.com/repos/${{ github.repository }}/commits?sha=doc\&per_page=1 | jq -r '.[0].commit.message')"
-        git push origin fix-issue-47
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        MESSAGE="Merging updates from deployment repository:\n\n$(curl -s https://api.github.com/repos/${{ github.repository }}/commits?sha=doc\&per_page=1 | jq -r '.[0].commit.message')"
+        git subtree pull --prefix=developer/howto/installing https://github.com/${{ github.repository }}.git doc --squash --message "$(echo -e "$MESSAGE")"
+        git push
