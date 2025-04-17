@@ -1,0 +1,27 @@
+name: Documentation tests
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 2 * * 1'
+
+jobs:
+  checkdoc:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3
+        check-latest: true
+    - name: Install dependencies
+      run: |
+        python -m pip install -r doc/doc_requirements.txt
+    - name: Build documentation
+      run: |
+        sphinx-build -W -b html doc doc/_build/html
+        sphinx-build -W -b doctest doc doc/_build/doctest
+        sphinx-build -W -b linkcheck doc doc/_build/linkcheck

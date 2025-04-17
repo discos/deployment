@@ -784,3 +784,29 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
   when: not slalibrary_present.stat.exists
+
+
+#######################
+# nlohmann/json library
+#######################
+
+- name: Install the nlohmann/json library
+  ansible.builtin.get_url:
+    url: "https://github.com/nlohmann/json/releases/latest/download/json.hpp"
+    dest: /usr/local/include/json.hpp
+    mode: '0644'
+  become: true
+
+
+##################
+# cppzmq libraries
+##################
+
+- name: Install the cppzmq header files
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/zeromq/cppzmq/master/{{ item }}"
+    dest: "/usr/local/include/{{ item }}"
+    mode: '0644'
+  with_items:
+    - zmq.hpp
+    - zmq_addon.hpp

@@ -6,7 +6,7 @@ on:
     - cron: '0 2 * * 1'
 
 jobs:
-  workflow:
+  provision:
     env:
       REPOSITORY_TOKEN: "${{ secrets.DEPENDENCIES_TOKEN }}"
       GH_TOKEN: "${{ secrets.GH_WORKFLOWS_TOKEN }}"

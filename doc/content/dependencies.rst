@@ -37,7 +37,7 @@ installed on your system:
 
 If your system comes bundled with a different Python version, you may want to
 consider installing a Python environment such as
-`Anaconda <https://www.anaconda.com/download/#linux>`_,
+`Anaconda <https://www.anaconda.com/docs/main>`_,
 `Miniconda <https://conda.io/miniconda.html>`_ or
 `Pyenv <https://github.com/pyenv/pyenv>`_ and its
 `Virtualenv <https://github.com/pyenv/pyenv-virtualenv>`_ plugin.
