@@ -1,0 +1,29 @@
+name: Documentation update
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'doc/*'
+
+jobs:
+  updatedoc:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: "${{ secrets.GH_WORKFLOWS_TOKEN }}"
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3
+        check-latest: true
+    - name: Split subtree and push to doc branch
+      run: |
+        git subtree split --prefix=doc -b doc
+        git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+        git push --force origin doc:doc
