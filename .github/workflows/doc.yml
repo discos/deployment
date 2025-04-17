@@ -1,4 +1,4 @@
-name: DISCOS provisioning and deployment documentation
+name: Documentation tests
 
 on:
   push:
