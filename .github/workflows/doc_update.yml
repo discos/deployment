@@ -19,7 +19,8 @@ jobs:
         fetch-depth: 0
     - name: Split subtree and push to doc branch
       run: |
-        git remote set-url origin https://x-access-token:${{ secrets.GH_WORKFLOWS_TOKEN }}@github.com/${{ github.repository }}
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
         git subtree split --prefix=doc -b doc
         git checkout doc
         rm -rf conf.py doc_requirements.txt .gitignore Makefile _static _templates
