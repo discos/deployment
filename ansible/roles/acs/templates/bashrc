@@ -7,6 +7,51 @@ alias ll='ls -la'
 alias la='ls -A'
 alias lt='ls -lt | more'
 
+# Prompt command colors
+# =====================
+red='\e[1;31m'  # Red
+grn='\e[1;32m'  # Green
+cyn='\e[1;36m'  # Cyan
+pur='\e[1;35m'  # Purple
+txtrst='\e[0m'  # Text Reset
+
+make() {
+    if [ -f $HOME/bin/_discos-check-branch ]; then
+        CHECK_OUTPUT=$($HOME/bin/_discos-check-branch)
+        if [ -n "${CHECK_OUTPUT}" ]; then
+            echo -e "${red}ERROR:${txtrst} the 'make' command has been disabled in order to avoid messing up the default introot!"
+            echo "       Set your desired branch using the 'discos-set' command before compiling and installing!"
+            return 1
+        fi
+    fi
+
+    max=$(nproc)
+    args=()
+    while [[ $# -gt 0 ]]; do
+        if [[ "$1" == "-j" ]]; then
+            shift
+            if [[ "$1" =~ ^[0-9]+$ ]]; then
+                jobs=$1
+                shift
+                (( jobs > max )) && jobs=$max
+                args+=("-j$jobs")
+            else
+                args+=("-j$max")
+                [[ -n "$1" ]] && args+=("$1") && shift
+            fi
+        elif [[ "$1" =~ ^-j([0-9]+)$ ]]; then
+            jobs="${BASH_REMATCH[1]}"
+            (( jobs > max )) && jobs=$max
+            args+=("-j$jobs")
+            shift
+        else
+            args+=("$1")
+            shift
+        fi
+    done
+    command make "${args[@]}"
+}
+
 # Variables to export
 # ===================
 export QTDIR={{ qt_dir }}

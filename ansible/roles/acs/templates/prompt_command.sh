@@ -4,11 +4,6 @@ if [ -f $HOME/bin/_discos-check-branch ]; then
 	CHECK_OUTPUT=$($HOME/bin/_discos-check-branch)
 	if [ -n "${CHECK_OUTPUT}" ]; then
 		echo -e "${pur}WARNING:${txtrst} $CHECK_OUTPUT"
-        alias make="
-        echo -e \"${pur}WARNING:${txtrst} the 'make' command has been disabled in order to avoid messing up the default introot!\"
-        echo \"         Set your desired branch using the 'discos-set' command before compiling and installing!\""
-    else
-        unalias make 2>/dev/null
 	fi
 fi
 
@@ -50,11 +45,6 @@ fi
 
 # Set the prompt
 # ==============
-red='\e[1;31m'  # Red
-grn='\e[1;32m'  # Green
-cyn='\e[1;36m'  # Cyan
-pur='\e[1;35m'  # Purple
-txtrst='\e[0m'  # Text Reset
 if [ -n "${DISCOS_BRANCH}" ]; then
     PS1="(\[$grn\]$DISCOS_BRANCH\[$txtrst\]:\[$cyn\]$CDB\[$txtrst\]) \u@\h \w $ "
 else
