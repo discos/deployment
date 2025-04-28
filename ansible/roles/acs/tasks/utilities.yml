@@ -1,13 +1,10 @@
 ---
 
 - name: Install prospector (Python linter)
-  ansible.builtin.command: "pip install {{ item }}"
+  ansible.builtin.command: "pip install prospector"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
-  with_items:
-    - "lazy-object-proxy==1.6.0"
-    - "prospector==0.12.11"
   changed_when: true
 
 
