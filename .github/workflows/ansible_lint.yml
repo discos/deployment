@@ -3,7 +3,7 @@ name: Run ansible-lint
 on: [push, pull_request]
 
 jobs:
-  linter:
+  ansible-lint:
     runs-on: ubuntu-latest
     steps:
       - name: Clone the repository
