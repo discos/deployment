@@ -192,6 +192,16 @@
     - deploy
 
 
+- name: Test the DISCOS CDB
+  tags:
+    - deploy
+    - cdb
+  hosts: acs_meta
+  remote_user: root
+  roles:
+    - cdb_test
+
+
 - name: Finalize the installation
   tags: provision
   hosts: all

@@ -93,7 +93,12 @@ parser.add_argument(
 parser.add_argument(
     '--deploy-only',
     action='store_true',
-    help='only deploy the DISCOS Control Software'
+    help='only deploy the DISCOS Control Software and test the DISCOS CDB'
+)
+parser.add_argument(
+    '--test-cdb-only',
+    action='store_true',
+    help='only test the DISCOS CDB'
 )
 parser.add_argument(
     '--default-passwords',
@@ -127,6 +132,12 @@ if args.branch and not args.station:
     parser.error(
         f"argument -s/--station: argument is required "
         f"when deploying a DISCOS branch or tag"
+    )
+
+if args.deploy_only and args.test_cdb_only:
+    parser.error(
+        f"arguments --deploy-only and --test-cdb-only "
+        f"are mutually exclusive"
     )
 
 if args.deploy_only and not args.branch:
@@ -206,6 +217,8 @@ else:
 ansible_tags = []
 if args.deploy_only:
     ansible_tags = ['--tags', "'deploy'"]
+elif args.test_cdb_only:
+    ansible_tags = ['--tags', "'cdb'"]
 elif not args.branch:
     ansible_tags = ['--skip-tags', "'deploy'"]
 
