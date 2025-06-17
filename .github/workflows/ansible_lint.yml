@@ -1,0 +1,22 @@
+name: Run ansible-lint
+
+on: [push, pull_request]
+
+jobs:
+  ansible-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3'
+          check-latest: true
+      - name: Install package and dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install -r test_requirements.txt
+      - name: Check if the Ansible procedure is correctly written
+        run: |
+          ansible-lint ansible

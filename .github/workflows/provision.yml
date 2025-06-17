@@ -39,12 +39,9 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install -r test_requirements.txt
           pip install .
-      - name: Check if the Ansible procedure is correctly written
-        run: |
-          ansible-lint ansible
       - name: Provision the virtual machine
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "$RUNNER_DEBUG" == "1" ]]; then
             discos-deploy manager:development --default-passwords -v
           else
             discos-deploy manager:development --default-passwords
