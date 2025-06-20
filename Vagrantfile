@@ -1,11 +1,10 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
-
+require 'etc'
 
 vagrantfile_api_version = "2"
 
 Vagrant.configure(vagrantfile_api_version) do |config|
-
     config.ssh.username = 'root'
     config.ssh.password = 'vagrant'
     config.ssh.insert_key = false
@@ -14,7 +13,7 @@ Vagrant.configure(vagrantfile_api_version) do |config|
     config.vm.synced_folder '.', '/vagrant', disabled: true
     config.vm.provider :virtualbox do |vb|
         vb.customize ["modifyvm", :id, "--ioapic", "on"]
-        vb.memory = 8192
+        vb.memory = [8192, `free -m | awk '/^Mem:/ {print $2/2}'`.to_i].min
         vb.cpus = 4
         vb.default_nic_type = "virtio"
     end

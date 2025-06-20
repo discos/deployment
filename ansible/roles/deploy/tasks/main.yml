@@ -38,7 +38,7 @@
 
 
 - name: Build and install DISCOS
-  ansible.builtin.command: "make -j"
+  ansible.builtin.command: "make -j{{ ansible_processor_vcpus }}"
   args:
     chdir: "{{ sources_path }}/SystemMake"
   become: true
