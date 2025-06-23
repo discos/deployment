@@ -1,0 +1,16 @@
+name: Virtualization test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install VirtualBox
+        run: |
+          sudo apt update
+          sudo apt install virtualbox
+      - name: Check virtualization
+        run: |
+          vboxmanage list hostinfo
