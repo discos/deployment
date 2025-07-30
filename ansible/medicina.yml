@@ -154,7 +154,7 @@
 
 - name: Install srt-single-dish-tools
   tags: provision
-  hosts: manager
+  hosts: console
   remote_user: root
   roles:
     - sdtools
@@ -162,7 +162,7 @@
 
 - name: Configure the quicklook
   tags: provision
-  hosts: manager
+  hosts: console
   remote_user: root
   roles:
     - quicklook
