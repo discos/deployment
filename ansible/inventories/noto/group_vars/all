@@ -26,4 +26,4 @@ quicklook_directories:
 
 quicklook_server_port: 8080
 
-users: { user: "{{ user }}" }
+users: { user: "{{ user }}", observer: "{{ observer }}" }

@@ -18,6 +18,12 @@
         name: ask_password
       with_dict: "{{ users }}"
 
+- name: Patch yum repositories
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - yum_repos
 
 - name: Configure SELINUX
   hosts: manager
@@ -93,31 +99,11 @@
     - manager
 
 
-- name: Install single dish tools
-  hosts: manager
-  remote_user: root
-  tasks:
-    - name: Install SDTools
-      ansible.builtin.include_role:
-        name: sdtools
-    - name: Configure the quicklook
-      ansible.builtin.include_role:
-        name: quicklook
-      when: quicklook_directories is defined
-
-
 - name: Install basie
   hosts: manager
   remote_user: root
   roles:
     - basie
-
-
-- name: Install GILDAS
-  hosts: manager
-  remote_user: root
-  roles:
-    - gildas
 
 
 - name: Install SAOImageDS9

@@ -1,5 +1,5 @@
 [manager]
-discos-manager.noto.ira.inaf.it ansible_host=192.167.187.17
+discos-manager.noto.ira.inaf.it ansible_host=192.167.187.24
 
 [acs:children]
 manager
