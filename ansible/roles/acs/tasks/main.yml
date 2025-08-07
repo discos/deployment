@@ -4,6 +4,10 @@
   ansible.builtin.include_tasks: yum.yml
 
 
+- name: Install correct JAVA packages
+  ansible.builtin.include_tasks: java.yml
+
+
 - name: Configure the DISCOS environment
   ansible.builtin.include_tasks: discos_environment.yml
 

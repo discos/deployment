@@ -17,8 +17,6 @@
       - file
       - flex
       - freetype-devel
-      - java-11-openjdk
-      - java-11-openjdk-devel
       - lbzip2
       - lbzip2-utils
       - libffi
