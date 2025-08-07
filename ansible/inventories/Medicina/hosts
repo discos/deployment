@@ -2,10 +2,13 @@
 discos-storage.med.ira.inaf.it ansible_host=192.168.1.9
 
 [manager]
-discos-manager.med.ira.inaf.it ansible_host=192.168.1.100
+discos-manager.med.ira.inaf.it ansible_host=192.168.1.102
 
 [console]
-discos-console.med.ira.inaf.it ansible_host=192.168.1.99
+discos-console.med.ira.inaf.it ansible_host=192.168.1.100
+
+[devel]
+discos-devel.med.ira.inaf.it ansible_host=192.168.1.103
 
 [acs:children]
 manager
@@ -13,6 +16,7 @@ console
 
 [acs_meta:children]
 acs
+devel
 
 [discos:children]
 storage

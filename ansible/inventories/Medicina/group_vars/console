@@ -1,11 +1,12 @@
 ---
 
-lustre_network_interface: eth0
+lustre_network_interface: p1p1
 
 quicklook_directories:
   - "/{{ archive }}/data"
+  - "{{ sardara_mount_point }}"
 quicklook_server_port: 8080
-quicklook_workers: 1
+quicklook_workers: 4
 quicklook_polling: True
 
 users: { user: "{{ user }}", observer: "{{ observer }}" }
