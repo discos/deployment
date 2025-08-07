@@ -43,8 +43,8 @@ lustre_server_files:
 # Lustre Client Variables
 #########################
 
-lustre_client_version: { major: "2.10.3", minor: "1" }
-lustre_client_tail: "{{ lustre_client_version.major }}-{{ lustre_client_version.minor }}.el6.x86_64.rpm"
+lustre_client_version: { major: "2.12.6", minor: "1" }
+lustre_client_tail: "{{ lustre_client_version.major }}-{{ lustre_client_version.minor }}.el7.x86_64.rpm"
 lustre_client_files:
   - "kmod-lustre-client"
   - "lustre-client"

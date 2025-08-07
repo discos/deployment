@@ -1,0 +1,5 @@
+---
+
+lustre_network_interface: ens2f0
+
+users: { user: "{{ user }}", observer: "{{ observer }}" }
