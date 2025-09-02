@@ -1,3 +1,4 @@
 ---
 
 nis_create_home: True
+reference_manager: True

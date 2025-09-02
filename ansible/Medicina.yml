@@ -23,7 +23,7 @@
 
 - name: Patch yum repositories
   tags: provision
-  hosts: manager
+  hosts: all
   remote_user: root
   roles:
     - yum_repos
@@ -130,7 +130,7 @@
 
 - name: Configure the manager machine
   tags: provision
-  hosts: 
+  hosts:
     - manager
     - devel
   remote_user: root
@@ -140,7 +140,7 @@
 
 - name: Install BASIE
   tags: provision
-  hosts: 
+  hosts:
     - console
     - devel
   remote_user: root
