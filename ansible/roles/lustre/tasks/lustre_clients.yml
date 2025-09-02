@@ -7,10 +7,9 @@
     mode: "0644"
   with_items: "{{ lustre_client_files }}"
 
-
 - name: Install lustre yum packages
   ansible.builtin.yum:
-    name: "{{ lustre_client_files | map('regex_replace', '(.*)', '/tmp/\\1-' + lustre_client_tail) | list }}"
+    name: "{{ lustre_client_files | map('regex_replace', '^(.*)$', '/tmp/' + '\\1' + '-' + lustre_client_tail) | list }}"
     state: present
     validate_certs: false
 

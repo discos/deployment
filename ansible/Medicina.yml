@@ -23,7 +23,7 @@
 
 - name: Patch yum repositories
   tags: provision
-  hosts: manager
+  hosts: all
   remote_user: root
   roles:
     - yum_repos
@@ -130,7 +130,9 @@
 
 - name: Configure the manager machine
   tags: provision
-  hosts: manager
+  hosts:
+    - manager
+    - devel
   remote_user: root
   roles:
     - manager
@@ -138,7 +140,9 @@
 
 - name: Install BASIE
   tags: provision
-  hosts: console
+  hosts:
+    - console
+    - devel
   remote_user: root
   roles:
     - basie
@@ -146,7 +150,9 @@
 
 - name: Install SAOImageDS9
   tags: provision
-  hosts: console
+  hosts:
+    - console
+    - devel
   remote_user: root
   roles:
     - ds9
@@ -170,7 +176,9 @@
 
 - name: Apply configuration for project users
   tags: provision
-  hosts: console
+  hosts:
+    - console
+    - devel
   remote_user: root
   roles:
     - projects
