@@ -2,11 +2,11 @@
 """Some command line examples:
 
   $ discos-deploy discos:development
-  $ discos-deploy discos:srt
-  $ discos-deploy manager:medicina --branch master
-  $ discos-deploy manager:noto --branch discos1.0-rc02
+  $ discos-deploy discos:SRT
+  $ discos-deploy manager:Medicina --branch master
+  $ discos-deploy manager:Noto --branch discos1.0-rc02
   $ discos-deploy console:development --no-vagrant
-  $ discos-deploy manager:development --branch master --station srt
+  $ discos-deploy manager:development --branch master --station SRT
 """
 
 import sys
@@ -16,7 +16,11 @@ import argparse
 import deployment
 import json
 
-STATIONS = { 'srt': 'SRT', 'medicina': 'Medicina', 'noto': 'Noto' }
+STATIONS = {
+    'SRT': 'SRT',
+    'Medicina': 'Medicina',
+    'Noto': 'Noto'
+}
 INVENTORIES, SYSTEMS = deployment.getEnvironments()
 BRANCHES = deployment.getBranches()
 cluster = ''
@@ -89,7 +93,12 @@ parser.add_argument(
 parser.add_argument(
     '--deploy-only',
     action='store_true',
-    help='only deploy the DISCOS Control Software'
+    help='only deploy the DISCOS Control Software and test the DISCOS CDB'
+)
+parser.add_argument(
+    '--test-cdb-only',
+    action='store_true',
+    help='only test the DISCOS CDB'
 )
 parser.add_argument(
     '--default-passwords',
@@ -123,6 +132,12 @@ if args.branch and not args.station:
     parser.error(
         f"argument -s/--station: argument is required "
         f"when deploying a DISCOS branch or tag"
+    )
+
+if args.deploy_only and args.test_cdb_only:
+    parser.error(
+        f"arguments --deploy-only and --test-cdb-only "
+        f"are mutually exclusive"
     )
 
 if args.deploy_only and not args.branch:
@@ -202,19 +217,32 @@ else:
 ansible_tags = []
 if args.deploy_only:
     ansible_tags = ['--tags', "'deploy'"]
+elif args.test_cdb_only:
+    ansible_tags = ['--tags', "'cdb'"]
 elif not args.branch:
     ansible_tags = ['--skip-tags', "'deploy'"]
 
 # Add extra variables to the ansible command
 ansible_cmd += ansible_tags + extra_vars
 if args.verbose:
-    ansible_cmd.append('-vvv')
+    ansible_cmd.append('-vv')
 ansible_cmd = ' '.join(ansible_cmd)
 
 
 print('Calling Ansible...')
 if args.sim:
     print(ansible_cmd)
-    sys.exit()
-else:
-    sys.exit(subprocess.call(ansible_cmd, shell=True))
+    sys.exit(0)
+
+process = subprocess.Popen(
+    ansible_cmd,
+    shell=True,
+    stdin=sys.stdin,
+    stdout=sys.stdout,
+    stderr=sys.stderr
+)
+try:
+    process.wait()
+except KeyboardInterrupt:
+    pass
+sys.exit(process.returncode)

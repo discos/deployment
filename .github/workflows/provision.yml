@@ -1,0 +1,67 @@
+name: DISCOS provisioning and deployment
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 1'
+
+jobs:
+  provision:
+    env:
+      REPOSITORY_TOKEN: "${{ secrets.DEPENDENCIES_TOKEN }}"
+      GH_TOKEN: "${{ secrets.GH_WORKFLOWS_TOKEN }}"
+      GOOGLE_DRIVE_TOKEN: "${{ secrets.GOOGLE_DRIVE_TOKEN }}"
+      PROVISIONED_VM_GDRIVE_ID: "${{ secrets.PROVISIONED_VM_GDRIVE_ID }}"
+      PROVISIONED_ARCHIVE_GDRIVE_ID: "${{ secrets.PROVISIONED_ARCHIVE_GDRIVE_ID }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free up space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+      - name: Install Vagrant
+        run: |
+          wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install vagrant
+      - name: Install VirtualBox
+        run: |
+          sudo apt install virtualbox
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3'
+          check-latest: true
+      - name: Install package and dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install -r test_requirements.txt
+          pip install .
+      - name: Provision the virtual machine
+        run: |
+          if [[ "$RUNNER_DEBUG" == "1" ]]; then
+            discos-deploy manager:development --default-passwords -v
+          else
+            discos-deploy manager:development --default-passwords
+          fi
+      - name: Shutdown the virtual machine
+        run: |
+          discos-vms stop
+      - name: Export the virtual machine and its Vagrant configuration
+        run: |
+          discos-vms export manager
+          tar -czvf vagrant.tar.gz .deployment/.vagrant
+        working-directory: /home/runner
+      - name: Upload the virtual machine and its Vagrant configuration to Google Drive
+        run: |
+          pip install -r .github/utils/gdrive_requirements.txt
+          python .github/utils/upload_to_gdrive.py
+          gh secret set GOOGLE_DRIVE_TOKEN --org discos --visibility selected --repos discos,deployment < token.json
+      - name: Trigger the download of the new VM in the DISCOS repository
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: update-vm
+          repository: discos/discos
+          token: ${{ env.GH_TOKEN }}

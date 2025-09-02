@@ -137,6 +137,22 @@
     - ds9
 
 
+- name: Install srt-single-dish-tools
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - sdtools
+
+
+- name: Configure the quicklook
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - quicklook
+
+
 - name: Apply configuration for project users
   tags: provision
   hosts: manager
@@ -159,6 +175,16 @@
   remote_user: root
   roles:
     - deploy
+
+
+- name: Test the DISCOS CDB
+  tags:
+    - deploy
+    - cdb
+  hosts: manager
+  remote_user: root
+  roles:
+    - cdb_test
 
 
 - name: Finalize the installation

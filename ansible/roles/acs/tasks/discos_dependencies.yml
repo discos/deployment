@@ -138,8 +138,8 @@
 
 - name: Export 'PKG_CONFIG_PATH' in order to have access to libcfitsio.so
   ansible.builtin.lineinfile:
-    dest: "/etc/profile"
-    line: "export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig"
+    dest: "/etc/bashrc"
+    line: "export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig"
 
 
 - name: Remove the directory used for the libraries compilation
@@ -784,3 +784,29 @@
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
   when: not slalibrary_present.stat.exists
+
+
+#######################
+# nlohmann/json library
+#######################
+
+- name: Install the nlohmann/json library
+  ansible.builtin.get_url:
+    url: "https://github.com/nlohmann/json/releases/latest/download/json.hpp"
+    dest: /usr/local/include/json.hpp
+    mode: '0644'
+  become: true
+
+
+##################
+# cppzmq libraries
+##################
+
+- name: Install the cppzmq header files
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/zeromq/cppzmq/master/{{ item }}"
+    dest: "/usr/local/include/{{ item }}"
+    mode: '0644'
+  with_items:
+    - zmq.hpp
+    - zmq_addon.hpp

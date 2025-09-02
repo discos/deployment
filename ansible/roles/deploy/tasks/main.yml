@@ -3,7 +3,7 @@
 - name: Build the discos-get Ansible command
   ansible.builtin.set_fact:
     repo_name: "{{ branch }}{{ '-' + station | lower if inventory_dir.split('/')[-1] == 'development' else '' }}"
-    discos_get_cmd: "discos-get {{ branch }}{{ ' -s ' + station | lower if inventory_dir.split('/')[-1] == 'development' else '' }}"
+    discos_get_cmd: "discos-get {{ branch }}{{ ' -s ' + station if inventory_dir.split('/')[-1] == 'development' else '' }}"
 
 
 - name: Define the sources and introot directory for DISCOS repository
@@ -37,11 +37,8 @@
   changed_when: true
 
 
-- name: Install DISCOS
-  ansible.builtin.command: "{{ item }}"
-  with_items:
-    - make
-    - make install
+- name: Build and install DISCOS
+  ansible.builtin.command: "make -j{{ ansible_processor_vcpus }}"
   args:
     chdir: "{{ sources_path }}/SystemMake"
   become: true

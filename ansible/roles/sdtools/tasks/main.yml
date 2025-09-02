@@ -1,6 +1,27 @@
 ---
 
-- name: Install requirements
-  ansible.builtin.include_tasks: requirements.yml
+- name: Download the SDTools repository
+  ansible.builtin.git:
+    repo: "https://github.com/discos/srt-single-dish-tools.git"
+    dest: "/{{ discos_sw_dir }}/srt-single-dish-tools"
+    version: "main"
+    force: true
+  become: true
+  become_user: "{{ user.name }}"
+
+
+- name: Install some yum packages dependencies
+  ansible.builtin.yum:
+    name:
+      - fftw
+      - fftw-devel
+
+
 - name: Install SDTools
-  ansible.builtin.include_tasks: install.yml
+  ansible.builtin.command: "pip install .[all]"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  args:
+    chdir: "/{{ discos_sw_dir }}/srt-single-dish-tools/"
+  changed_when: true

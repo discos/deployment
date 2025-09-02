@@ -1,5 +1,5 @@
 ---
 
-lustre_network_interface: p1p1
+lustre_network_interface: ens2f0
 
 users: { user: "{{ user }}" }

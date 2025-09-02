@@ -35,6 +35,16 @@
     - "cdb_rdb/src/rules.mk"
 
 
+- name: Patch lockfile timeout in acsMakefileDefinitions.mk
+  ansible.builtin.replace:
+    dest: "{{ remote_build_path }}/acs/{{ item }}"
+    regexp: 'lockfile -s 2 -r 10(.*\.make-OmniOrb\.lock)'
+    replace: 'lockfile -s 1 -r 60\g<1>'
+  with_items:
+    - "LGPL/Kit/acs/include/acsMakefileDefinitions.mk"
+    - "ExtProd/PRODUCTS/acs-ext/expat/make/acsMakefileDefinitions.mk"
+
+
 - name: Set some paths
   ansible.builtin.set_fact:
     acs_command_center: "{{ item }}"

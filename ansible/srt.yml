@@ -21,6 +21,14 @@
       with_dict: "{{ users }}"
 
 
+- name: Patch yum repositories
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - yum_repos
+
+
 - name: Configure SELINUX
   tags: provision
   hosts: all
@@ -102,6 +110,19 @@
         - nis_server_ip is defined
 
 
+- name: Apply Sardara configuration to ACS nodes
+  hosts: acs_meta
+  remote_user: root
+  tasks:
+    - name: Apply Sardara configuration to ACS nodes
+      ansible.builtin.include_role:
+        name: sardara
+      when:
+        - sardara_mount_point is defined
+        - sardara_ip_address is defined
+        - sardara_remote_directory is defined
+
+
 - name: Apply ACS configuration to ACS nodes
   tags: provision
   hosts: acs_meta
@@ -140,6 +161,22 @@
     - ds9
 
 
+- name: Install srt-single-dish-tools
+  tags: provision
+  hosts: console
+  remote_user: root
+  roles:
+    - sdtools
+
+
+- name: Configure the quicklook
+  tags: provision
+  hosts: console
+  remote_user: root
+  roles:
+    - quicklook
+
+
 - name: Apply configuration for project users
   tags: provision
   hosts:
@@ -164,6 +201,16 @@
   remote_user: root
   roles:
     - deploy
+
+
+- name: Test the DISCOS CDB
+  tags:
+    - deploy
+    - cdb
+  hosts: acs_meta
+  remote_user: root
+  roles:
+    - cdb_test
 
 
 - name: Finalize the installation

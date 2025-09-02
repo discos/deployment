@@ -1,7 +1,8 @@
 ---
 
 - name: Check presence of dependencies on local repository
-  hosts: all
+  tags: provision
+  hosts: manager
   tasks:
     - name: Check presence of dependencies on local repository
       ansible.builtin.import_role:
@@ -11,7 +12,8 @@
 
 
 - name: Check users presence and eventually ask for their password
-  hosts: all
+  tags: provision
+  hosts: manager
   tasks:
     - name: Check users presence and eventually ask for their password
       ansible.builtin.include_role:
@@ -19,57 +21,73 @@
       with_dict: "{{ users }}"
 
 
+- name: Patch yum repositories
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - yum_repos
+
+
 - name: Configure SELINUX
-  hosts: all
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - selinux
 
 
 - name: Install yum packages
-  hosts: all
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - yum
 
 
 - name: Configure network
-  hosts: all
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - network
 
 
 - name: Configure firewall
-  hosts: all
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - firewall
 
 
 - name: Configure SSH
-  hosts: all
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - ssh
 
 
 - name: Configure time
-  hosts: all
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - time
 
 
 - name: Configure users and groups
-  hosts: all
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - users
 
 
 - name: Perform the key exchange procedure
-  hosts: all
+  tags: provision
+  hosts: manager
   tasks:
     - name: Perform the key exchange procedure
       ansible.builtin.include_role:
@@ -79,116 +97,91 @@
         loop_var: username
 
 
-- name: Configure NIS
-  hosts: all
-  remote_user: root
-  tasks:
-    - name: Configure NIS
-      ansible.builtin.include_role:
-        name: nis
-      when:
-        - nis_domain_name is defined
-        - network_ip_address is defined
-        - nis_server_ip is defined
-
-
-- name: Configure lustre
-  hosts: all
-  remote_user: root
-  tasks:
-    - name: Configure lustre
-      ansible.builtin.include_role:
-        name: lustre
-      when: lustre_server_ip is defined
-
-
-- name: Apply Sardara configuration to ACS nodes
-  hosts: acs_meta
-  remote_user: root
-  tasks:
-    - name: Apply Sardara configuration to ACS nodes
-      ansible.builtin.include_role:
-        name: sardara
-      when:
-        - sardara_mount_point is defined
-        - sardara_ip_address is defined
-        - sardara_remote_directory is defined
-
-
 - name: Apply ACS configuration to ACS nodes
-  hosts: acs_meta
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - acs
 
 
 - name: Configure the manager machine
+  tags: provision
   hosts: manager
   remote_user: root
   roles:
     - manager
 
 
-- name: Install single dish tools
-  hosts: console
-  remote_user: root
-  tasks:
-    - name: Install SDTools
-      ansible.builtin.include_role:
-        name: sdtools
-    - name: Configure the quicklook
-      ansible.builtin.include_role:
-        name: quicklook
-      when: quicklook_directories is defined
-
-
-- name: Install basie
-  hosts: console
+- name: Install BASIE
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - basie
 
 
-- name: Install GILDAS
-  hosts: console
-  remote_user: root
-  roles:
-    - gildas
-
-
 - name: Install SAOImageDS9
-  hosts: console
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - ds9
 
 
+- name: Install srt-single-dish-tools
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - sdtools
+
+
+- name: Configure the quicklook
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - quicklook
+
+
 - name: Apply configuration for project users
-  hosts: console
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - projects
 
 
 - name: Configure the VNC servers
-  hosts: acs_meta
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - vnc
 
 
 - name: Deploy DISCOS
-  hosts: acs_meta
+  tags: deploy
+  hosts: manager
   remote_user: root
-  tasks:
-    - name: Deploy DISCOS
-      ansible.builtin.include_role:
-        name: deploy
-      when: branch is defined or tag is defined
+  roles:
+    - deploy
+
+
+- name: Test the DISCOS CDB
+  tags:
+    - deploy
+    - cdb
+  hosts: manager
+  remote_user: root
+  roles:
+    - cdb_test
 
 
 - name: Finalize the installation
-  hosts: all
+  tags: provision
+  hosts: manager
   remote_user: root
   roles:
     - finalize

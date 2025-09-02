@@ -7,11 +7,74 @@ alias ll='ls -la'
 alias la='ls -A'
 alias lt='ls -lt | more'
 
+# Prompt command colors
+# =====================
+red='\e[1;31m'  # Red
+grn='\e[1;32m'  # Green
+cyn='\e[1;36m'  # Cyan
+pur='\e[1;35m'  # Purple
+txtrst='\e[0m'  # Text Reset
+
+make() {
+    if [ -f $HOME/bin/_discos-check-branch ]; then
+        CHECK_OUTPUT=$($HOME/bin/_discos-check-branch)
+        if [ -n "${CHECK_OUTPUT}" ]; then
+            echo -e "${red}ERROR:${txtrst} the 'make' command has been disabled in order to avoid messing up the default introot!"
+            echo "       Set your desired branch using the 'discos-set' command before compiling and installing!"
+            return 1
+        fi
+    fi
+
+    max=$(nproc)
+    args=()
+    while [[ $# -gt 0 ]]; do
+        if [[ "$1" == "-j" ]]; then
+            shift
+            if [[ "$1" =~ ^[0-9]+$ ]]; then
+                jobs=$1
+                shift
+                (( jobs > max )) && jobs=$max
+                args+=("-j$jobs")
+            else
+                args+=("-j$max")
+                [[ -n "$1" ]] && args+=("$1") && shift
+            fi
+        elif [[ "$1" =~ ^-j([0-9]+)$ ]]; then
+            jobs="${BASH_REMATCH[1]}"
+            (( jobs > max )) && jobs=$max
+            args+=("-j$jobs")
+            shift
+        else
+            args+=("$1")
+            shift
+        fi
+    done
+    command make "${args[@]}"
+}
+
+# Variables to export
+# ===================
+export QTDIR={{ qt_dir }}
+export QTLIB=$QTDIR/lib
+export QTINC=/usr/include/Qt
+export qt_prefix=$QTLIB
+export PATH=$PATH:$QTDIR/bin:$HOME/.local/bin:$HOME/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib64/:/usr/lib64:$QTLIB
+export PYTHONSTARTUP=$HOME/.pyrc
+export EDITOR=vi
+
 # Update the pyenv shims in order to be able to use newly installed python packages
 # =================================================================================
 pyenv rehash > /dev/null 2>&1
 
+{% if reference_manager == True %}
+# ACS Manager reference
+# =====================
+MNG_IP={{ hostvars[groups['manager'].0].ansible_host }}
+export MANAGER_REFERENCE=corbaloc::$MNG_IP:3000/Manager
+
+{% endif %}
 # Update the environment now and with every prompt
 # ================================================
-source /discos-sw/config/misc/prompt_command.sh
 PROMPT_COMMAND='source /{{ discos_sw_dir }}/config/misc/prompt_command.sh'
+$PROMPT_COMMAND

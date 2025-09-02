@@ -1,0 +1,16 @@
+---
+
+- name: Test the DISCOS CDB
+  block:
+    - name: Test the DISCOS CDB
+      ansible.builtin.command: cdbChecker
+      become: true
+      become_user: "{{ user.name }}"
+      become_flags: "-i"
+      changed_when: false
+  always:
+    - name: Go on with the procedure
+      ansible.builtin.meta: clear_host_errors
+      delegate_to: localhost
+      run_once: true
+      when: "'cdb' not in ansible_run_tags"

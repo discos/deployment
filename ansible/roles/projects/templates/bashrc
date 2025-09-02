@@ -30,7 +30,7 @@ if [ ! -L $HOME/logs ]; then
     fi
 fi
 
-{% if inventory_dir.split('/')[-1] == 'srt' %}
+{% if inventory_dir.split('/')[-1] == 'SRT' %}
 # Temporary solution for sardara not being lustre-integrated
 if [ ! -L $HOME/sardaraData ]; then
     ln -sfn /roach2_nuraghe/data/$USER sardaraData
