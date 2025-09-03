@@ -13,7 +13,7 @@ GARR_nameservers:
   - '193.206.141.38   # GARR'
   - '193.206.141.42   # GARR'
 
-resolv_nameservers: "{{ NOTO_nameservers + IRA_nameservers + GARR_nameservers }}"
+resolv_nameservers: "{{ GOOGLE_nameservers }}"
 
 host_list:
   - { hostname: "euser", ip_address: "192.167.187.16" }
@@ -26,4 +26,4 @@ quicklook_directories:
 
 quicklook_server_port: 8080
 
-users: { user: "{{ user }}" }
+users: { user: "{{ user }}", observer: "{{ observer }}" }
