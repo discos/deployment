@@ -115,7 +115,7 @@ def sshLogin(ip, user='root'):
     sp = subprocess.run(
         [
             'timeout',
-            '5'
+            '5',
             'ssh',
             f'{user}@{ip}',
             '-o',
@@ -134,7 +134,7 @@ def ping(ip):
     sp = subprocess.run(
         [
             'timeout',
-            '5'
+            '5',
             'nc',
             '-z',
             ip,
