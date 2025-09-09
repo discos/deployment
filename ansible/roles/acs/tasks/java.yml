@@ -1,5 +1,14 @@
 ---
 
+- name: Install correct java yum packages
+  ansible.builtin.yum:
+    name:
+      - java-11-openjdk
+      - java-11-openjdk-headless
+      - java-11-openjdk-devel
+    state: present
+
+
 - name: Fetch the installed yum packages
   ansible.builtin.yum:
     list: installed
@@ -19,11 +28,3 @@
     name: "{{ item }}"
     state: absent
   with_items: "{{ openjdk_packages_to_remove }}"
-
-
-- name: Install correct java yum packages
-  ansible.builtin.yum:
-    name:
-      - java-11-openjdk
-      - java-11-openjdk-devel
-    state: present
