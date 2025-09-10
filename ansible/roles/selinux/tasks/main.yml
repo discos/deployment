@@ -2,7 +2,7 @@
 
 - name: Install SELINUX python bindings
   ansible.builtin.yum:
-    name: python3-libselinux
+    name: libselinux-python3
     state: present
 
 

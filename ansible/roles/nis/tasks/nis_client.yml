@@ -8,7 +8,7 @@
 
 - name: Configure NIS on client machines
   ansible.builtin.command: "authconfig --enablenis --nisdomain={{ nis_domain_name }} --nisserver={{ nis_server_ip }}\
-           {% if nis_create_home == True %}--enablemkhomedir {% endif %} --update"
+           {% if nis_create_home == True %} --enablemkhomedir {% endif %} --update"
   changed_when: true
 
 

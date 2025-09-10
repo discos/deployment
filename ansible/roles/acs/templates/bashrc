@@ -67,7 +67,7 @@ export EDITOR=vi
 # =================================================================================
 pyenv rehash > /dev/null 2>&1
 
-{% if inventory_hostname not in groups['manager'] %}
+{% if reference_manager == True %}
 # ACS Manager reference
 # =====================
 MNG_IP={{ hostvars[groups['manager'].0].ansible_host }}
