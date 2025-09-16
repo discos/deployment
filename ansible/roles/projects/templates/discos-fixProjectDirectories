@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+from __future__ import print_function
+import os
+import getpass
+import pwd
+import grp
+import subprocess
+
+FNULL = open(os.devnull, 'w')
+
+{% if fs_server_ip is defined %}
+fs_server_ip = '{{ archive_server_ip }}'
+{% else %}
+fs_server_ip = None
+{% endif %}
+
+def fix_home(user):
+    # Symlinks will be added every login
+    # via the user's .bashrc if they are missing
+    print(f'{user} home directory is missing, adding it')
+    subprocess.call([
+        'sudo',
+        'mkhomedir_helper',
+        user
+    ], stdout=FNULL)
+
+    subprocess.call([
+        'sudo',
+        'su',
+        '-',
+        user,
+        '-c',
+        'date>>discosUser'
+    ], stdout=FNULL)
+
+def fix_local_acl(path, acl):
+    subprocess.call([
+        'setfacl',
+        '-m',
+        acl,
+        path
+    ], stdout=FNULL)
+
+def fix_remote_acl(path, acl):
+    subprocess.call([
+        'sudo',
+        'ssh',
+        fs_server_ip,
+        'setfacl',
+        '-m',
+        acl,
+        path
+    ], stdout=FNULL)
+
+def main():
+    print('Re-adding missing directories for \'projects\' users:\n')
+
+    try:
+        gid = grp.getgrnam('projects').gr_gid
+        users = {
+            user.pw_name: user.pw_dir
+            for user in pwd.getpwall()
+            if user.pw_gid == gid
+        }
+
+        for user, home_dir in users.items():
+            try:
+                os.stat(home_dir)
+            except:
+                fix_home(user)
+
+            paths = {
+                '/discos-archive/schedules/%s' % user: [
+                    'u:%s:rwx' % user,
+                    'd:u:%s:rwx' % getpass.getuser()
+                ],
+                '/discos-archive/data/%s' % user: [
+                    'u:%s:r-x' % user,
+                    'd:u:%s:rwx' % getpass.getuser(),
+                    'd:u:%s:r-x' % user
+                ],
+                '/discos-archive/extraData/%s' % user: [
+                    'u:%s:r-x' % user,
+                    'd:u:%s:rwx' % getpass.getuser(),
+                    'd:u:%s:r-x' % user
+                ]
+            }
+
+            for path in paths.keys():
+                try:
+                    os.stat(path)
+                except:
+                    print(f'{path} is missing, adding it')
+                    os.mkdir(path)
+                for acl in paths[path]:
+                    if fs_server_ip is not None:
+                        fix_remote_acl(path, acl)
+                    else:
+                        fix_local_acl(path, acl)
+
+    except KeyError:
+        print('Group \'projects\' does not exist yet!')
+
+if __name__ == "__main__":
+    main()

@@ -39,6 +39,18 @@
   become_user: "{{ user.name }}"
 
 
+- name: Render the discos-fixProjectDirectories template
+  ansible.builtin.template:
+    src: discos-fixProjectDirectories
+    dest: "/{{ discos_sw_dir }}/{{ user.name }}/bin/"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: "0544"
+    force: true
+  become: true
+  become_user: "{{ user.name }}"
+
+
 - name: Copy the bashrc template into /etc/skel
   ansible.builtin.template:
     src: bashrc
