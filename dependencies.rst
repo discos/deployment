@@ -7,7 +7,7 @@ Dependencies
 To automatically deploy DISCOS, you need to install some dependencies:
 `Git <https://git-scm.com/>`_, `Ansible <https://www.ansible.com/>`_,
 `Python 3 <https://www.python.org/download/>`_,
-`Vagrant <https://www.vagrantup.com/>`_ and `VirtualBox
+`Vagrant <https://developer.hashicorp.com/vagrant/>`_ and `VirtualBox
 <https://www.virtualbox.org/>`_.  It usually takes about 15 minutes.
 
 
@@ -72,8 +72,8 @@ Now verify if Vagrant is installed:
    $ vagrant --version
    Vagrant 2.2.1
 
-If it is not, download the binary file from
-the `vagrant official website <https://www.vagrantup.com/downloads.html>`_
+If it is not, download the binary file from the
+`vagrant official website <https://developer.hashicorp.com/vagrant/install>`_
 and install it.
 
 
