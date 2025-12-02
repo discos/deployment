@@ -18,5 +18,6 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install -r test_requirements.txt
       - name: Check if the Ansible procedure is correctly written
+        working-directory: ansible
         run: |
-          ansible-lint ansible
+          ansible-lint .

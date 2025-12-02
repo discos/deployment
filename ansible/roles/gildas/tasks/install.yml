@@ -1,7 +1,7 @@
 ---
 
 - name: Install some GILDAS dependencies
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - gcc-gfortran
       - lpr

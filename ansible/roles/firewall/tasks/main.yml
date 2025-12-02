@@ -1,7 +1,7 @@
 ---
 
 - name: Install iptables yum packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ firewall_packages }}"
     state: present
 

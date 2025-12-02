@@ -1,7 +1,7 @@
 ---
 
 - name: Fetch the installed yum packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     list: installed
   register: package_facts
 
@@ -19,7 +19,7 @@
 
 
 - name: Uninstall the old tigervnc packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ item }}"
     state: absent
   with_items: "{{ old_tigervnc_packages }}"
@@ -55,7 +55,7 @@
 
 
 - name: Install tigervnc
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "/root/{{ item }}"
     state: present
   with_items: "{{ tigervnc_packages }}"

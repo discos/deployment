@@ -1,7 +1,7 @@
 ---
 
 - name: Install ypbind yum package
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: ypbind
     state: present
 

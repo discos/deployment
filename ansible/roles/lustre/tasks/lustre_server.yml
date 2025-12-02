@@ -1,7 +1,7 @@
 ---
 
 - name: Install some yum dependencies
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - sg3_utils
       - lsof
@@ -24,7 +24,7 @@
 
 
 - name: Install e2fsprogs yum packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ e2fsprogs_files | map('regex_replace', '(.*)', '/tmp/\\1-' + e2fsprogs_tail) | list }}"
     state: present
     validate_certs: false
@@ -50,7 +50,7 @@
 
 
 - name: Install lustre server kernel yum packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ lustre_server_kernel_files | map('regex_replace', '(.*)', '/tmp/\\1-' + lustre_server_kernel_tail) | list }}"
     state: present
     validate_certs: false
@@ -85,7 +85,7 @@
 
 
 - name: Install lustre server yum packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ lustre_server_files | map('regex_replace', '(.*)', '/tmp/\\1-' + lustre_server_tail) | list }}"
     state: present
     validate_certs: false

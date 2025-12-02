@@ -1,7 +1,7 @@
 ---
 
 - name: Install correct java yum packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - java-11-openjdk
       - java-11-openjdk-headless
@@ -10,7 +10,7 @@
 
 
 - name: Fetch the installed yum packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     list: installed
   register: package_facts
 
@@ -24,7 +24,7 @@
 
 
 - name: Uninstall OpenJDK packages different from Java 11
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ item }}"
     state: absent
   with_items: "{{ openjdk_packages_to_remove }}"

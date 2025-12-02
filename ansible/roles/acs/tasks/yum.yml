@@ -1,7 +1,7 @@
 ---
 
 - name: Install ACS-related yum packages
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - deltarpm
       - epel-release
@@ -91,7 +91,7 @@
 
 
 - name: Install centos-release-scl
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: centos-release-scl
 
 
@@ -108,7 +108,7 @@
 
 
 - name: Install devtoolset-{{ devtoolset_release }}-gcc
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: devtoolset-{{ devtoolset_release }}-gcc*
     enablerepo: centos-sclo-rh-testing
 
@@ -120,7 +120,7 @@
 
 
 - name: Make sure the default git yum package is not installed
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - git
     state: absent
@@ -147,7 +147,7 @@
 
 
 - name: Install the git224-core-2.24.3-1.el7.ius.x86_64.rpm yum package
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - "/root/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
       - git-lfs
@@ -161,7 +161,7 @@
 
 
 - name: Ensure cmake2 is not installed
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - cmake
     state: absent

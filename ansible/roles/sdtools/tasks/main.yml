@@ -11,7 +11,7 @@
 
 
 - name: Install some yum packages dependencies
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - fftw
       - fftw-devel
