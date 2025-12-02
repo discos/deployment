@@ -25,7 +25,6 @@
   with_nested:
     - ["data", "extraData", "schedules"]
     - ["user::rwx", "group::---"]
-  ignore_errors: true
   failed_when: false
 
 
