@@ -11,7 +11,7 @@
 - name: Make sure the ssh-required files exists
   ansible.builtin.file:
     path: "{{ user_facts.home }}/.ssh/{{ item }}"
-    state: touch
+    state: file
     owner: "{{ username }}"
     group: "{{ user_facts.group }}"
     mode: "0600"
@@ -20,27 +20,17 @@
     - "known_hosts"
 
 
-- name: Removing old machine RSA fingerprints from known_hosts file
-  ansible.builtin.lineinfile:
-    path: "{{ user_facts.home }}/.ssh/known_hosts"
-    state: absent
-    regexp: "^{{ hostvars[item].inventory_hostname }},{{ hostvars[item].inventory_hostname_short }},{{ hostvars[item].ansible_host }}(.*)$"
-  with_items: "{{ play_hosts }}"
-
-
-- name: Fetch the machine RSA fingerprints
-  ansible.builtin.command: cat /etc/ssh/ssh_host_rsa_key.pub
-  register: machine_public_key
-  changed_when: false
-
-
-- name: Add machine RSA fingerprints to known_hosts file
-  ansible.builtin.lineinfile:
+- name: Ensure machine host keys are in known_hosts for the user
+  ansible.builtin.known_hosts:
     path: "{{ user_facts.home }}/.ssh/known_hosts"
     state: present
-    line: "{{ hostvars[item].inventory_hostname }},{{ hostvars[item].inventory_hostname_short }},\
-           {{ hostvars[item].ansible_host }} {{ hostvars[item].machine_public_key.stdout }}"
-  with_items: "{{ play_hosts }}"
+    name: "{{ hostvars[item.0][item.1] }}"
+    key: "{{ lookup('pipe', 'ssh-keyscan -t ecdsa ' ~ hostvars[item.0][item.1] ~ ' 2>/dev/null') }}"
+  with_nested:
+    - "{{ play_hosts }}"
+    - ["inventory_hostname", "inventory_hostname_short", "ansible_host"]
+  become: true
+  become_user: "{{ username }}"
 
 
 - name: Remove old public keys from authorized_keys file

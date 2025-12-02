@@ -68,7 +68,7 @@
       - gsl
       - gsl-devel
       - gdb
-      - cmake
+      - cmake3
       - expect
       - boost
       - boost-devel
@@ -82,8 +82,8 @@
       - bluefish
       - dejavu-sans-mono-fonts
       - bash-completion
-      - zeromq
-      - zeromq-devel
+      - libsodium
+      - libsodium-devel
       - "@X Window System"
       - "@GNOME"
       - "@fonts"
@@ -158,3 +158,17 @@
   ansible.builtin.file:
     path: "/root/git224-core-2.24.3-1.el7.ius.x86_64.rpm"
     state: absent
+
+
+- name: Ensure cmake2 is not installed
+  ansible.builtin.yum:
+    name:
+      - cmake
+    state: absent
+
+
+- name: Set cmake3 as default cmake
+  ansible.builtin.file:
+    src: /usr/bin/cmake3
+    dest: /usr/bin/cmake
+    state: link

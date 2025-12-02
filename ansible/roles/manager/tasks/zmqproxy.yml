@@ -1,0 +1,82 @@
+---
+
+- name: Create the telemetry proxy server directories
+  ansible.builtin.file:
+    path: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/{{ item }}"
+    state: directory
+    mode: "0700"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  with_items:
+    - "server"
+    - "server/authorized"
+
+
+- name: Check if the telemetry proxy key pair is present
+  ansible.builtin.stat:
+    path: ".curve/discos/telemetry/server/identity.key_secret"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  register: proxy_key_present
+
+
+- name: Generate the telemetry proxy Curve key pair
+  ansible.builtin.command: >
+    python -c "from zmq.auth import create_certificates;
+    create_certificates('.curve/discos/telemetry/server', 'identity')"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  changed_when: true
+  when: not proxy_key_present.stat.exists
+
+
+- name: Set the proxy Curve key pair permissions
+  ansible.builtin.file:
+    path: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/server/{{ item }}"
+    mode: "0600"
+    state: file
+  with_items:
+    - "identity.key"
+    - "identity.key_secret"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+
+
+- name: Create symlink for telemetry publishers
+  ansible.builtin.file:
+    src: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/identity.key"
+    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/server/authorized/{{ inventory_hostname_short }}.key"
+    state: link
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+
+
+- name: Create symlink for server public key
+  ansible.builtin.file:
+    src: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/server/identity.key"
+    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/client/server.key"
+    state: link
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+
+
+- name: Copy the zmqproxy.service unit file
+  ansible.builtin.template:
+    src: zmqproxy.service
+    dest: /usr/lib/systemd/system/zmqproxy.service
+    mode: "0644"
+    force: true
+
+
+- name: Enable the ZMQProxy service
+  ansible.builtin.systemd:
+    name: "zmqproxy.service"
+    state: restarted
+    enabled: true
+  failed_when: false

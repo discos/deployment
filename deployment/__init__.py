@@ -77,7 +77,7 @@ def parseInventory(inventory):
                 _ ,ansible_host = ansible_host.split('=')
                 host = {}
                 host['hostname'] = hostname
-                host['ip'] = ansible_host            
+                host['ip'] = ansible_host
                 hosts[current_group] = host
             elif line != '\n' and current_group:
                 # Inside cluster
@@ -89,7 +89,7 @@ def parseInventory(inventory):
                         if machine not in groups[current_group]:
                             groups[current_group].append(machine)
     clusters = list(hosts.keys()) + list(groups.keys())
-    return hosts, groups, clusters 
+    return hosts, groups, clusters
 
 def getBranches():
     from urllib.request import Request, urlopen
@@ -115,7 +115,7 @@ def sshLogin(ip, user='root'):
     sp = subprocess.run(
         [
             'timeout',
-            '5',
+            '2',
             'ssh',
             f'{user}@{ip}',
             '-o',
@@ -134,7 +134,7 @@ def ping(ip):
     sp = subprocess.run(
         [
             'timeout',
-            '5',
+            '2',
             'nc',
             '-z',
             ip,
@@ -166,7 +166,7 @@ def statusVm(machine):
         print(f'Machine {machine} is running.')
     else:
         print(f'Machine {machine} powered off.')
-    return return_code 
+    return return_code
 
 def startVm(machine):
     return_code = 0
@@ -451,7 +451,7 @@ def updateKnownHosts(
             stderr=STDERR
         )
         subprocess.run(
-            ['ssh-keyscan', '-t', 'rsa', '-H', ip],
+            ['ssh-keyscan', '-t', 'ecdsa', '-H', ip],
             stderr=STDERR,
             stdout=open(file_name, 'a')
         )

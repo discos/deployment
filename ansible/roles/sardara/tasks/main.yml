@@ -4,17 +4,15 @@
   ansible.builtin.file:
     path: "{{ sardara_mount_point }}"
     state: directory
-    recurse: true
     mode: "0755"
 
 
-- name: Add Sardara backend data directory mount to rc.local
-  ansible.builtin.lineinfile:
-    dest: /etc/rc.local
-    line: "/bin/mount -t nfs4 {{ sardara_ip_address }}:{{ sardara_remote_directory }} {{ sardara_mount_point }}"
-
-
-- name: Try to mount Sardara backend data directory
-  ansible.builtin.command: "timeout 10 /bin/mount -t nfs4 {{ sardara_ip_address }}:{{ sardara_remote_directory }} {{ sardara_mount_point }}"
-  changed_when: true
+- name: Ensure Sardara backend NFS mount is configured and mounted
+  ansible.posix.mount:
+    path: "{{ sardara_mount_point }}"
+    src: "{{ sardara_ip_address }}:{{ sardara_remote_directory }}"
+    fstype: nfs4
+    opts: "defaults,_netdev,nofail"
+    state: mounted
   failed_when: false
+  changed_when: false

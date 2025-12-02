@@ -2,3 +2,6 @@
 
 - name: Configure the archive directory
   ansible.builtin.include_tasks: archive_tree.yml
+
+- name: Configure the ZMQProxy service
+  ansible.builtin.include_tasks: zmqproxy.yml

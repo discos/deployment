@@ -141,6 +141,14 @@
     - manager
 
 
+- name: Perform the Curve key exchange procedure
+  tags: provision
+  hosts: acs
+  remote_user: root
+  roles:
+    - curve_key_exchange
+
+
 - name: Install BASIE
   tags: provision
   hosts:

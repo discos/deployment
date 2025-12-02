@@ -4,7 +4,10 @@
   ansible.builtin.file:
     path: "{{ remote_build_path }}"
     state: directory
-    mode: "0755"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: "0770"
+    recurse: true
 
 
 #################################
@@ -790,23 +793,168 @@
 # nlohmann/json library
 #######################
 
+- name: Download the nlohmann/json repository
+  ansible.builtin.git:
+    repo: "https://github.com/nlohmann/json.git"
+    dest: "{{ remote_build_path }}/json"
+    force: true
+    version: "master"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+
+
 - name: Install the nlohmann/json library
-  ansible.builtin.get_url:
-    url: "https://github.com/nlohmann/json/releases/latest/download/json.hpp"
-    dest: /usr/local/include/json.hpp
-    mode: '0644'
+  ansible.builtin.copy:
+    src: "{{ remote_build_path }}/json/single_include/nlohmann/json.hpp"
+    dest: "/usr/local/include/json.hpp"
+    remote_src: true
+    mode: "0644"
+    force: true
   become: true
 
 
 ##################
-# cppzmq libraries
+# ZeroMQ libraries
 ##################
 
-- name: Install the cppzmq header files
-  ansible.builtin.get_url:
-    url: "https://raw.githubusercontent.com/zeromq/cppzmq/master/{{ item }}"
-    dest: "/usr/local/include/{{ item }}"
-    mode: '0644'
+- name: Download the libzmq repository
+  ansible.builtin.git:
+    repo: "https://github.com/zeromq/libzmq.git"
+    dest: "{{ remote_build_path }}/libzmq"
+    force: true
+    version: "master"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+
+
+- name: Build libzmq
+  ansible.builtin.shell: |
+    ./autogen.sh
+    ./configure --prefix=/usr --libdir=/usr/lib64 --with-libsodium --enable-drafts
+    make -j
+  args:
+    chdir: "{{ remote_build_path }}/libzmq"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  changed_when: true
+
+
+- name: Install libzmq
+  ansible.builtin.command: "make install"
+  args:
+    chdir: "{{ remote_build_path }}/libzmq"
+  become: true
+  changed_when: true
+
+
+- name: Download the cppzmq repository
+  ansible.builtin.git:
+    repo: "https://github.com/zeromq/cppzmq.git"
+    dest: "{{ remote_build_path }}/cppzmq"
+    force: true
+    version: "master"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+
+
+- name: Create the build directory
+  ansible.builtin.file:
+    path: "{{ remote_build_path }}/cppzmq/build"
+    state: directory
+    mode: "0755"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+
+
+- name: Build cppzmq
+  ansible.builtin.shell: |
+    cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+    make -j
+  args:
+    chdir: "{{ remote_build_path }}/cppzmq/build"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  environment:
+    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+  changed_when: true
+
+
+- name: Install cppzmq
+  ansible.builtin.command: "make install"
+  args:
+    chdir: "{{ remote_build_path }}/cppzmq/build"
+  become: true
+  changed_when: true
+
+
+- name: Install pyzmq
+  ansible.builtin.command: "pip install --force-reinstall --no-binary=pyzmq pyzmq"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  changed_when: true
+
+
+- name: Create the .curve directory tree
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0700"
   with_items:
-    - zmq.hpp
-    - zmq_addon.hpp
+    - ".curve"
+    - ".curve/discos"
+    - ".curve/discos/telemetry"
+    - ".curve/discos/telemetry/client"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+
+
+- name: Check if the Curve key pair is present
+  ansible.builtin.stat:
+    path: ".curve/identity.key_secret"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  register: curve_key_present
+
+
+- name: Generate the Curve key pair
+  ansible.builtin.command: >
+    python -c "from zmq.auth import create_certificates;
+    create_certificates('.curve', 'identity')"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  changed_when: true
+  when: not curve_key_present.stat.exists
+
+
+- name: Set the Curve key pair permissions
+  ansible.builtin.file:
+    path: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/{{ item }}"
+    mode: "0600"
+    state: file
+  with_items:
+    - "identity.key"
+    - "identity.key_secret"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+
+
+- name: Link the Curve key pair into telemetry client directory
+  ansible.builtin.file:
+    src: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/identity.key_secret"
+    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/client/identity.key_secret"
+    state: link
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  changed_when: true

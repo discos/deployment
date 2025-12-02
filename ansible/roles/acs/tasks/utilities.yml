@@ -1,13 +1,10 @@
 ---
 
 - name: Install prospector (Python linter)
-  ansible.builtin.command: "pip install {{ item }}"
+  ansible.builtin.command: "pip install prospector"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
-  with_items:
-    - "lazy-object-proxy==1.6.0"
-    - "prospector==0.12.11"
   changed_when: true
 
 
@@ -25,19 +22,7 @@
   become_user: "{{ item.value.name }}"
   become_flags: "-i"
   with_dict: "{{ users }}"
-  no_log: true
   changed_when: true
-
-
-- name: Copy the ipython startup files
-  ansible.builtin.template:
-    src: ipython_startup_01.py
-    dest: "/{{ discos_sw_dir }}/{{ item.value.name }}/.ipython/profile_default/startup/01.py"
-    owner: "{{ item.value.name }}"
-    group: "{{ item.value.group }}"
-    mode: "0644"
-  with_dict: "{{ users }}"
-  no_log: true
 
 
 - name: Set the default application for html files
