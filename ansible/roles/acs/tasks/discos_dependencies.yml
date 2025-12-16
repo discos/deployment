@@ -872,16 +872,15 @@
 
 
 - name: Build cppzmq
-  ansible.builtin.shell: |
-    cmake .. -DCMAKE_INSTALL_PREFIX=/usr
-    make -j
+  ansible.builtin.shell: "source /etc/profile && {{ item }}"
+  with_items:
+    - "cmake .. -DCMAKE_INSTALL_PREFIX=/usr"
+    - "make -j"
   args:
     chdir: "{{ remote_build_path }}/cppzmq/build"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
-  environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
   changed_when: true
 
 

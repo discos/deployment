@@ -25,7 +25,14 @@
     path: "{{ user_facts.home }}/.ssh/known_hosts"
     state: present
     name: "{{ hostvars[item.0][item.1] }}"
-    key: "{{ lookup('pipe', 'ssh-keyscan -t ecdsa ' ~ hostvars[item.0][item.1] ~ ' 2>/dev/null') }}"
+    key: >-
+      {{
+        hostvars[item.0][item.1]
+        ~ ' '
+        ~ (
+            lookup('pipe', 'ssh-keyscan -T 5 -t ecdsa ' ~ hostvars[item.0].ansible_host).split()[1:] | join(' ')
+          )
+      }}
   with_nested:
     - "{{ play_hosts }}"
     - ["inventory_hostname", "inventory_hostname_short", "ansible_host"]

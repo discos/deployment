@@ -5,7 +5,7 @@ lustre_network_interface: p1p1
 quicklook_directories:
   - "/{{ archive }}/data"
 quicklook_server_port: 8080
-quicklook_workers: 4
+quicklook_workers: 3
 quicklook_polling: True
 
 users: { user: "{{ user }}", observer: "{{ observer }}" }
