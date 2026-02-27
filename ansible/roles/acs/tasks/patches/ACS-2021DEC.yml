@@ -94,6 +94,16 @@
     backup: false
 
 
+- name: Replace DALImpl.java to fix CDB parallelism
+  ansible.builtin.template:
+    src: "patches/{{ acs_tag }}/DALImpl.java"
+    dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/cdb/ws/src/com/cosylab/cdb/jdal/DALImpl.java"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
+    mode: "0664"
+    backup: false
+
+
 - name: Patch acsstartupProcesses
   ansible.builtin.replace:
     path: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/acsstartup/src/acsstartupProcesses"
