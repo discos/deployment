@@ -94,10 +94,10 @@
     backup: false
 
 
-- name: Replace DALImpl.java to fix CDB parallelism
+- name: Replace WDALImpl.java to fix CDB writes
   ansible.builtin.template:
-    src: "patches/{{ acs_tag }}/DALImpl.java"
-    dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/cdb/ws/src/com/cosylab/cdb/jdal/DALImpl.java"
+    src: "patches/{{ acs_tag }}/WDALImpl.java"
+    dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/cdb/ws/src/com/cosylab/cdb/jdal/WDALImpl.java"
     owner: "{{ user.name }}"
     group: "{{ user.group }}"
     mode: "0664"
