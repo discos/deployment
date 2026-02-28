@@ -1,6 +1,6 @@
 #!/usr/bin/python
-import crypt
 import getpass
+from passlib.hash import sha512_crypt
 from ansible.module_utils.basic import AnsibleModule
 
 __metaclass__ = type
@@ -40,7 +40,8 @@ def run_module():
         else:
             module.fail_json(msg=error_msg + '.', **result)
 
-    result['password_hash'] = crypt.crypt(var, f"$6$rounds=656000${module.params['username'][:8]}$")
+    salt_val = module.params['username'][:8]
+    result['password_hash'] = sha512_crypt.hash(var, rounds=656000, salt=salt_val)
     result['changed'] = True
 
     # in the event of a successful module execution, you will want to
