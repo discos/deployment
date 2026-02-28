@@ -2,7 +2,7 @@
 
 - name: Read telemetry server public key from manager
   ansible.builtin.slurp:
-    src: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/server/identity.key"
+    src: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/telemetry/server/identity.key"
   register: telemetry_server_pub
   delegate_to: "{{ groups['manager'][0] }}"
   run_once: true
@@ -13,7 +13,7 @@
 
 - name: Distribute telemetry server public key as server.key to ACS hosts
   ansible.builtin.copy:
-    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/client/server.key"
+    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/telemetry/client/server.key"
     content: "{{ telemetry_server_pub.content | b64decode }}"
     owner: "{{ user.name }}"
     mode: "0600"
@@ -26,7 +26,7 @@
 
 - name: Read client public Curve key on each ACS host (except manager)
   ansible.builtin.slurp:
-    src: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/identity.key"
+    src: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/identity.key"
   register: client_curve_pub
   when:
     - inventory_hostname != groups['manager'][0]
@@ -37,7 +37,7 @@
 
 - name: Install client public keys into telemetry authorized on manager
   ansible.builtin.copy:
-    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/server/authorized/{{ hostvars[item].ansible_hostname }}.key"
+    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/telemetry/server/authorized/{{ hostvars[item].ansible_hostname }}.key"
     content: "{{ hostvars[item].client_curve_pub.content | b64decode }}"
     owner: "{{ user.name }}"
     mode: "0600"

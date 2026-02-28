@@ -900,16 +900,18 @@
   changed_when: true
 
 
-- name: Create the .curve directory tree
+- name: Create the .config/discos directory tree
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ item.path }}"
     state: directory
-    mode: "0700"
-  with_items:
-    - ".curve"
-    - ".curve/discos"
-    - ".curve/discos/telemetry"
-    - ".curve/discos/telemetry/client"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: ".config", mode: "0755" }
+    - { path: ".config/discos", mode: "0700" }
+    - { path: ".config/discos/telemetry", mode: "0700" }
+    - { path: ".config/discos/telemetry/client", mode: "0700" }
+    - { path: ".config/discos/rpc", mode: "0700" }
+    - { path: ".config/discos/rpc/client", mode: "0700" }
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
@@ -917,7 +919,7 @@
 
 - name: Check if the Curve key pair is present
   ansible.builtin.stat:
-    path: ".curve/identity.key_secret"
+    path: ".config/discos/identity.key_secret"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
@@ -927,7 +929,7 @@
 - name: Generate the Curve key pair
   ansible.builtin.command: >
     python -c "from zmq.auth import create_certificates;
-    create_certificates('.curve', 'identity')"
+    create_certificates('.config/discos', 'identity')"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
@@ -937,7 +939,7 @@
 
 - name: Set the Curve key pair permissions
   ansible.builtin.file:
-    path: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/{{ item }}"
+    path: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/{{ item }}"
     mode: "0600"
     state: file
   with_items:
@@ -950,8 +952,8 @@
 
 - name: Link the Curve key pair into telemetry client directory
   ansible.builtin.file:
-    src: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/identity.key_secret"
-    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/client/identity.key_secret"
+    src: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/identity.key_secret"
+    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/telemetry/client/identity.key_secret"
     state: link
   become: true
   become_user: "{{ user.name }}"

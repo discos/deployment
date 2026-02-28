@@ -2,7 +2,7 @@
 
 - name: Create the telemetry proxy server directories
   ansible.builtin.file:
-    path: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/{{ item }}"
+    path: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/telemetry/{{ item }}"
     state: directory
     mode: "0700"
   become: true
@@ -15,7 +15,7 @@
 
 - name: Check if the telemetry proxy key pair is present
   ansible.builtin.stat:
-    path: ".curve/discos/telemetry/server/identity.key_secret"
+    path: ".config/discos/telemetry/server/identity.key_secret"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
@@ -25,7 +25,7 @@
 - name: Generate the telemetry proxy Curve key pair
   ansible.builtin.command: >
     python -c "from zmq.auth import create_certificates;
-    create_certificates('.curve/discos/telemetry/server', 'identity')"
+    create_certificates('.config/discos/telemetry/server', 'identity')"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
@@ -35,7 +35,7 @@
 
 - name: Set the proxy Curve key pair permissions
   ansible.builtin.file:
-    path: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/server/{{ item }}"
+    path: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/telemetry/server/{{ item }}"
     mode: "0600"
     state: file
   with_items:
@@ -48,8 +48,8 @@
 
 - name: Create symlink for telemetry publishers
   ansible.builtin.file:
-    src: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/identity.key"
-    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/server/authorized/{{ inventory_hostname_short }}.key"
+    src: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/identity.key"
+    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/telemetry/server/authorized/{{ inventory_hostname_short }}.key"
     state: link
   become: true
   become_user: "{{ user.name }}"
@@ -58,25 +58,25 @@
 
 - name: Create symlink for server public key
   ansible.builtin.file:
-    src: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/server/identity.key"
-    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.curve/discos/telemetry/client/server.key"
+    src: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/telemetry/server/identity.key"
+    dest: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/telemetry/client/server.key"
     state: link
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"
 
 
-- name: Copy the zmqproxy.service unit file
+- name: Copy the discos_telemetry_proxy.service unit file
   ansible.builtin.template:
-    src: zmqproxy.service
-    dest: /usr/lib/systemd/system/zmqproxy.service
+    src: discos_telemetry_proxy.service
+    dest: /usr/lib/systemd/system/discos_telemetry_proxy.service
     mode: "0644"
     force: true
 
 
-- name: Enable the ZMQProxy service
+- name: Enable the discos_telemetry_proxy service
   ansible.builtin.systemd:
-    name: "zmqproxy.service"
+    name: "discos_telemetry_proxy.service"
     state: restarted
     enabled: true
   failed_when: false
