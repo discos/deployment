@@ -26,6 +26,7 @@ else
 fi
 
 export ACS_TMP=/service/acstmp/{{ inventory_hostname_short }}
+export ACS_STARTUP_TIMEOUT_MULTIPLIER=10
 
 # Load ACS definitions
 # ====================
