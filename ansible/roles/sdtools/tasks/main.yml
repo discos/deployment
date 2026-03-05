@@ -18,7 +18,7 @@
 
 
 - name: Install SDTools
-  ansible.builtin.command: "pip install .[all]"
+  ansible.builtin.command: "pip install --upgrade .[all]"
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"

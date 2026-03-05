@@ -745,6 +745,7 @@
   with_items:
     - "fs.inotify.max_user_watches"
     - "fs.inotify.max_user_instances"
+  when: ansible_virtualization_type != 'docker'
 
 
 ############

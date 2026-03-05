@@ -66,4 +66,5 @@
       - iperf
       - vnstat
       - tree
+      - sudo
     state: present

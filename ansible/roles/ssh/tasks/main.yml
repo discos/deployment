@@ -31,3 +31,13 @@
   ansible.builtin.service:
     name: sshd
     state: restarted
+    use: systemd
+
+
+- name: Fix SSH login issue for non-root users in Docker (pam_loginuid)
+  ansible.builtin.replace:
+    path: /etc/pam.d/sshd
+    regexp: '^session\s+required\s+pam_loginuid\.so'
+    replace: 'session    optional     pam_loginuid.so'
+  become: true
+  when: ansible_virtualization_type == 'docker'

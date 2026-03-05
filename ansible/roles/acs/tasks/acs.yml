@@ -46,16 +46,52 @@
   when: not target_dir.stat.exists
 
 
-- name: Download the ACS repository
-  ansible.builtin.git:
-    repo: "https://asw.alma.cl/ASW/acs.git"
-    dest: "{{ remote_build_path }}/acs"
-    version: "acs/2021DEC"
-    track_submodules: true
-    force: true
-  become: true
-  become_user: "{{ user.name }}"
-  become_flags: "-i"
+- name: Check if the ACS-2021DEC archive exists locally
+  ansible.builtin.stat:
+    path: "{{ local_repository_path }}/{{ acs_archive_path }}"
+  register: acs_archive
+  delegate_to: localhost
+  run_once: true
+
+
+- name: Download the ACS-2021DEC archive parts
+  ansible.builtin.get_url:
+    url: "{{ remote_repository_download_url }}/{{ acs_archive_prefix }}{{ item }}"
+    dest: "{{ local_repository_path }}"
+    mode: "0644"
+    headers:
+      Authorization: "token {{ repository_token }}"
+  loop: "{{ acs_archive_parts }}"
+  when: not acs_archive.stat.exists
+  delegate_to: localhost
+  run_once: true
+
+
+- name: Reassemble ACS archive from parts
+  ansible.builtin.shell: "cat {{ acs_archive_prefix }}* > {{ acs_archive_path }}"
+  args:
+    chdir: "{{ local_repository_path }}"
+    creates: "{{ local_repository_path }}/{{ acs_archive_path }}"
+  delegate_to: localhost
+  run_once: true
+  when: not acs_archive.stat.exists
+
+
+- name: Remove ACS parts
+  ansible.builtin.file:
+    path: "{{ local_repository_path }}/{{ acs_archive_prefix }}{{ item }}"
+    state: absent
+  loop: "{{ acs_archive_parts }}"
+  delegate_to: localhost
+  run_once: true
+
+
+- name: Extract the ACS archive to the remote
+  ansible.builtin.unarchive:
+    src: "{{ local_repository_path }}/{{ acs_archive_path }}"
+    dest: "{{ remote_build_path }}/"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
   when: not target_dir.stat.exists
 
 

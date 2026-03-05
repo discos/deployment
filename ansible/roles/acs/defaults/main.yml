@@ -8,6 +8,10 @@ acssw: /alma/{{ acs_tag }}/ACSSW
 
 cdb_versions: ['SRT', 'Medicina', 'Noto']
 
+acs_archive_prefix: "acs-2021DEC-part-"
+acs_archive_parts: ['aa', 'ab', 'ac', 'ad', 'ae', 'af', 'ag', 'ah', 'ai', 'aj', 'ak', 'al', 'am', 'an', 'ao', 'ap']
+acs_archive_path: "acs-2021DEC.tar.gz"
+
 
 ###############################
 # DISCOS Dependencies Variables

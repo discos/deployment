@@ -25,6 +25,7 @@
     name: ntpd
     state: restarted
     enabled: true
+    use: systemd
 
 
 - name: Install the gnuplot yum package

@@ -1,0 +1,46 @@
+---
+
+- name: Make pam_loginuid optional in tigervnc PAM profile
+  ansible.builtin.replace:
+    path: /etc/pam.d/tigervnc
+    regexp: '^session\s+required\s+pam_loginuid\.so'
+    replace: 'session    optional     pam_loginuid.so'
+
+
+- name: Disable problematic GNOME autostart entries in Docker
+  ansible.builtin.lineinfile:
+    path: "/etc/xdg/autostart/{{ item }}"
+    regexp: '^Hidden='
+    line: 'Hidden=true'
+    insertafter: '^\[Desktop Entry\]'
+    create: false
+  loop:
+    - org.gnome.SettingsDaemon.Keyboard.desktop
+    - org.gnome.SettingsDaemon.MediaKeys.desktop
+    - org.gnome.SettingsDaemon.Power.desktop
+    - org.gnome.SettingsDaemon.Rfkill.desktop
+    - org.gnome.SettingsDaemon.Color.desktop
+    - org.gnome.SettingsDaemon.Datetime.desktop
+    - org.gnome.SettingsDaemon.Sharing.desktop
+    - org.gnome.SettingsDaemon.Smartcard.desktop
+    - org.gnome.SettingsDaemon.Wacom.desktop
+    - org.gnome.SettingsDaemon.PrintNotifications.desktop
+
+
+- name: Ensure /run/user exists
+  ansible.builtin.file:
+    path: /run/user
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+
+- name: Ensure XDG runtime dirs exist for VNC users
+  ansible.builtin.file:
+    path: "/run/user/{{ item.value.uid }}"
+    state: directory
+    owner: "{{ item.value.name }}"
+    group: "{{ item.value.group }}"
+    mode: "0700"
+  with_dict: "{{ users }}"

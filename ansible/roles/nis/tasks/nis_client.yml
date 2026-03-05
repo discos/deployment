@@ -26,6 +26,7 @@
     name: rpcbind
     state: started
     enabled: true
+    use: systemd
 
 
 - name: Start ypbind service
@@ -33,4 +34,5 @@
     name: ypbind
     state: started
     enabled: true
+    use: systemd
   failed_when: false

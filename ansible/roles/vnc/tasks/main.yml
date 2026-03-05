@@ -41,7 +41,6 @@
       Authorization: "token {{ repository_token }}"
   when: not item.stat.exists
   with_items: "{{ tigervnc_packages_exists.results }}"
-  no_log: true
   run_once: true
   delegate_to: localhost
 
@@ -103,7 +102,6 @@
     path: "/etc/tigervnc/vncserver.users"
     line: ":{{ item.value.vnc_port_offset | int }}={{ item.value.name }}"
   with_dict: "{{ users }}"
-  no_log: true
 
 
 - name: Configure the default ports for each user
@@ -116,13 +114,35 @@
   become_user: "{{ item.value.name }}"
   become_flags: "-i"
   with_dict: "{{ users }}"
-  no_log: true
+
+
+- name: Ensure vncserver override directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/system/vncserver@.service.d
+    state: directory
+    mode: "0755"
+
+
+- name: Install staggered startup override for TigerVNC
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/vncserver@.service.d/10-stagger.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Service]
+      ExecStartPre=/bin/bash -c 'd="%i"; n=${d#:}; sleep $((n-1))'
+
+
+- name: Include docker related tasks
+  ansible.builtin.include_tasks: docker.yml
+  when: ansible_virtualization_type == 'docker'
 
 
 - name: Start the VNC servers
-  ansible.builtin.systemd:
+  ansible.builtin.service:
     name: "vncserver@:{{ item.value.vnc_port_offset | int }}.service"
     state: restarted
     enabled: true
+    use: systemd
   with_dict: "{{ users }}"
-  no_log: true
