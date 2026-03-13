@@ -130,23 +130,27 @@ def sshLogin(ip, user='root'):
     else:
         return False
 
-def ping(ip):
-    sp = subprocess.run(
-        [
-            'timeout',
-            '2',
-            'nc',
-            '-z',
-            ip,
-            '22'
-        ],
-        stdout=STDOUT,
-        stderr=STDERR
-    )
-    if sp.returncode == 0:
-        return True
-    else:
-        return False
+def ping(ip, timeout=2):
+    start = time.monotonic()
+
+    while True:
+        sp = subprocess.run(
+            [
+                'timeout',
+                str(timeout),
+                'nc',
+                '-z',
+                ip,
+                '22'
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        if sp.returncode == 0:
+            return True
+        if time.monotonic() - start >= timeout:
+            return False
+        time.sleep(0.2)
 
 def getIp(machine, inventory='development'):
     hosts, _, _ = parseInventory(inventory)
@@ -483,3 +487,80 @@ def injectRSAKey(machines):
                     f'try again with the correct password.'
                 )
     os.remove('/tmp/ssh_askpass')
+
+def _docker(args, cwd=DEPLOYMENT_DIR):
+    """Run a docker command in the deployment directory."""
+    cmd = ['docker'] + list(args)
+    sp = subprocess.run(cmd, cwd=cwd, stdout=STDOUT, stderr=STDERR)
+    return sp.returncode
+
+def dockerImageExists(image):
+    sp = subprocess.run(
+        ['docker', 'image', 'inspect', image],
+        cwd=DEPLOYMENT_DIR,
+        stdout=STDOUT,
+        stderr=STDERR
+    )
+    return sp.returncode == 0
+
+def dockerBuild(image='discos-centos-7.9:latest'):
+    """Build the docker image from ~/.deployment/Dockerfile using ~/.deployment as context."""
+    dockerfile_path = os.path.join(DEPLOYMENT_DIR, 'Dockerfile')
+    if not os.path.exists(dockerfile_path):
+        error(f"Missing Dockerfile in {DEPLOYMENT_DIR}: {dockerfile_path}")
+    return _docker(['build', '-t', image, '-f', dockerfile_path, '.'])
+
+def dockerNetworkExists(network):
+    sp = subprocess.run(
+        ['docker', 'network', 'inspect', network],
+        cwd=DEPLOYMENT_DIR,
+        stdout=STDOUT,
+        stderr=STDERR
+    )
+    return sp.returncode == 0
+
+def dockerEnsureNetwork(network='discos_net', subnet='192.168.56.0/24'):
+    """Ensure a bridge network exists with a predictable subnet for static IPs."""
+    if dockerNetworkExists(network):
+        return 0
+    return _docker(['network', 'create', '--driver', 'bridge', '--subnet', subnet, network])
+
+def dockerContainerExists(name):
+    sp = subprocess.run(
+        ['docker', 'inspect', '--type=container', name],
+        cwd=DEPLOYMENT_DIR,
+        stdout=STDOUT,
+        stderr=STDERR
+    )
+    return sp.returncode == 0
+
+def dockerContainerRunning(name):
+    sp = subprocess.run(
+        ['docker', 'inspect', '-f', '{{.State.Running}}', name],
+        cwd=DEPLOYMENT_DIR,
+        stdout=subprocess.PIPE,
+        stderr=STDERR,
+        text=True
+    )
+    return sp.returncode == 0 and sp.stdout.strip().lower() == 'true'
+
+def dockerEnsureContainer(
+    name,
+    ip,
+    image='discos-centos-7.9:latest',
+    network='discos_net'
+):
+    """Create container if missing, otherwise start it."""
+    if dockerContainerExists(name):
+        if dockerContainerRunning(name):
+            return 0
+        return _docker(['start', name])
+
+    return _docker([
+        'run', '-d',
+        '--name', name,
+        '--hostname', name,
+        '--network', network,
+        '--ip', ip,
+        image
+    ])
