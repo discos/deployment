@@ -265,37 +265,32 @@ if args.branch:
     extra_vars['branch'] = args.branch
 
 if extra_vars:
-    extra_vars = ['--extra-vars', f"'{json.dumps(extra_vars)}'"]
+    extra_vars = ['--extra-vars', json.dumps(extra_vars)]
 else:
     extra_vars = []
 
 # Check if we want provision only or deployment only
 ansible_tags = []
 if args.deploy_only:
-    ansible_tags = ['--tags', "'deploy'"]
+    ansible_tags = ['--tags', 'deploy']
 elif args.test_cdb_only:
-    ansible_tags = ['--tags', "'cdb'"]
+    ansible_tags = ['--tags', 'cdb']
 elif not args.branch:
-    ansible_tags = ['--skip-tags', "'deploy'"]
+    ansible_tags = ['--skip-tags', 'deploy']
 
 # Add extra variables to the ansible command
 ansible_cmd += ansible_tags + extra_vars
 if args.verbose:
     ansible_cmd.append('-vv')
-ansible_cmd = ' '.join(ansible_cmd)
 
 
 print('Calling Ansible...')
 if args.sim:
-    print(ansible_cmd)
+    print(' '.join(ansible_cmd))
     sys.exit(0)
 
 process = subprocess.Popen(
     ansible_cmd,
-    shell=True,
-    stdin=sys.stdin,
-    stdout=sys.stdout,
-    stderr=sys.stderr
 )
 try:
     process.wait()
