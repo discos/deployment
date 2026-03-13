@@ -3,6 +3,7 @@ import os
 import time
 import subprocess
 import getpass
+import threading
 from argparse import Namespace
 STDOUT = sys.stdout
 STDERR = sys.stderr
@@ -488,20 +489,37 @@ def injectRSAKey(machines):
                 )
     os.remove('/tmp/ssh_askpass')
 
-def _docker(args, cwd=DEPLOYMENT_DIR):
+def _docker(args, cwd=DEPLOYMENT_DIR, stdout=None, stderr=None):
     """Run a docker command in the deployment directory."""
+    if stdout is None:
+        stdout = STDOUT
+    if stderr is None:
+        stderr = STDERR
     cmd = ['docker'] + list(args)
-    sp = subprocess.run(cmd, cwd=cwd, stdout=STDOUT, stderr=STDERR)
+    sp = subprocess.run(
+        cmd,
+        cwd=cwd,
+        stdout=stdout,
+        stderr=stderr
+    )
     return sp.returncode
 
-def dockerImageExists(image):
+def _docker_output(args, cwd=DEPLOYMENT_DIR, stdout=None, stderr=None, text=True):
+    if stdout is None:
+        stdout=subprocess.PIPE
+    if stderr is None:
+        stderr = STDERR
     sp = subprocess.run(
-        ['docker', 'image', 'inspect', image],
-        cwd=DEPLOYMENT_DIR,
-        stdout=STDOUT,
-        stderr=STDERR
+        ['docker'] + list(args),
+        cwd=cwd,
+        stdout=stdout,
+        stderr=stderr,
+        text=text
     )
-    return sp.returncode == 0
+    return sp
+
+def dockerImageExists(image):
+    return _docker(["image", "inspect", image]) == 0
 
 def dockerBuild(image='discos-centos-7.9:latest'):
     """Build the docker image from ~/.deployment/Dockerfile using ~/.deployment as context."""
@@ -511,13 +529,7 @@ def dockerBuild(image='discos-centos-7.9:latest'):
     return _docker(['build', '-t', image, '-f', dockerfile_path, '.'])
 
 def dockerNetworkExists(network):
-    sp = subprocess.run(
-        ['docker', 'network', 'inspect', network],
-        cwd=DEPLOYMENT_DIR,
-        stdout=STDOUT,
-        stderr=STDERR
-    )
-    return sp.returncode == 0
+    return _docker(["network", "inspect", network]) == 0
 
 def dockerEnsureNetwork(network='discos_net', subnet='192.168.56.0/24'):
     """Ensure a bridge network exists with a predictable subnet for static IPs."""
@@ -526,23 +538,11 @@ def dockerEnsureNetwork(network='discos_net', subnet='192.168.56.0/24'):
     return _docker(['network', 'create', '--driver', 'bridge', '--subnet', subnet, network])
 
 def dockerContainerExists(name):
-    sp = subprocess.run(
-        ['docker', 'inspect', '--type=container', name],
-        cwd=DEPLOYMENT_DIR,
-        stdout=STDOUT,
-        stderr=STDERR
-    )
-    return sp.returncode == 0
+    return _docker(["inspect", "--type=container", name]) == 0
 
 def dockerContainerRunning(name):
-    sp = subprocess.run(
-        ['docker', 'inspect', '-f', '{{.State.Running}}', name],
-        cwd=DEPLOYMENT_DIR,
-        stdout=subprocess.PIPE,
-        stderr=STDERR,
-        text=True
-    )
-    return sp.returncode == 0 and sp.stdout.strip().lower() == 'true'
+    sp = _docker_output(['inspect', '-f', '{{.State.Running}}', name])
+    return sp.returncode == 0 and sp.stdout.strip() == 'true'
 
 def dockerEnsureContainer(
     name,
@@ -554,9 +554,9 @@ def dockerEnsureContainer(
     if dockerContainerExists(name):
         if dockerContainerRunning(name):
             return 0
-        return _docker(['start', name])
+        return dockerStartContainer(name, ip=ip)
 
-    return _docker([
+    rc = _docker([
         'run', '-d',
         '--name', name,
         '--hostname', name,
@@ -564,3 +564,101 @@ def dockerEnsureContainer(
         '--ip', ip,
         image
     ])
+    if rc != 0:
+        return rc
+    if not ping(ip, timeout=30):
+        return 3
+    return dockerInjectRSAKey(name)
+
+def dockerStartContainer(name, ip=None):
+    rc = _docker(['start', name])
+    if rc != 0:
+        return rc
+    if ip is not None:
+        return 0 if ping(ip, timeout=30) else 3
+    return 0
+
+def dockerStopContainer(name):
+    return _docker(['stop', name])
+
+def dockerRestartContainer(name, ip=None):
+    rc = _docker(['restart', name])
+    if rc != 0:
+        return rc
+    if ip is not None:
+        return 0 if ping(ip, timeout=30) else 3
+    return 0
+
+def dockerRemoveContainer(name, force=True):
+    args = ['rm']
+    if force:
+        args.append('-f')
+    args.append(name)
+    return _docker(args)
+
+def getRSAPublicKeyPath(
+        key_file='id_rsa',
+        ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')
+    ):
+    ssh_dir = os.path.expanduser(ssh_dir)
+    pub_file = os.path.join(ssh_dir, key_file + '.pub')
+
+    if not os.path.exists(pub_file):
+        generateRSAKey(key_file=key_file, ssh_dir=ssh_dir)
+
+    if not os.path.exists(pub_file):
+        error(f"SSH public key not found: {pub_file}")
+
+    return pub_file
+
+def dockerInjectRSAKey(
+        container,
+        key_file='id_rsa',
+        ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')
+    ):
+    pub_file = getRSAPublicKeyPath(key_file=key_file, ssh_dir=ssh_dir)
+
+    rc = _docker(['cp', pub_file, f'{container}:/tmp/id_rsa.pub'])
+    if rc != 0:
+        return rc
+
+    script = r'''
+set -euo pipefail
+mkdir -p /root/.ssh
+touch /root/.ssh/authorized_keys
+chmod 700 /root/.ssh
+chmod 600 /root/.ssh/authorized_keys
+pub="$(cat /tmp/id_rsa.pub)"
+grep -Fqx "$pub" /root/.ssh/authorized_keys || echo "$pub" >> /root/.ssh/authorized_keys
+rm -f /tmp/id_rsa.pub
+'''
+    return _docker(['exec', container, '/bin/bash', '-lc', script])
+
+
+def runWithProgress(message, worker, error_message, *args, interval=1, **kwargs):
+    sys.stdout.write(message)
+    sys.stdout.flush()
+
+    result = {'done': False, 'rc': 1}
+
+    def _target():
+        try:
+            result['rc'] = worker(*args, **kwargs)
+        except Exception:
+            result['rc'] = 1
+        finally:
+            result['done'] = True
+
+    thread = threading.Thread(target=_target, daemon=True)
+    thread.start()
+
+    while not result['done']:
+        sys.stdout.write('.')
+        sys.stdout.flush()
+        thread.join(interval)
+
+    if result['rc'] == 0:
+        print('done.')
+    else:
+        print(error_message)
+    return result['rc']
