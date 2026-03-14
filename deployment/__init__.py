@@ -634,7 +634,6 @@ rm -f /tmp/id_rsa.pub
 '''
     return _docker(['exec', container, '/bin/bash', '-lc', script])
 
-
 def runWithProgress(message, worker, error_message, *args, interval=1, **kwargs):
     sys.stdout.write(message)
     sys.stdout.flush()
@@ -662,3 +661,21 @@ def runWithProgress(message, worker, error_message, *args, interval=1, **kwargs)
     else:
         print(error_message)
     return result['rc']
+
+def dockerCommitContainer(container, image):
+    """Create a Docker image from an existing container."""
+    return _docker(['commit', container, image])
+
+def dockerSaveImage(image, outfile):
+    """Save a Docker image to a tar file."""
+    outdir = os.path.dirname(outfile)
+    if outdir:
+        os.makedirs(outdir, exist_ok=True)
+    return _docker(['save', '-o', outfile, image])
+
+def dockerCommitAndSaveContainer(container, image, outfile):
+    """Commit a container into an image, then save it to a tar file."""
+    rc = dockerCommitContainer(container, image)
+    if rc != 0:
+        return rc
+    return dockerSaveImage(image, outfile)

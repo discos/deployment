@@ -9,12 +9,7 @@
   $ discos-containers destroy console
   $ discos-containers list
   $ discos-containers logs manager
-
-  $ discos-containers -i build
-  $ discos-containers -i status
-  $ discos-containers -i save --output ~/exports
-  $ discos-containers -i remove
-  $ discos-containers -i list
+  $ discos-containers save manager discos_manager.tar
 """
 
 import argparse
@@ -25,7 +20,9 @@ from pathlib import Path
 
 import deployment
 
-IMAGE = 'discos-centos-7.9:latest'
+IMAGE = 'discos-centos-7.9'
+LATEST_IMAGE = IMAGE + ':latest'
+PROVISIONED_IMAGE = IMAGE + ':provisioned'
 NETWORK = 'discos_net'
 SUBNET = '192.168.56.0/24'
 
@@ -33,10 +30,8 @@ SUBNET = '192.168.56.0/24'
 def _vagrant_machines():
     return list(deployment._vagrantList())
 
-
 def _machine_ip(machine, inventory='development'):
     return deployment.getIp(machine, inventory)
-
 
 def _check_output(cmd, **kwargs):
     return subprocess.check_output(
@@ -45,7 +40,6 @@ def _check_output(cmd, **kwargs):
         **kwargs
     ).decode().strip()
 
-
 def _docker_available():
     try:
         _check_output(['docker', 'version', '--format', '{{.Server.Version}}'])
@@ -53,11 +47,9 @@ def _docker_available():
     except Exception:
         return False
 
-
 def _ensure_docker_available():
     if not _docker_available():
         deployment.error('Docker is not available or the daemon is not reachable!')
-
 
 def _container_names():
     try:
@@ -65,7 +57,6 @@ def _container_names():
     except subprocess.CalledProcessError:
         return []
     return [line.strip() for line in out.splitlines() if line.strip()]
-
 
 def _image_names():
     try:
@@ -76,24 +67,20 @@ def _image_names():
         return []
     return [line.strip() for line in out.splitlines() if line.strip()]
 
-
 def containerList():
     return [m for m in _vagrant_machines() if m in _container_names()]
-
 
 def imageList():
     return _image_names()
 
-
-def statusImage(image=IMAGE):
+def statusImage(image=PROVISIONED_IMAGE):
     if deployment.dockerImageExists(image):
         print(f'Image {image} exists.')
         return 0
     print(f'Image {image} not found.')
     return 1
 
-
-def buildImage(image=IMAGE):
+def buildImage(image=LATEST_IMAGE):
     if deployment.dockerImageExists(image):
         print(f'Image {image} already exists.')
         return 0
@@ -104,8 +91,7 @@ def buildImage(image=IMAGE):
         image
     )
 
-
-def removeImage(image=IMAGE):
+def removeImage(image=PROVISIONED_IMAGE):
     if not deployment.dockerImageExists(image):
         print(f'Image {image} not found.')
         return 1
@@ -116,8 +102,7 @@ def removeImage(image=IMAGE):
         ['image', 'rm', '-f', image]
     )
 
-
-def saveImage(image=IMAGE, outdir=os.environ.get('HOME')):
+def saveImage(image=PROVISIONED_IMAGE, outdir='.'):
     if not deployment.dockerImageExists(image):
         print(f'Image {image} not found.')
         return 1
@@ -128,11 +113,20 @@ def saveImage(image=IMAGE, outdir=os.environ.get('HOME')):
 
     return deployment.runWithProgress(
         f'Saving image {image} as {outfile}',
-        deployment._docker,
+        deployment.dockerSaveImage,
         'error while saving the requested image.',
-        ['save', '-o', str(outfile), image]
+        image,
+        str(outfile)
     )
 
+def listImages():
+    print('Docker images available: ')
+    for image in imageList():
+        print(image)
+    return 0
+
+def statusProvisionedImage():
+    return statusImage()
 
 def statusContainer(container, inventory='development'):
     if container not in _vagrant_machines():
@@ -148,11 +142,10 @@ def statusContainer(container, inventory='development'):
         print(f'Container {container} stopped.')
     return 0
 
-
 def createContainer(
     container,
     inventory='development',
-    image=IMAGE,
+    image=LATEST_IMAGE,
     network=NETWORK,
     subnet=SUBNET
 ):
@@ -185,7 +178,6 @@ def createContainer(
         network
     )
 
-
 def startContainer(container, inventory='development'):
     if container not in _vagrant_machines():
         print(f'Container {container} unknown.')
@@ -207,7 +199,6 @@ def startContainer(container, inventory='development'):
         ip
     )
 
-
 def stopContainer(container):
     if container not in _vagrant_machines():
         print(f'Container {container} unknown.')
@@ -226,7 +217,6 @@ def stopContainer(container):
         container
     )
 
-
 def restartContainer(container, inventory='development'):
     if container not in _vagrant_machines():
         print(f'Container {container} unknown.')
@@ -244,7 +234,6 @@ def restartContainer(container, inventory='development'):
         container,
         ip
     )
-
 
 def destroyContainer(container):
     if container not in _vagrant_machines():
@@ -280,6 +269,20 @@ def destroyContainer(container):
         container
     )
 
+def commitContainer(container, image='discos-centos-7.9:provisioned'):
+    if container not in _vagrant_machines():
+        print(f'Container {container} unknown.')
+        return 1
+    if not deployment.dockerContainerExists(container):
+        print(f'Container {container} not created.')
+        return 2
+    return deployment.runWithProgress(
+        f'Committing container {container} to image {image}',
+        deployment.dockerCommitContainer,
+        'error while committing the requested container.',
+        container,
+        image
+    )
 
 def exportContainer(container, outdir=os.environ.get('HOME')):
     if container not in _vagrant_machines():
@@ -303,7 +306,6 @@ def exportContainer(container, outdir=os.environ.get('HOME')):
         ['export', '-o', str(outfile), container]
     )
 
-
 def logsContainer(container, follow=True, tail='100'):
     if container not in _vagrant_machines():
         print(f'Container {container} unknown.')
@@ -318,6 +320,24 @@ def logsContainer(container, follow=True, tail='100'):
     cmd.append(container)
     return subprocess.call(cmd)
 
+def saveContainer(container, outfile, image=PROVISIONED_IMAGE):
+    if container not in _vagrant_machines():
+        print(f'Container {container} unknown.')
+        return 1
+    if not deployment.dockerContainerExists(container):
+        print(f'Container {container} not created.')
+        return 2
+
+    outfile = Path(outfile).expanduser()
+
+    return deployment.runWithProgress(
+        f'Saving container {container} to {outfile}',
+        deployment.dockerCommitAndSaveContainer,
+        'error while saving the requested container.',
+        container,
+        image,
+        str(outfile)
+    )
 
 def _parse_args(machines):
     parser = argparse.ArgumentParser(
@@ -325,34 +345,30 @@ def _parse_args(machines):
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
-        '-i', '--images',
-        action='store_true',
-        help='operate on images instead of containers',
-    )
-    parser.add_argument(
         'action',
         choices=[
             'status', 'start', 'stop', 'restart', 'create', 'destroy',
-            'export', 'list', 'build', 'remove', 'save', 'logs'
+            'commit', 'export', 'list', 'build', 'remove', 'save', 'logs',
+            'list-images', 'status-image'
         ],
     )
     parser.add_argument(
-        'machine',
-        nargs='*',
+        'container',
+        nargs='?',
         type=str,
-        help='desired machine(s). Leave empty to select all available machines.',
+        help='desired container',
         choices=machines,
         default=None,
+    )
+    parser.add_argument(
+        'outfile',
+        nargs='?',
+        help='output filename for save'
     )
     parser.add_argument(
         '--inventory',
         default='development',
         help='inventory to use for IP lookup (default: development)',
-    )
-    parser.add_argument(
-        '--image',
-        default=IMAGE,
-        help=f'Docker image to use (default: {IMAGE})',
     )
     parser.add_argument(
         '--network',
@@ -403,9 +419,28 @@ def main():
         deployment.STDERR = sys.stderr
 
     _ensure_docker_available()
+    image_actions = {'build', 'remove', 'list-images', 'status-image'}
+    container_actions = {
+        'status', 'start', 'stop', 'restart', 'create',
+        'destroy', 'export', 'list', 'logs', 'commit', 'save'
+    }
 
-    if not args.images:
-        selected = list(args.machine or machines)
+    if args.action in image_actions:
+        if args.container:
+            print(f"Action '{args.action}' does not accept container arguments.")
+            return 2
+
+        if args.action == 'build':
+            return buildImage()
+        elif args.action == 'remove':
+            return removeImage()
+        elif args.action == 'list-images':
+            return listImages()
+        elif args.action == 'status-image':
+            return statusProvisionedImage()
+
+    if args.action in container_actions:
+        selected = [args.container] if args.container else list(machines)
 
         if 'storage' in selected and len(selected) > 1:
             selected.insert(0, selected.pop(selected.index('storage')))
@@ -419,74 +454,49 @@ def main():
                 print(machine)
             return 0
 
-        if args.action not in [
-            'status', 'start', 'stop', 'restart', 'create',
-            'destroy', 'export', 'logs'
-        ]:
-            print(f"Action '{args.action}' is not valid for containers.")
+        if args.action == 'logs' and len(selected) != 1:
+            print('Action logs requires exactly one container.')
             return 2
 
-        if args.action == 'logs' and len(selected) != 1:
-            print('Action logs requires exactly one machine.')
-            return 2
+        if args.action == 'save':
+            if len(selected) != 1:
+                print('Action save requires exactly one container.')
+                return 2
+            if not args.outfile:
+                print('Action save requires an output filename.')
+                return 2
+            return saveContainer(selected[0], args.outfile)
 
         return_code = 0
         for machine in selected:
             if args.action == 'status':
-                return_code = statusContainer(
-                    machine, inventory=args.inventory
-                ) or return_code
+                return_code = statusContainer(machine, inventory=args.inventory) or return_code
             elif args.action == 'start':
-                return_code = startContainer(
-                    machine, inventory=args.inventory
-                ) or return_code
+                return_code = startContainer(machine, inventory=args.inventory) or return_code
             elif args.action == 'stop':
                 return_code = stopContainer(machine) or return_code
             elif args.action == 'restart':
-                return_code = restartContainer(
-                    machine, inventory=args.inventory
-                ) or return_code
+                return_code = restartContainer(machine, inventory=args.inventory) or return_code
             elif args.action == 'create':
                 return_code = createContainer(
                     machine,
                     inventory=args.inventory,
-                    image=args.image,
+                    image=LATEST_IMAGE,
                     network=args.network,
                     subnet=args.subnet,
                 ) or return_code
             elif args.action == 'destroy':
                 return_code = destroyContainer(machine) or return_code
             elif args.action == 'export':
-                return_code = exportContainer(
-                    machine, outdir=args.output
-                ) or return_code
+                return_code = exportContainer(machine, outdir=args.output) or return_code
             elif args.action == 'logs':
-                return logsContainer(
-                    machine,
-                    follow=not args.no_follow,
-                    tail=args.tail
-                )
+                return logsContainer(machine, follow=not args.no_follow, tail=args.tail)
+            elif args.action == 'commit':
+                return_code = commitContainer(machine) or return_code
+
         return return_code
 
-    if args.machine:
-        print('Images do not accept machine arguments.')
-        return 2
-
-    if args.action == 'list':
-        print('Docker images available: ')
-        for image in imageList():
-            print(image)
-        return 0
-    if args.action == 'status':
-        return statusImage(args.image)
-    if args.action == 'build':
-        return buildImage(image=args.image)
-    if args.action == 'remove':
-        return removeImage(image=args.image)
-    if args.action == 'save':
-        return saveImage(image=args.image, outdir=args.output)
-
-    print(f"Action '{args.action}' is not valid for images.")
+    print(f"Unknown action '{args.action}'.")
     return 2
 
 

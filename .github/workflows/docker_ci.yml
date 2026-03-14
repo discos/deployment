@@ -8,6 +8,8 @@ jobs:
   provision:
     env:
       REPOSITORY_TOKEN: "${{ secrets.DEPENDENCIES_TOKEN }}"
+      GOOGLE_DRIVE_TOKEN: "${{ secrets.GOOGLE_DRIVE_TOKEN }}"
+      PROVISIONED_CONTAINER_GDRIVE_ID: "${{ secrets.PROVISIONED_CONTAINER_GDRIVE_ID }}"
     runs-on: ubuntu-latest
     steps:
       - name: Free up space
@@ -15,9 +17,9 @@ jobs:
         with:
           tool-cache: true
       - name: Clone the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3'
           check-latest: true
@@ -33,14 +35,19 @@ jobs:
           else
             discos-deploy manager:development --docker --default-passwords
           fi
+      - name: Commit the provisioned container to image
+        run: |
+          discos-containers commit manager
+      - name: Save provisioned image as tar artifact
+        run: |
+          discos-containers save manager discos_manager.tar
+        working-directory: /home/runner
       - name: Shutdown the container
-        run: |
-          docker stop manager
-      - name: Show container status
         if: always()
         run: |
-          docker ps -a || true
-      - name: Show container logs
-        if: always()
+          discos-containers stop manager || true
+      - name: Upload the container to Google Drive
         run: |
-          docker logs manager || true
+          pip install -r .github/utils/gdrive_requirements.txt
+          python .github/utils/upload_to_gdrive.py
+          gh secret set GOOGLE_DRIVE_TOKEN --org discos --visibility selected --repos discos,deployment < token.json
