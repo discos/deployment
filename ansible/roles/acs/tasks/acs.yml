@@ -251,3 +251,17 @@
 - name: Load the ACS libraries to the system
   ansible.builtin.command: ldconfig
   changed_when: true
+
+
+#######################
+# Perform some cleaning
+#######################
+
+- name: Remove some unnecessary directories to save some space
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/alma/{{ acs_tag }}/DDS/build"
+    - "/alma/{{ acs_tag }}/DDS/.git"
+    - "/alma/{{ acs_tag }}/TAO/ACE_wrappers/build"

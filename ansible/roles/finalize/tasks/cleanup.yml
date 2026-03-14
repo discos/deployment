@@ -5,6 +5,41 @@
   changed_when: true
 
 
+- name: Clean the pip cache to save some space
+  ansible.builtin.command: "pip cache purge"
+  become: true
+  become_user: "{{ item.value.name }}"
+  become_flags: "-i"
+  with_dict: "{{ users }}"
+
+
+- name: Clean the yum cache to save some space
+  ansible.builtin.command: "yum clean all"
+
+
+- name: Remove maven cache to save some space
+  ansible.builtin.file:
+    path: "/{{ discos_sw_dir }}/{{ item.value.name }}/.m2"
+    state: absent
+  with_dict: "{{ users }}"
+
+
+- name: Clean user cache to save some space
+  ansible.builtin.file:
+    path: "/{{ discos_sw_dir }}/{{ item.value.name }}/.cache"
+    state: absent
+  with_dict: "{{ users }}"
+
+
+- name: Install pyclean and clean some python environments
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - "pip install pyclean"
+    - "pyclean /alma"
+    - "pyclean /usr"
+    - "pyclean /{{ discos_sw_dir }}"
+
+
 - name: Remove the temporary directory used for libraries compilation
   ansible.builtin.file:
     path: "{{ remote_build_path }}"

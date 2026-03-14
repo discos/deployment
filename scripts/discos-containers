@@ -67,6 +67,25 @@ def _image_names():
         return []
     return [line.strip() for line in out.splitlines() if line.strip()]
 
+def _resolve_create_image(image_selector=None):
+    if image_selector == 'latest':
+        return LATEST_IMAGE
+
+    if image_selector == 'provisioned':
+        if not deployment.dockerImageExists(PROVISIONED_IMAGE):
+            print(f'Image {PROVISIONED_IMAGE} not found.')
+            return None
+        return PROVISIONED_IMAGE
+
+    if deployment.dockerImageExists(PROVISIONED_IMAGE):
+        return PROVISIONED_IMAGE
+
+    if deployment.dockerImageExists(LATEST_IMAGE):
+        return LATEST_IMAGE
+
+    print(f'Neither {PROVISIONED_IMAGE} nor {LATEST_IMAGE} exists.')
+    return None
+
 def containerList():
     return [m for m in _vagrant_machines() if m in _container_names()]
 
@@ -396,6 +415,13 @@ def _parse_args(machines):
         help='do not follow logs in real time',
     )
     parser.add_argument(
+        '--image',
+        choices=['latest', 'provisioned'],
+        default=None,
+        help='image to use for create: latest or provisioned '
+             '(default: provisioned if available, otherwise latest)',
+    )
+    parser.add_argument(
         '-v', '--verbose',
         action='store_true',
         help='show Docker output',
@@ -478,10 +504,13 @@ def main():
             elif args.action == 'restart':
                 return_code = restartContainer(machine, inventory=args.inventory) or return_code
             elif args.action == 'create':
+                image = _resolve_create_image(args.image)
+                if image is None:
+                    return 2
                 return_code = createContainer(
                     machine,
                     inventory=args.inventory,
-                    image=LATEST_IMAGE,
+                    image=image,
                     network=args.network,
                     subnet=args.subnet,
                 ) or return_code
