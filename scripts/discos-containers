@@ -328,7 +328,7 @@ def saveContainer(container, outfile, image=PROVISIONED_IMAGE):
         print(f'Container {container} not created.')
         return 2
 
-    outfile = Path(outfile).expanduser()
+    outfile = Path(outfile).expanduser().resolve()
 
     return deployment.runWithProgress(
         f'Saving container {container} to {outfile}',
