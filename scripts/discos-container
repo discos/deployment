@@ -1,0 +1,397 @@
+#!/usr/bin/env python3
+"""Some command line examples:
+
+  $ discos-container build
+  $ discos-container load discos_manager.tar
+  $ discos-container create
+  $ discos-container start
+  $ discos-container stop
+  $ discos-container restart
+  $ discos-container status
+  $ discos-container destroy
+  $ discos-container save discos_manager.tar
+  $ discos-container remove
+"""
+
+import argparse
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import deployment
+
+CONTAINER = "manager"
+IMAGE = "discos-centos-7.9"
+LATEST_IMAGE = IMAGE + ":latest"
+PROVISIONED_IMAGE = IMAGE + ":provisioned"
+NETWORK = "discos_net"
+SUBNET = "192.168.56.0/24"
+DEFAULT_INVENTORY = "development"
+
+
+def _machine_ip(inventory=DEFAULT_INVENTORY):
+    return deployment.getIp(CONTAINER, inventory)
+
+
+def _check_output(cmd, **kwargs):
+    return subprocess.check_output(
+        cmd,
+        stderr=deployment.STDERR,
+        **kwargs,
+    ).decode().strip()
+
+
+def _docker_available():
+    try:
+        _check_output(["docker", "version", "--format", "{{.Server.Version}}"])
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return False
+
+
+def _ensure_docker_available():
+    if not _docker_available():
+        deployment.error("Docker is not available or the daemon is not reachable!")
+
+
+def _resolve_create_image(image=None):
+    if image == "latest":
+        return LATEST_IMAGE
+
+    if image == "provisioned":
+        if not deployment.dockerImageExists(PROVISIONED_IMAGE):
+            print(f"Image {PROVISIONED_IMAGE} not found.")
+            return None
+        return PROVISIONED_IMAGE
+
+    if deployment.dockerImageExists(PROVISIONED_IMAGE):
+        return PROVISIONED_IMAGE
+
+    if deployment.dockerImageExists(LATEST_IMAGE):
+        return LATEST_IMAGE
+
+    print(f"Neither {PROVISIONED_IMAGE} nor {LATEST_IMAGE} exists.")
+    return None
+
+
+def build_image(image=LATEST_IMAGE):
+    if deployment.dockerImageExists(image):
+        print(f"Image {image} already exists.")
+        return 0
+
+    return deployment.runWithProgress(
+        f"Building image {image}",
+        deployment.dockerBuild,
+        "error while building the requested image.",
+        image,
+    )
+
+
+def remove_image(image=PROVISIONED_IMAGE):
+    if not deployment.dockerImageExists(image):
+        print(f"Image {image} not found.")
+        return 1
+
+    return deployment.runWithProgress(
+        f"Removing image {image}",
+        deployment._docker,
+        "error while removing the requested image.",
+        ["image", "rm", "-f", image],
+    )
+
+
+def load_image(imgfile):
+    imgfile = Path(imgfile).expanduser().resolve()
+    return deployment.runWithProgress(
+        f"Loading image from {imgfile}",
+        deployment.dockerLoadImage,
+        "error while loading the requested image.",
+        str(imgfile),
+    )
+
+
+def status_container(inventory=DEFAULT_INVENTORY):
+    print("Container:")
+    print("----------")
+
+    if not deployment.dockerContainerExists(CONTAINER):
+        print(f"{CONTAINER}: not created")
+    else:
+        if deployment.dockerContainerRunning(CONTAINER):
+            ip = _machine_ip(inventory)
+            print(f"{CONTAINER}: running ({ip})")
+        else:
+            print(f"{CONTAINER}: stopped")
+
+    print()
+    print("Images:")
+    print("-------")
+
+    if deployment.dockerImageExists(LATEST_IMAGE):
+        print(f"{LATEST_IMAGE}: present")
+    else:
+        print(f"{LATEST_IMAGE}: missing")
+
+    if deployment.dockerImageExists(PROVISIONED_IMAGE):
+        print(f"{PROVISIONED_IMAGE}: present")
+    else:
+        print(f"{PROVISIONED_IMAGE}: missing")
+
+    return 0
+
+
+def create_container(
+    inventory=DEFAULT_INVENTORY,
+    image=None,
+    network=NETWORK,
+    subnet=SUBNET,
+):
+    if deployment.dockerContainerExists(CONTAINER):
+        print(f"Container {CONTAINER} already created.")
+        return 2
+
+    resolved_image = _resolve_create_image(image)
+    if resolved_image is None:
+        return 2
+
+    ip = _machine_ip(inventory)
+
+    rc = deployment.runWithProgress(
+        f"Creating network {network}",
+        deployment.dockerEnsureNetwork,
+        "error while creating the requested network.",
+        network,
+        subnet,
+    )
+    if rc != 0:
+        return rc
+
+    return deployment.runWithProgress(
+        f"Creating container {CONTAINER}",
+        deployment.dockerEnsureContainer,
+        "error while creating the requested container.",
+        CONTAINER,
+        ip,
+        resolved_image,
+        network,
+    )
+
+
+def start_container(inventory=DEFAULT_INVENTORY):
+    if not deployment.dockerContainerExists(CONTAINER):
+        print(f"Container {CONTAINER} not created.")
+        return 2
+
+    if deployment.dockerContainerRunning(CONTAINER):
+        print(f"Container {CONTAINER} already running.")
+        return 0
+
+    ip = _machine_ip(inventory)
+    return deployment.runWithProgress(
+        f"Starting container {CONTAINER}",
+        deployment.dockerStartContainer,
+        "error while starting the requested container.",
+        CONTAINER,
+        ip,
+    )
+
+
+def stop_container():
+    if not deployment.dockerContainerExists(CONTAINER):
+        print(f"Container {CONTAINER} not created.")
+        return 2
+
+    if not deployment.dockerContainerRunning(CONTAINER):
+        print(f"Container {CONTAINER} is not running.")
+        return 0
+
+    return deployment.runWithProgress(
+        f"Stopping container {CONTAINER}",
+        deployment.dockerStopContainer,
+        "error while stopping the requested container.",
+        CONTAINER,
+    )
+
+
+def restart_container(inventory=DEFAULT_INVENTORY):
+    if not deployment.dockerContainerExists(CONTAINER):
+        print(f"Container {CONTAINER} not created.")
+        return 2
+
+    ip = _machine_ip(inventory)
+    return deployment.runWithProgress(
+        f"Restarting container {CONTAINER}",
+        deployment.dockerRestartContainer,
+        "error while restarting the requested container.",
+        CONTAINER,
+        ip,
+    )
+
+
+def destroy_container():
+    if not deployment.dockerContainerExists(CONTAINER):
+        print(f"Container {CONTAINER} not created.")
+        return 2
+
+    valid = {"yes": True, "y": True, "ye": True, "no": False, "n": False}
+    prompted = 0
+
+    while True:
+        if prompted == 3:
+            print("Aborted.")
+            return 0
+
+        prompted += 1
+        sys.stdout.write(
+            f"Are you sure you want to destroy container {CONTAINER}? [y/N]: "
+        )
+        sys.stdout.flush()
+        choice = input().strip().lower()
+
+        if choice == "":
+            print("Aborted.")
+            return 0
+
+        if choice in valid:
+            if not valid[choice]:
+                print("Aborted.")
+                return 0
+            break
+
+    return deployment.runWithProgress(
+        f"Destroying container {CONTAINER}",
+        deployment.dockerRemoveContainer,
+        "error while destroying the requested container.",
+        CONTAINER,
+    )
+
+
+def save_container(imgfile, image=PROVISIONED_IMAGE):
+    if not deployment.dockerContainerExists(CONTAINER):
+        print(f"Container {CONTAINER} not created.")
+        return 2
+
+    imgfile = Path(imgfile).expanduser().resolve()
+
+    return deployment.runWithProgress(
+        f"Saving container {CONTAINER} to {imgfile}",
+        deployment.dockerCommitAndSaveContainer,
+        "error while saving the requested container.",
+        CONTAINER,
+        image,
+        str(imgfile),
+    )
+
+
+def _bind_command(parser, func, *arg_names):
+    parser.set_defaults(func=func, arg_names=arg_names)
+
+
+def _parse_args():
+    parser = argparse.ArgumentParser(
+        description=f"Handle the DISCOS development container. {__doc__}",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="show Docker output",
+    )
+
+    subparsers = parser.add_subparsers(dest="action", required=True)
+
+    def add_inventory(p):
+        p.add_argument(
+            "--inventory",
+            default=DEFAULT_INVENTORY,
+            help=f"inventory to use for IP lookup (default: {DEFAULT_INVENTORY})",
+        )
+
+    def add_imgfile(p):
+        p.add_argument(
+            "imgfile",
+            help="image .tar filename",
+        )
+
+    p = subparsers.add_parser("build")
+    _bind_command(p, build_image)
+
+    p = subparsers.add_parser("remove")
+    _bind_command(p, remove_image)
+
+    p = subparsers.add_parser("load")
+    add_imgfile(p)
+    _bind_command(p, load_image, "imgfile")
+
+    p = subparsers.add_parser("save")
+    add_imgfile(p)
+    _bind_command(p, save_container, "imgfile")
+
+    p = subparsers.add_parser("status")
+    add_inventory(p)
+    _bind_command(p, status_container, "inventory")
+
+    p = subparsers.add_parser("start")
+    add_inventory(p)
+    _bind_command(p, start_container, "inventory")
+
+    p = subparsers.add_parser("stop")
+    _bind_command(p, stop_container)
+
+    p = subparsers.add_parser("restart")
+    add_inventory(p)
+    _bind_command(p, restart_container, "inventory")
+
+    p = subparsers.add_parser("create")
+    add_inventory(p)
+    p.add_argument(
+        "--network",
+        default=NETWORK,
+        help=f"Docker network to use (default: {NETWORK})",
+    )
+    p.add_argument(
+        "--subnet",
+        default=SUBNET,
+        help=f"Docker subnet to use (default: {SUBNET})",
+    )
+    p.add_argument(
+        "--image",
+        choices=["latest", "provisioned"],
+        default=None,
+        help=(
+            "image to use for create: latest or provisioned "
+            "(default: provisioned if available, otherwise latest)"
+        ),
+    )
+    _bind_command(p, create_container, "inventory", "image", "network", "subnet")
+
+    p = subparsers.add_parser("destroy")
+    _bind_command(p, destroy_container)
+
+    return parser.parse_args()
+
+
+def main():
+    args = _parse_args()
+
+    if not args.verbose:
+        try:
+            from subprocess import DEVNULL
+        except ImportError:
+            DEVNULL = open(os.devnull, "wb")
+        deployment.STDOUT = DEVNULL
+        deployment.STDERR = DEVNULL
+    else:
+        deployment.STDOUT = sys.stdout
+        deployment.STDERR = sys.stderr
+
+    _ensure_docker_available()
+
+    kwargs = {name: getattr(args, name) for name in args.arg_names}
+    return args.func(**kwargs)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

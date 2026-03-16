@@ -36,18 +36,15 @@ jobs:
           else
             discos-deploy manager:development --docker --default-passwords
           fi
-      - name: Commit the provisioned container to image
-        run: |
-          discos-containers commit manager
       - name: Save provisioned image as tar artifact
         run: |
-          discos-containers save manager discos_manager.tar
+          discos-container manager discos_manager.tar
         working-directory: /home/runner
       - name: Shutdown the container
         if: always()
         run: |
-          discos-containers stop manager || true
-      - name: Upload the container to Google Drive
+          discos-container stop || true
+      - name: Upload the Docker image to Google Drive
         run: |
           pip install -r .github/utils/gdrive_requirements.txt
           python .github/utils/upload_to_gdrive.py

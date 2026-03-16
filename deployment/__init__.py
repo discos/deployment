@@ -666,16 +666,22 @@ def dockerCommitContainer(container, image):
     """Create a Docker image from an existing container."""
     return _docker(['commit', container, image])
 
-def dockerSaveImage(image, outfile):
+def dockerSaveImage(image, imgfile):
     """Save a Docker image to a tar file."""
-    outdir = os.path.dirname(outfile)
+    outdir = os.path.dirname(imgfile)
     if outdir:
         os.makedirs(outdir, exist_ok=True)
-    return _docker(['save', '-o', outfile, image])
+    return _docker(['save', '-o', imgfile, image])
 
-def dockerCommitAndSaveContainer(container, image, outfile):
+def dockerCommitAndSaveContainer(container, image, imgfile):
     """Commit a container into an image, then save it to a tar file."""
     rc = dockerCommitContainer(container, image)
     if rc != 0:
         return rc
-    return dockerSaveImage(image, outfile)
+    return dockerSaveImage(image, imgfile)
+
+def dockerLoadImage(imgfile):
+    """Load a Docker image from a .tar archive."""
+    if not os.path.exists(imgfile):
+        error(f"Image archive not found: {imgfile}")
+    return _docker(['load', '-i', imgfile])

@@ -7,8 +7,7 @@ import os
 import io
 
 TOKEN_FILE = 'token.json'
-VM_FILE_PATH = '/home/runner/discos_manager.ova'
-ARCHIVE_FILE_PATH = '/home/runner/vagrant.tar.gz'
+CONTAINER_FILE_PATH = '/home/runner/discos_manager.tar'
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 
 # Create the token file from the GH Secret
@@ -23,25 +22,17 @@ if creds.expired and creds.refresh_token:
 service = build('drive', 'v3', credentials=creds)
 
 downloader = MediaIoBaseDownload(
-    io.FileIO(ARCHIVE_FILE_PATH, 'wb'),
-    service.files().get_media(
-        fileId=os.environ.get('PROVISIONED_ARCHIVE_GDRIVE_ID')
-    )
-)
-done = False
-while not done:
-    _, done = downloader.next_chunk()
-
-downloader = MediaIoBaseDownload(
     io.FileIO(VM_FILE_PATH, 'wb'),
     service.files().get_media(
-        fileId=os.environ.get('PROVISIONED_VM_GDRIVE_ID'),
+        fileId=os.environ.get('PROVISIONED_CONTAINER_GDRIVE_ID'),
     ),
-    chunksize=5*1024*1024
+    chunksize=64*1024*1024
 )
 done = False
 while not done:
-    _, done = downloader.next_chunk()
+    status, done = downloader.next_chunk()
+    if status is not None:
+        print(f'Download progress: {int(status.progress() * 100)}%', flush=True)
 
 # Finally update the token file
 with open(TOKEN_FILE, 'w') as tokenfile:
