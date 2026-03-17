@@ -111,6 +111,18 @@
   when: not target_dir.stat.exists
 
 
+- name: Get missing antlr-generator library
+  ansible.builtin.get_url:
+    url: "https://download.itemis.com/antlr-generator-3.2.0-patch.jar"
+    dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/codegen/.antlr-generator-3.2.0-patch.jar"
+    mode: "0644"
+    validate_certs: false
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  when: not target_dir.stat.exists
+
+
 - name: Patch ACS Python 3 default version
   ansible.builtin.template:
     src: "patches/{{ acs_tag }}/{{ item }}"
