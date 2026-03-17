@@ -38,7 +38,7 @@ jobs:
           fi
       - name: Save provisioned image as tar artifact
         run: |
-          discos-container manager discos_manager.tar
+          discos-container save discos_manager.tar
         working-directory: /home/runner
       - name: Shutdown the container
         if: always()
