@@ -61,7 +61,12 @@
     mode: "0644"
     headers:
       Authorization: "token {{ repository_token }}"
+    timeout: 60
   loop: "{{ acs_archive_parts }}"
+  register: download_result
+  retries: 5
+  delay: 10
+  until: download_result is succeeded
   when: not acs_archive.stat.exists
   delegate_to: localhost
   run_once: true
