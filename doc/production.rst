@@ -4,26 +4,106 @@
 Production
 **********
 
-Machines deployment
-===================
-To deploy the system in production, you have to specify a *cluster* of machines,
-followed by the name of the station, you can choose among ``Medicina``,
-``Noto`` or ``SRT``:
+This section describes how to deploy DISCOS in a production environment.
 
-.. code-block:: shell
+The deployment procedure configures target machines via SSH using Ansible.
 
-  $ discos-deploy discos:SRT
 
-As mentioned in the :ref:`deploy_development` section, the ``discos`` *cluster*
-makes the automatic procedure provision the whole DISCOS system, composed by
-all the required station machines. If you only want to deploy a single machine,
-change the cluster from ``discos`` to the related machine name. For instance,
-in the following case we are deploying only the ``console`` machine for the
-``SRT`` station:
+Command syntax
+==============
 
-.. code-block:: shell
+The deployment is performed using the ``discos-deploy`` command:
 
-  $ discos-deploy console:SRT
+::
+
+   discos-deploy SYSTEM [options]
+
+where ``SYSTEM`` has the form:
+
+::
+
+   <target>:<environment>
+
+``<target>`` can be either a machine name or a cluster name, while
+``<environment>`` identifies the target inventory.
+
+
+Deploy the full system
+======================
+
+To deploy the full production system for a station:
+
+::
+
+   $ discos-deploy discos:SRT
+
+The ``discos`` target identifies the full cluster of machines defined in the
+selected production inventory.
+
+This command connects to all target machines via SSH and applies the full
+configuration.
+
+
+Deploy a single machine
+=======================
+
+To deploy a single production machine:
+
+::
+
+   $ discos-deploy console:SRT
+
+This command applies the configuration only to the selected machine.
+
+
+Command line options
+====================
+
+The most relevant options for production deployments are:
+
+``-b``, ``--branch BRANCH``
+   Deploy the specified DISCOS branch or tag.
+
+``-s``, ``--station STATION``
+   Specify the station name.
+
+``--deploy-only``
+   Only deploy the DISCOS Control Software.
+
+``--test-cdb-only``
+   Only test the DISCOS CDB.
+
+``--default-passwords``
+   Use the default passwords for the DISCOS users.
+
+``--sim``
+   Print the final Ansible command without executing it.
+
+``-v``, ``--verbose``
+   Run Ansible in verbose mode.
+
+
+Options behavior
+================
+
+In production environments, the station name is implicitly derived from the
+selected environment. For example:
+
+::
+
+   $ discos-deploy discos:SRT
+
+already implies station ``SRT``.
+
+For this reason, the ``--station`` option is normally not required in
+production. If specified, it must match the environment name.
+
+When using ``--branch``, the station must be defined. In production this
+usually happens automatically through the selected environment.
+
+The ``--deploy-only`` and ``--test-cdb-only`` options are mutually exclusive.
+
+The ``--deploy-only`` option requires ``--branch``.
 
 
 DISCOS setup
@@ -31,46 +111,42 @@ DISCOS setup
 
 Manual setup
 ------------
-To install the DISCOS control software, you can use the ``discos-get`` command
-and then build and install the system by yourself, as we already saw in the
-:ref:`get_a_discos_branch` paragraph. Since this time we are deploying in a
-production environment, you may want to deploy a DISCOS tag. The ``discos-get``
-script can handle this case just like it does for normal branches. All you have
-to do is pass to the scripts command line the ``--tag`` argument instead of the
-``--branch`` one. Of course, you also have to specify the desired DISCOS tag
-afterwards:
 
-.. figure:: images/discos1rc2.png
-   :figwidth: 100%
-   :align: center
+To install the DISCOS control software manually, use the ``discos-get`` command
+and then build and install the system as described in
+:ref:`get_a_discos_branch` and :ref:`install_discos`.
 
-The downloaded tag will be handled by ``discos-get`` and ``discos-set`` just
-like a normal branch.
+In production environments, it is usually preferable to work on a specific tag.
 
-.. note:: As you may have noticed from the last image, the downloaded
-   repository will be left in a ``detached HEAD' state``. This means that any
-   modification you make to the repository will not be tracked by any remote
-   branch. If you want to edit some files in order to push a hotfix you should
-   download and work on the ``stable`` branch.
-
-You can now build and install the DISCOS control system as we already saw in
-the :ref:`install_discos` paragraph.
 
 Automatic setup
 ---------------
-The ``discos-deploy`` script can automatically handle the DISCOS setup
-procedure even for tags. In order for it to do this, you have to pass the
-``--tag`` argument to the ``discos-deploy`` command, followed by the DISCOS
-tag you want to install on the machines:
 
-.. code-block:: shell
+The deployment procedure can also install DISCOS automatically:
 
-   $ discos-deploy discos:SRT --tag discos1.0-rc02
+::
+
+   $ discos-deploy discos:SRT --branch stable
+
+or:
+
+::
+
+   $ discos-deploy discos:SRT --branch discos1.0-rc02
+
+In both cases the deployment procedure will pass the required variables to
+Ansible and execute the corresponding deployment tasks.
 
 
-.. note:: Since you are performing the deployment procedure on station
-   machines, the station name is already specified inside the machines
-   themselves as an environment variable, so you can omit the ``--station``
-   argument from both the ``discos-deploy`` and ``discos-get`` scripts. If you
-   pass the ``--station`` argument anyway, if the given argument does not match
-   the correct station you will receive an error and the procedure will stop.
+Execution model
+===============
+
+The deployment procedure:
+
+- connects to target machines via SSH
+- applies the Ansible configuration for the selected environment
+- installs system dependencies and DISCOS components
+- configures the runtime environment
+
+All target machines must already be reachable through the network and properly
+configured for SSH access.

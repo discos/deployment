@@ -4,176 +4,242 @@
 Useful scripts
 **************
 
-If you installed the `deployment` Python package  as mentioned in the
-:ref:`deploy_quickstart` section, you will have access via terminal to the
-following useful scripts, along with the :file:`discos_deploy` one (described
-in the :ref:`deploy_quickstart` section):
+If you installed the `deployment` Python package as described in the
+:ref:`deploy_quickstart` section, you will have access to the following
+command line tools:
 
-- :file:`discos-vms`: a script used to manage DISCOS virtual machines
-- :file:`discos-login`: a script that performs SSH login to the specified virtual machine
-- :file:`discos-vnc`: a script that opens a VNC viewer to the specified virtual machine
+- :file:`discos-container`: manage the Docker-based development environment
+- :file:`discos-vms`: manage DISCOS virtual machines (legacy support)
+- :file:`discos-login`: perform SSH login to a deployed machine
+- :file:`discos-vnc`: open a VNC session to a deployed machine
 
 
-Start and stop DISCOS virtual machines, `discos-vms`
-====================================================
-To start or stop a DISCOS virtual machine, you can run the :file:`discos-vms`
-script specifying an action and a machine. The action is one among `--start`,
-`--stop`, `--status` and `--restart`, the machine argument is the name of an
-already deployed virtual machine. For instance, if you want to start the
-``manager`` virtual machine, all you have to do is execute the following command:
+Manage the development container, ``discos-container``
+======================================================
+
+The :file:`discos-container` script is used to manage the Docker-based
+development environment.
+
+Command syntax
+--------------
+
+::
+
+   discos-container [-v] <command> [options]
+
+Available commands are:
+
+- ``build``
+- ``remove``
+- ``load <imgfile>``
+- ``save <imgfile>``
+- ``status``
+- ``start``
+- ``stop``
+- ``restart``
+- ``create``
+- ``destroy``
+
+The ``-v`` or ``--verbose`` option enables Docker output.
+
+
+Build or remove images
+----------------------
+
+To build the base image:
+
+.. code-block:: shell
+
+   $ discos-container build
+
+This creates the ``discos-centos-7.9:latest`` image, unless it already exists.
+
+To remove the provisioned image:
+
+.. code-block:: shell
+
+   $ discos-container remove
+
+
+Create the container
+--------------------
+
+To create the development container:
+
+.. code-block:: shell
+
+   $ discos-container create
+
+The command creates the Docker network if needed, selects an image, creates
+the ``manager`` container and waits until it becomes reachable via SSH.
+
+By default, ``create`` uses the ``provisioned`` image if available, otherwise
+it falls back to ``latest``.
+
+You can explicitly choose the image:
+
+.. code-block:: shell
+
+   $ discos-container create --image latest
+   $ discos-container create --image provisioned
+
+You can also override the inventory and Docker network settings:
+
+.. code-block:: shell
+
+   $ discos-container create --inventory development
+   $ discos-container create --network discos_net --subnet 192.168.56.0/24
+
+
+Start, stop and restart the container
+-------------------------------------
+
+Once the container has been created, you can manage its lifecycle with:
+
+.. code-block:: shell
+
+   $ discos-container start
+   $ discos-container stop
+   $ discos-container restart
+
+The ``start`` and ``restart`` commands wait until the container is reachable
+via SSH.
+
+
+Show container status
+---------------------
+
+To inspect the current state of the container and local images:
+
+.. code-block:: shell
+
+   $ discos-container status
+
+This command reports:
+
+- whether the ``manager`` container exists
+- whether it is running
+- its configured IP address
+- whether the ``latest`` and ``provisioned`` images are present
+
+
+Save and load images
+--------------------
+
+To save the current development container to a tar archive:
+
+.. code-block:: shell
+
+   $ discos-container save discos_manager.tar
+
+This command commits the current container to the
+``discos-centos-7.9:provisioned`` image and then saves it to the specified
+archive.
+
+To load an image archive:
+
+.. code-block:: shell
+
+   $ discos-container load discos_manager.tar
+
+
+Destroy the container
+---------------------
+
+To remove the container:
+
+.. code-block:: shell
+
+   $ discos-container destroy
+
+This command asks for confirmation before deleting the container.
+
+
+Start and stop DISCOS virtual machines, ``discos-vms``
+======================================================
+
+The :file:`discos-vms` script is used to manage DISCOS virtual machines.
+
+To start or stop a virtual machine, specify an action and a machine name.
+Supported actions are ``--start``, ``--stop``, ``--status`` and ``--restart``.
+
+For instance, to start the ``manager`` virtual machine:
 
 .. code-block:: shell
 
    $ discos-vms --start manager
    Starting machine manager..............done.
 
-As you may have noticed from the previous examples, the ``discos-vms --start <machine>``
-command will block and wait until the machine is booted up and ready.
-Executing this command when the selected machine is already powered on will just
-print on screen:
-
-.. code-block:: shell
-
-   $ discos-vms --start manager
-   Machine manager is already running.
+The ``--start`` command blocks until the machine is booted and reachable.
+If the machine is already running, the script prints a message and exits.
 
 The script can also handle multiple machines:
 
 .. code-block:: shell
 
    $ discos-vms --start manager console
-   Starting machine manager..............done.
-   Starting machine console..............done.
 
-If you omit the machine, the script will try to execute the same action on all
-available machines:
+If no machine is specified, the action is applied to all available machines.
 
-.. code-block:: shell
-
-   $ discos-vms --start
-   Starting machine storage..............done.
-   Starting machine manager..............done.
-   Starting machine console..............done.
-
-
-.. note:: Right after the deployment procedure is completed, the deployed
-   virtual machines will be running already, so starting them with the above
-   command will just output ``Machine <machine> is already running``.
-
-
-If you want to stop a running machine you just need to specify the ``--stop``
-action:
+To stop a machine:
 
 .. code-block:: shell
 
    $ discos-vms --stop manager
    Powering off machine manager......done.
 
-Just like the ``--start`` command, the ``--stop`` command will block and wait
-until the selected machine has been completely powered off. Trying to stop
-a powered off machine will print a message just like the ``--start`` command:
-
-.. code-block:: shell
-
-   $ discos-vms --stop manager
-   Machine manager is not running.
-
-If you use the ``--restart`` action, machines will of course be restarted.
-
-In case you specify the ``--status`` action, the script will display the
-virtual machine status:
-
-.. code-block:: shell
-
-   $ discos-vms --status manager console
-   Machine manager status: running.
-   Machine console status: powered off.
+The ``--status`` action displays the current machine state.
 
 
-Login into a DISCOS virtual machine, `discos-login`
-===================================================
-The script :file:`discos-login` acts as a wrapper to `ssh`, and is useful to
-easily perform login on a deployed virtual machine. To login into a DISCOS
-virtual machine with this script, you can simply execute the following code:
+Login into a deployed machine, ``discos-login``
+===============================================
+
+The :file:`discos-login` script acts as a wrapper to ``ssh`` and can be used
+to log into a deployed machine.
+
+Example:
 
 .. code-block:: console
 
-  $ discos-login manager
-  discos@manager's password:
-  (branch?) discos@manager ~ $
+   $ discos-login manager
+   discos@manager's password:
+   (branch?) discos@manager ~ $
 
-
-The `discos-login` command handles the login procedure by internally executing
-the following command:
-
-.. code-block:: shell
-
-   $ ssh -CX discos@manager
-
-You can specify the user with which you want to login to the virtual machine,
-by appending the ``-u``, or ``--user``, argument, followed by the desired user
-name, to the `discos-login` script, just as follows:
+You can specify the user with ``-u`` or ``--user``:
 
 .. code-block:: console
 
-   $ discos-login -u observer console
-   observer@console's password:
-   (branch?) observer@console ~ $
+   $ discos-login -u observer manager
+
+The script reads host names and IP addresses from the Ansible inventory.
 
 
-.. note:: Currently the ``discos-login`` command only handles logins to virtual
-   machines. It does not rely on host names present in the ``/etc/hosts`` file,
-   it reads host names and their IP addresses from the Ansible inventory
-   directory. Changing any development machine's IP address in the Ansible
-   inventory after the deployment procedure is completed could result in a
-   login failure using this script. This behavior could change in the future
-   in order to enable the login to any machine (even actual ones).
+Graphical login into a deployed machine, ``discos-vnc``
+=======================================================
 
+The :file:`discos-vnc` script acts as a wrapper to ``vncviewer`` and opens a
+graphical session on a deployed machine.
 
-Graphical login into a DISCOS virtual machine (using VNC), `discos-vnc`
-=======================================================================
-The script :file:`discos-vnc` acts as a wrapper to ``vncviewer``, and is useful
-to perform a graphical login on a deployed virtual machine.
+Example:
 
-In order to be able to use it you should install ``vncviewer``, we suggest the
-``tigervnc`` one, that can be installed via ``yum`` or ``apt``. On red-hat
-based linux distributions you can install it by typing:
+.. code-block:: console
 
-.. code-block:: shell
+   $ discos-vnc manager
 
-   $ sudo yum install tigervnc
+The command establishes an SSH tunnel and launches the VNC viewer.
 
-Whether on debian-based linux distributions you can install it by typing:
+To use it, you need a VNC client such as `TigerVNC <https://tigervnc.org/>`_.
+
+On Debian-based systems:
 
 .. code-block:: shell
 
    $ sudo apt install tigervnc-viewer
 
-If you fail to install the ``vncviewer`` using the previous commands, or if you
-are running a different operating system than the previously mentioned ones,
-check out the `official tigervnc website <https://tigervnc.org/>`_.
+On Red Hat-based systems:
 
+.. code-block:: shell
 
-Once you installed the ``vncviewer``, you can correctly execute the
-``discos-vnc`` command. In order to login into a DISCOS virtual machine by the
-means of it, you can simply execute the following code and insert type desired
-user's login password:
+   $ sudo yum install tigervnc
 
-.. code-block:: console
-
-   $ discos-vnc manager
-   discos@manager's password:
-
-At this point the VNC session will be opened on your display.
-The :file:`discos-vnc` command handles the graphical login procedure by
-establishing a ssh tunnel to the desired machine and launching the
-``vncviewer`` in order to display the specified user's desktop. Only the
-``manager`` and ``console`` machines hosts some VNC servers. The ``manager``
-machine hosts the VNC server for the ``discos`` user, the ``console`` machine
-hosts both the VNC servers for the ``discos`` user and the ``observer`` user.
-
-
-.. note:: Like the `discos-login` script, even `discos-vnc` relies on IP
-   addresses read from the Ansible inventory directory. This behavior could
-   change in the future in order to enable the graphical login to any machine
-   (even actual ones).
+Like :file:`discos-login`, this script relies on the Ansible inventory.
