@@ -30,4 +30,3 @@ Contents:
    development.rst
    production.rst
    scripts.rst
-

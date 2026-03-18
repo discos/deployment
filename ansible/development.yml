@@ -33,8 +33,11 @@
   tags: provision
   hosts: manager
   remote_user: root
-  roles:
-    - selinux
+  tasks:
+    - name: Configure SELINUX
+      ansible.builtin.include_role:
+        name: selinux
+      when: ansible_virtualization_type != "docker"
 
 
 - name: Install yum packages
@@ -43,6 +46,17 @@
   remote_user: root
   roles:
     - yum
+
+
+- name: Apply Docker-specific configuration
+  tags: provision
+  hosts: manager
+  remote_user: root
+  tasks:
+    - name: Apply Docker-specific configuration
+      ansible.builtin.include_role:
+        name: docker
+      when: ansible_virtualization_type == "docker"
 
 
 - name: Configure network

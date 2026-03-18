@@ -1,16 +1,5 @@
 ---
 
-- name: Install quicklook python dependencies
-  ansible.builtin.command: "pip install {{ item }}"
-  become: true
-  become_user: "{{ user.name }}"
-  become_flags: "-i"
-  with_items:
-    - watchdog
-    - tornado
-  changed_when: true
-
-
 - name: Copy the quicklook service unit file
   ansible.builtin.template:
     src: quicklook.service
@@ -39,7 +28,8 @@
 
 
 - name: Start the quicklook service
-  ansible.builtin.systemd:
+  ansible.builtin.service:
     name: "quicklook.service"
     state: restarted
     enabled: true
+    use: systemd

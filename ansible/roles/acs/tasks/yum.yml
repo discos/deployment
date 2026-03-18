@@ -136,7 +136,6 @@
       Authorization: "token {{ repository_token }}"
   delegate_to: localhost
   run_once: true
-  no_log: true
 
 
 - name: Copy git-core to the remote

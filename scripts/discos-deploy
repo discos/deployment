@@ -91,6 +91,32 @@ parser.add_argument(
     )
 )
 parser.add_argument(
+    '--docker',
+    action='store_true',
+    help=(
+        'Use Docker containers (built from ~/.deployment/Dockerfile) '
+        'instead of Vagrant for development inventory'
+    )
+)
+parser.add_argument(
+    '--docker-image',
+    type=str,
+    default='discos-centos-7.9:latest',
+    help='Docker image tag to build/run (default: discos-centos-7.9:latest)'
+)
+parser.add_argument(
+    '--docker-network',
+    type=str,
+    default='discos_net',
+    help='Docker network name for static IP containers (default: discos_net)'
+)
+parser.add_argument(
+    '--docker-subnet',
+    type=str,
+    default='192.168.56.0/24',
+    help='Docker network subnet (default: 192.168.56.0/24)'
+)
+parser.add_argument(
     '--deploy-only',
     action='store_true',
     help='only deploy the DISCOS Control Software and test the DISCOS CDB'
@@ -163,7 +189,37 @@ if not args.sim:
     deployment.generateRSAKey()
     # Check if the chosen machines are reachable
     for machine, ip in machines.items():
-        if env == 'development' and not args.no_vagrant:
+        if env == 'development' and args.docker:
+            # Docker-based dev environment
+            # Build image (context is always ~/.deployment)
+            if not deployment.dockerImageExists(args.docker_image):
+                rc = deployment.dockerBuild(image=args.docker_image)
+                if rc != 0:
+                    deployment.error('Docker build failed.', code=rc)
+
+            # Ensure network
+            rc = deployment.dockerEnsureNetwork(
+                network=args.docker_network,
+                subnet=args.docker_subnet
+            )
+            if rc != 0:
+                deployment.error('Failed to create docker network.', code=rc)
+
+            rc = deployment.dockerEnsureContainer(
+                name=machine,
+                ip=ip,
+                image=args.docker_image,
+                network=args.docker_network
+            )
+            if rc != 0:
+                deployment.error(f'Failed to create/start docker container {machine}.', code=rc)
+
+            if not deployment.ping(ip, timeout=30):
+                deployment.error(
+                    f'Container {machine} unreachable on SSH (22). '
+                    f'Check that sshd is enabled in the image and that it listens on {ip}.'
+                )
+        elif env == 'development' and not args.no_vagrant:
             # Start or create the virtual machine
             code = 0
             action = 'starting'
@@ -209,37 +265,32 @@ if args.branch:
     extra_vars['branch'] = args.branch
 
 if extra_vars:
-    extra_vars = ['--extra-vars', f"'{json.dumps(extra_vars)}'"]
+    extra_vars = ['--extra-vars', json.dumps(extra_vars)]
 else:
     extra_vars = []
 
 # Check if we want provision only or deployment only
 ansible_tags = []
 if args.deploy_only:
-    ansible_tags = ['--tags', "'deploy'"]
+    ansible_tags = ['--tags', 'deploy']
 elif args.test_cdb_only:
-    ansible_tags = ['--tags', "'cdb'"]
+    ansible_tags = ['--tags', 'cdb']
 elif not args.branch:
-    ansible_tags = ['--skip-tags', "'deploy'"]
+    ansible_tags = ['--skip-tags', 'deploy']
 
 # Add extra variables to the ansible command
 ansible_cmd += ansible_tags + extra_vars
 if args.verbose:
     ansible_cmd.append('-vv')
-ansible_cmd = ' '.join(ansible_cmd)
 
 
 print('Calling Ansible...')
 if args.sim:
-    print(ansible_cmd)
+    print(' '.join(ansible_cmd))
     sys.exit(0)
 
 process = subprocess.Popen(
     ansible_cmd,
-    shell=True,
-    stdin=sys.stdin,
-    stdout=sys.stdout,
-    stderr=sys.stderr
 )
 try:
     process.wait()

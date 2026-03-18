@@ -6,8 +6,7 @@ from googleapiclient.http import MediaFileUpload
 import os
 
 TOKEN_FILE = 'token.json'
-VM_FILE_PATH = '/home/runner/discos_manager.ova'
-ARCHIVE_FILE_PATH = '/home/runner/vagrant.tar.gz'
+CONTAINER_FILE_PATH = '/home/runner/discos_manager.tar'
 SCOPES = [
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/drive.file'
@@ -24,18 +23,23 @@ if creds.expired and creds.refresh_token:
 
 # Prepare the files to be uploaded
 service = build('drive', 'v3', credentials=creds)
-vm_media = MediaFileUpload(VM_FILE_PATH, resumable=True)
-service.files().update(
-    fileId=os.environ.get('PROVISIONED_VM_GDRIVE_ID'),
-    media_body=vm_media,
+container_media = MediaFileUpload(
+    CONTAINER_FILE_PATH,
+    mimetype='application/x-tar',
+    resumable=True,
+    chunksize=64*1024*1024
+)
+request = service.files().update(
+    fileId=os.environ.get('PROVISIONED_CONTAINER_GDRIVE_ID'),
+    media_body=container_media,
     fields='id'
-).execute()
-archive_media = MediaFileUpload(ARCHIVE_FILE_PATH, resumable=True)
-service.files().update(
-    fileId=os.environ.get('PROVISIONED_ARCHIVE_GDRIVE_ID'),
-    media_body=archive_media,
-    fields='id'
-).execute()
+)
+
+response = None
+while response is None:
+    status, response = request.next_chunk()
+    if status is not None:
+        print(f'Upload progress: {int(status.progress() * 100)}%', flush=True)
 
 # Finally update the token file
 with open(TOKEN_FILE, 'w') as tokenfile:

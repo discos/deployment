@@ -7,9 +7,10 @@
 
 
 - name: Mask firewalld service
-  ansible.builtin.systemd:
+  ansible.builtin.service:
     name: firewalld
     masked: true
+    use: systemd
   failed_when: false
 
 
@@ -28,7 +29,8 @@
 
 
 - name: Configure the firewall
-  ansible.builtin.systemd:
+  ansible.builtin.service:
     name: iptables
     state: "{{ firewall_state }}"
     enabled: "{{ firewall_enabled }}"
+    use: systemd

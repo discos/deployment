@@ -38,6 +38,7 @@
     name: rpcbind
     state: started
     enabled: true
+    use: systemd
 
 
 - name: Start ypserv service
@@ -45,6 +46,7 @@
     name: ypserv
     state: started
     enabled: true
+    use: systemd
 
 
 - name: Start ypxfrd service
@@ -52,6 +54,7 @@
     name: ypxfrd
     state: started
     enabled: true
+    use: systemd
 
 
 - name: Start yppasswdd
@@ -59,6 +62,7 @@
     name: yppasswdd
     state: started
     enabled: true
+    use: systemd
 
 
 - name: Perform a backup of the ypinit script

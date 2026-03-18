@@ -75,8 +75,9 @@
 
 
 - name: Enable the discos_telemetry_proxy service
-  ansible.builtin.systemd:
+  ansible.builtin.service:
     name: "discos_telemetry_proxy.service"
     state: restarted
     enabled: true
+    use: systemd
   failed_when: false

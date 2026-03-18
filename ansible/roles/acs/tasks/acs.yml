@@ -46,16 +46,57 @@
   when: not target_dir.stat.exists
 
 
-- name: Download the ACS repository
-  ansible.builtin.git:
-    repo: "https://asw.alma.cl/ASW/acs.git"
-    dest: "{{ remote_build_path }}/acs"
-    version: "acs/2021DEC"
-    track_submodules: true
-    force: true
-  become: true
-  become_user: "{{ user.name }}"
-  become_flags: "-i"
+- name: Check if the ACS-2021DEC archive exists locally
+  ansible.builtin.stat:
+    path: "{{ local_repository_path }}/{{ acs_archive_path }}"
+  register: acs_archive
+  delegate_to: localhost
+  run_once: true
+
+
+- name: Download the ACS-2021DEC archive parts
+  ansible.builtin.get_url:
+    url: "{{ remote_repository_download_url }}/{{ acs_archive_prefix }}{{ item }}"
+    dest: "{{ local_repository_path }}"
+    mode: "0644"
+    headers:
+      Authorization: "token {{ repository_token }}"
+    timeout: 60
+  loop: "{{ acs_archive_parts }}"
+  register: download_result
+  retries: 5
+  delay: 10
+  until: download_result is succeeded
+  when: not acs_archive.stat.exists
+  delegate_to: localhost
+  run_once: true
+
+
+- name: Reassemble ACS archive from parts
+  ansible.builtin.shell: "cat {{ acs_archive_prefix }}* > {{ acs_archive_path }}"
+  args:
+    chdir: "{{ local_repository_path }}"
+    creates: "{{ local_repository_path }}/{{ acs_archive_path }}"
+  delegate_to: localhost
+  run_once: true
+  when: not acs_archive.stat.exists
+
+
+- name: Remove ACS parts
+  ansible.builtin.file:
+    path: "{{ local_repository_path }}/{{ acs_archive_prefix }}{{ item }}"
+    state: absent
+  loop: "{{ acs_archive_parts }}"
+  delegate_to: localhost
+  run_once: true
+
+
+- name: Extract the ACS archive to the remote
+  ansible.builtin.unarchive:
+    src: "{{ local_repository_path }}/{{ acs_archive_path }}"
+    dest: "{{ remote_build_path }}/"
+    owner: "{{ user.name }}"
+    group: "{{ user.group }}"
   when: not target_dir.stat.exists
 
 
@@ -69,6 +110,18 @@
     - "https://sourceforge.net/projects/gnuplot-py/files/Gnuplot-py/1.8/gnuplot-py-1.8.tar.gz/download"
     - "https://sourceforge.net/projects/pychecker/files/pychecker/0.8.17/pychecker-0.8.17.tar.gz/download"
     - "https://sourceforge.net/projects/numpy/files/OldFiles/1.3.3/numarray-1.3.3.tar.gz"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  when: not target_dir.stat.exists
+
+
+- name: Get missing antlr-generator library
+  ansible.builtin.get_url:
+    url: "https://download.itemis.com/antlr-generator-3.2.0-patch.jar"
+    dest: "{{ remote_build_path }}/acs/LGPL/CommonSoftware/codegen/.antlr-generator-3.2.0-patch.jar"
+    mode: "0644"
+    validate_certs: false
   become: true
   become_user: "{{ user.name }}"
   become_flags: "-i"

@@ -3,6 +3,7 @@ import os
 import time
 import subprocess
 import getpass
+import threading
 from argparse import Namespace
 STDOUT = sys.stdout
 STDERR = sys.stderr
@@ -130,23 +131,27 @@ def sshLogin(ip, user='root'):
     else:
         return False
 
-def ping(ip):
-    sp = subprocess.run(
-        [
-            'timeout',
-            '2',
-            'nc',
-            '-z',
-            ip,
-            '22'
-        ],
-        stdout=STDOUT,
-        stderr=STDERR
-    )
-    if sp.returncode == 0:
-        return True
-    else:
-        return False
+def ping(ip, timeout=2):
+    start = time.monotonic()
+
+    while True:
+        sp = subprocess.run(
+            [
+                'timeout',
+                str(timeout),
+                'nc',
+                '-z',
+                ip,
+                '22'
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        if sp.returncode == 0:
+            return True
+        if time.monotonic() - start >= timeout:
+            return False
+        time.sleep(0.2)
 
 def getIp(machine, inventory='development'):
     hosts, _, _ = parseInventory(inventory)
@@ -483,3 +488,200 @@ def injectRSAKey(machines):
                     f'try again with the correct password.'
                 )
     os.remove('/tmp/ssh_askpass')
+
+def _docker(args, cwd=DEPLOYMENT_DIR, stdout=None, stderr=None):
+    """Run a docker command in the deployment directory."""
+    if stdout is None:
+        stdout = STDOUT
+    if stderr is None:
+        stderr = STDERR
+    cmd = ['docker'] + list(args)
+    sp = subprocess.run(
+        cmd,
+        cwd=cwd,
+        stdout=stdout,
+        stderr=stderr
+    )
+    return sp.returncode
+
+def _docker_output(args, cwd=DEPLOYMENT_DIR, stdout=None, stderr=None, text=True):
+    if stdout is None:
+        stdout=subprocess.PIPE
+    if stderr is None:
+        stderr = STDERR
+    sp = subprocess.run(
+        ['docker'] + list(args),
+        cwd=cwd,
+        stdout=stdout,
+        stderr=stderr,
+        text=text
+    )
+    return sp
+
+def dockerImageExists(image):
+    return _docker(["image", "inspect", image]) == 0
+
+def dockerBuild(image='discos-centos-7.9:latest'):
+    """Build the docker image from ~/.deployment/Dockerfile using ~/.deployment as context."""
+    dockerfile_path = os.path.join(DEPLOYMENT_DIR, 'Dockerfile')
+    if not os.path.exists(dockerfile_path):
+        error(f"Missing Dockerfile in {DEPLOYMENT_DIR}: {dockerfile_path}")
+    return _docker(['build', '-t', image, '-f', dockerfile_path, '.'])
+
+def dockerNetworkExists(network):
+    return _docker(["network", "inspect", network]) == 0
+
+def dockerEnsureNetwork(network='discos_net', subnet='192.168.56.0/24'):
+    """Ensure a bridge network exists with a predictable subnet for static IPs."""
+    if dockerNetworkExists(network):
+        return 0
+    return _docker(['network', 'create', '--driver', 'bridge', '--subnet', subnet, network])
+
+def dockerContainerExists(name):
+    return _docker(["inspect", "--type=container", name]) == 0
+
+def dockerContainerRunning(name):
+    sp = _docker_output(['inspect', '-f', '{{.State.Running}}', name])
+    return sp.returncode == 0 and sp.stdout.strip() == 'true'
+
+def dockerEnsureContainer(
+    name,
+    ip,
+    image='discos-centos-7.9:latest',
+    network='discos_net'
+):
+    """Create container if missing, otherwise start it."""
+    if dockerContainerExists(name):
+        if dockerContainerRunning(name):
+            return 0
+        return dockerStartContainer(name, ip=ip)
+
+    rc = _docker([
+        'run', '-d',
+        '--name', name,
+        '--hostname', name,
+        '--network', network,
+        '--ip', ip,
+        image
+    ])
+    if rc != 0:
+        return rc
+    if not ping(ip, timeout=30):
+        return 3
+    return dockerInjectRSAKey(name)
+
+def dockerStartContainer(name, ip=None):
+    rc = _docker(['start', name])
+    if rc != 0:
+        return rc
+    if ip is not None:
+        return 0 if ping(ip, timeout=30) else 3
+    return 0
+
+def dockerStopContainer(name):
+    return _docker(['stop', name])
+
+def dockerRestartContainer(name, ip=None):
+    rc = _docker(['restart', name])
+    if rc != 0:
+        return rc
+    if ip is not None:
+        return 0 if ping(ip, timeout=30) else 3
+    return 0
+
+def dockerRemoveContainer(name, force=True):
+    args = ['rm']
+    if force:
+        args.append('-f')
+    args.append(name)
+    return _docker(args)
+
+def getRSAPublicKeyPath(
+        key_file='id_rsa',
+        ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')
+    ):
+    ssh_dir = os.path.expanduser(ssh_dir)
+    pub_file = os.path.join(ssh_dir, key_file + '.pub')
+
+    if not os.path.exists(pub_file):
+        generateRSAKey(key_file=key_file, ssh_dir=ssh_dir)
+
+    if not os.path.exists(pub_file):
+        error(f"SSH public key not found: {pub_file}")
+
+    return pub_file
+
+def dockerInjectRSAKey(
+        container,
+        key_file='id_rsa',
+        ssh_dir=os.path.join(os.environ.get('HOME'), '.ssh')
+    ):
+    pub_file = getRSAPublicKeyPath(key_file=key_file, ssh_dir=ssh_dir)
+
+    rc = _docker(['cp', pub_file, f'{container}:/tmp/id_rsa.pub'])
+    if rc != 0:
+        return rc
+
+    script = r'''
+set -euo pipefail
+mkdir -p /root/.ssh
+touch /root/.ssh/authorized_keys
+chmod 700 /root/.ssh
+chmod 600 /root/.ssh/authorized_keys
+pub="$(cat /tmp/id_rsa.pub)"
+grep -Fqx "$pub" /root/.ssh/authorized_keys || echo "$pub" >> /root/.ssh/authorized_keys
+rm -f /tmp/id_rsa.pub
+'''
+    return _docker(['exec', container, '/bin/bash', '-lc', script])
+
+def runWithProgress(message, worker, error_message, *args, interval=1, **kwargs):
+    sys.stdout.write(message)
+    sys.stdout.flush()
+
+    result = {'done': False, 'rc': 1}
+
+    def _target():
+        try:
+            result['rc'] = worker(*args, **kwargs)
+        except Exception:
+            result['rc'] = 1
+        finally:
+            result['done'] = True
+
+    thread = threading.Thread(target=_target, daemon=True)
+    thread.start()
+
+    while not result['done']:
+        sys.stdout.write('.')
+        sys.stdout.flush()
+        thread.join(interval)
+
+    if result['rc'] == 0:
+        print('done.')
+    else:
+        print(error_message)
+    return result['rc']
+
+def dockerCommitContainer(container, image):
+    """Create a Docker image from an existing container."""
+    return _docker(['commit', container, image])
+
+def dockerSaveImage(image, imgfile):
+    """Save a Docker image to a tar file."""
+    outdir = os.path.dirname(imgfile)
+    if outdir:
+        os.makedirs(outdir, exist_ok=True)
+    return _docker(['save', '-o', imgfile, image])
+
+def dockerCommitAndSaveContainer(container, image, imgfile):
+    """Commit a container into an image, then save it to a tar file."""
+    rc = dockerCommitContainer(container, image)
+    if rc != 0:
+        return rc
+    return dockerSaveImage(image, imgfile)
+
+def dockerLoadImage(imgfile):
+    """Load a Docker image from a .tar archive."""
+    if not os.path.exists(imgfile):
+        error(f"Image archive not found: {imgfile}")
+    return _docker(['load', '-i', imgfile])

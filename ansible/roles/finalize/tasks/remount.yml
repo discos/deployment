@@ -1,9 +1,10 @@
 ---
 
 - name: Force lustre remount to correctly start services
-  ansible.builtin.systemd:
+  ansible.builtin.service:
     name: lustre
     state: restarted
+    use: systemd
   when:
     - lustre_network_interface is defined
     - lustre_type == "server"

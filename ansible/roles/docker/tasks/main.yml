@@ -1,0 +1,41 @@
+---
+
+- name: Ensure dbus.service.d drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/system/dbus.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+
+- name: Install dbus override drop-in
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/dbus.service.d/override.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Service]
+      ExecStartPre=/usr/bin/mkdir -p /run/dbus
+      ExecStart=
+      ExecStart=/usr/bin/dbus-daemon --system --nofork --nopidfile
+      OOMScoreAdjust=0
+
+
+- name: Remove systemd-logind runtime directories in Docker containers
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /run/systemd/seats
+    - /run/systemd/sessions
+    - /run/systemd/users
+
+
+- name: Start and enable the dbus service
+  ansible.builtin.service:
+    name: dbus
+    state: started
+    enabled: true
+    use: systemd

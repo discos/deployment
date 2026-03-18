@@ -323,12 +323,13 @@
 
 
 - name: Start the server lustre service
-  ansible.builtin.systemd:
+  ansible.builtin.service:
     name: lustre
     state: restarted
     enabled: true
     daemon_reload: true
     force: true
+    use: systemd
 
 
 - name: Tune the /{{ archive }} directory permissions after mount
