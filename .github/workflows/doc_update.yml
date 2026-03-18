@@ -14,7 +14,7 @@ jobs:
     env:
       GH_TOKEN: "${{ secrets.GH_WORKFLOWS_TOKEN }}"
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Split subtree and push to doc branch
@@ -33,7 +33,7 @@ jobs:
     needs: update-local-doc
     steps:
     - name: Checkout the doc repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: discos/doc
         fetch-depth: 0
