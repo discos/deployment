@@ -4,78 +4,149 @@
 Dependencies
 ************
 
-To automatically deploy DISCOS, you need to install some dependencies:
-`Git <https://git-scm.com/>`_, `Ansible <https://www.ansible.com/>`_,
-`Python 3 <https://www.python.org/download/>`_,
-`Vagrant <https://developer.hashicorp.com/vagrant/>`_ and `VirtualBox
-<https://www.virtualbox.org/>`_.  It usually takes about 15 minutes.
+This section describes the required dependencies to deploy DISCOS.
 
+The deployment procedure is based on Ansible and is designed to configure
+a set of target machines. These machines can be:
+
+- physical machines
+- virtual machines
+- Docker containers
+
+The same procedure is applied in all cases.
+
+Mandatory dependencies
+======================
+
+The following tools are always required:
+
+- `Git <https://git-scm.com/>`_
+- `Python 3 <https://www.python.org/download/>`_
+- `Ansible <https://www.ansible.com/>`_
 
 Install Git
-===========
-Before installing Git, verify if it is already installed:
+-----------
+
+Before installing Git, verify if it is already available:
 
 .. code-block:: shell
 
    $ git --version
-   git version 2.17.1
 
-You do not need a particular version of Git, but if the command ``git --version``
-fails, than you have to install Git by following the instructions at the `official Git
-website <https://git-scm.com/book/en/v1/Getting-Started-Installing-Git>`_.
+If the command fails, install Git following the instructions at the
+`official Git website <https://git-scm.com/book/en/v1/Getting-Started-Installing-Git>`_.
 
+Install Python 3
+----------------
 
-Install a Python environment
-============================
-The whole DISCOS deployment procedure relies on Python 3. Verify if Python is already
-installed on your system:
+Verify that Python 3 is installed:
 
 .. code-block:: shell
 
    $ python --version
-   Python 3.11.1
 
-If your system comes bundled with a different Python version, you may want to
-consider installing a Python environment such as
-`Anaconda <https://www.anaconda.com/docs/main>`_,
-`Miniconda <https://conda.io/miniconda.html>`_ or
-`Pyenv <https://github.com/pyenv/pyenv>`_ and its
-`Virtualenv <https://github.com/pyenv/pyenv-virtualenv>`_ plugin.
+If your system provides an older version of Python, consider installing a
+dedicated Python environment such as:
+
+- `Anaconda <https://www.anaconda.com/docs/main>`_
+- `Miniconda <https://conda.io/miniconda.html>`_
+- `Pyenv <https://github.com/pyenv/pyenv>`_ with
+  `Virtualenv <https://github.com/pyenv/pyenv-virtualenv>`_
 
 
-Install VirtualBox and Vagrant
-==============================
-You need to install VirtualBox and Vagrant only if you want to
-deploy DISCOS on virtual machines, as in the case of a development
-environment. As a first step, check if VirtualBox is already installed:
+Install Ansible
+---------------
+
+Ansible is the core tool used to configure the target machines.
+
+You can install it using ``pip``:
+
+.. code-block:: shell
+
+   $ pip install ansible
+
+Alternatively, you can install it using your system package manager.
+
+
+Execution environments
+======================
+
+The deployment procedure can be applied to different types of environments.
+Depending on the chosen target, additional tools may be required.
+
+Docker containers (recommended for development)
+-----------------------------------------------
+
+Docker is the recommended way to create development environments.
+
+It allows you to quickly provision disposable systems that behave like
+real machines, while reusing the same Ansible configuration used for
+physical deployments.
+
+Install Docker:
+
+.. code-block:: shell
+
+   $ sudo apt install docker.io
+   $ sudo usermod -aG docker $USER
+
+After installation, log out and log back in to apply group changes.
+
+Verify the installation:
+
+.. code-block:: shell
+
+   $ docker --version
+
+
+Virtual machines
+----------------
+
+Virtual machines can be used as an alternative to Docker containers,
+or when a full system emulation is required.
+
+To use them, install:
+
+- `VirtualBox <https://www.virtualbox.org/>`_
+- `Vagrant <https://developer.hashicorp.com/vagrant/>`_
+
+Install VirtualBox:
 
 .. code-block:: shell
 
    $ which virtualbox
-   /usr/bin/virtualbox
 
-In case it is not, download the binary file from the
-`official website <https://www.virtualbox.org/wiki/Downloads>`_
-and install it.
+If not installed, download it from the
+`VirtualBox official website <https://www.virtualbox.org/wiki/Downloads>`_.
 
-
-.. note:: The suggested VirtualBox version to install is the 5.1. As of today,
-   the latest release of VirtualBox, version 5.2, seems to introduce some lag
-   in SSH sessions to the deployed virtual machines. Version 5.1 also matches
-   the VirtualBox guest additions already installed in the virtual machines.
-
-
-Now verify if Vagrant is installed:
+Install Vagrant:
 
 .. code-block:: shell
 
    $ vagrant --version
-   Vagrant 2.2.1
 
-If it is not, download the binary file from the
-`vagrant official website <https://developer.hashicorp.com/vagrant/install>`_
-and install it.
+If not installed, download it from the
+`Vagrant install page <https://developer.hashicorp.com/vagrant/install>`_.
 
 
-At this point you are ready to deploy DISCOS.  The :ref:`deploy_quickstart`
-section is a good starting point, because it covers a typical scenario.
+Physical machines
+-----------------
+
+No additional software is required to deploy on physical machines.
+
+You only need:
+
+- network connectivity
+- SSH access from the control host
+
+
+Summary
+=======
+
+- Git, Python 3 and Ansible are always required
+- The deployment procedure targets machines via Ansible
+- Docker and virtual machines are optional tools to create such machines
+- Physical machines are supported out of the box
+
+Once all dependencies are installed, proceed to the
+:ref:`deploy_quickstart` section.
