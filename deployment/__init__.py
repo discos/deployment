@@ -562,6 +562,7 @@ def dockerEnsureContainer(
         '--hostname', name,
         '--network', network,
         '--ip', ip,
+        '--platform', 'linux/amd64',
         image
     ])
     if rc != 0:

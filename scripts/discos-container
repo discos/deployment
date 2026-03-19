@@ -55,24 +55,16 @@ def _ensure_docker_available():
         deployment.error("Docker is not available or the daemon is not reachable!")
 
 
-def _resolve_create_image(image=None):
-    if image == "latest":
+def _resolve_image_from_tag(tag=None):
+    if tag is None:
+        if deployment.dockerImageExists(PROVISIONED_IMAGE):
+            return PROVISIONED_IMAGE
         return LATEST_IMAGE
 
-    if image == "provisioned":
-        if not deployment.dockerImageExists(PROVISIONED_IMAGE):
-            print(f"Image {PROVISIONED_IMAGE} not found.")
-            return None
-        return PROVISIONED_IMAGE
+    if ":" in tag:
+        return tag
 
-    if deployment.dockerImageExists(PROVISIONED_IMAGE):
-        return PROVISIONED_IMAGE
-
-    if deployment.dockerImageExists(LATEST_IMAGE):
-        return LATEST_IMAGE
-
-    print(f"Neither {PROVISIONED_IMAGE} nor {LATEST_IMAGE} exists.")
-    return None
+    return f"{IMAGE}:{tag}"
 
 
 def build_image(image=LATEST_IMAGE):
@@ -143,7 +135,7 @@ def status_container(inventory=DEFAULT_INVENTORY):
 
 def create_container(
     inventory=DEFAULT_INVENTORY,
-    image=None,
+    tag=None,
     network=NETWORK,
     subnet=SUBNET,
 ):
@@ -151,8 +143,8 @@ def create_container(
         print(f"Container {CONTAINER} already created.")
         return 2
 
-    resolved_image = _resolve_create_image(image)
-    if resolved_image is None:
+    image = _resolve_image_from_tag(tag)
+    if image is None:
         return 2
 
     ip = _machine_ip(inventory)
@@ -173,7 +165,7 @@ def create_container(
         "error while creating the requested container.",
         CONTAINER,
         ip,
-        resolved_image,
+        image,
         network,
     )
 
@@ -267,7 +259,25 @@ def destroy_container():
     )
 
 
-def save_container(imgfile, image=PROVISIONED_IMAGE):
+def commit_container(tag="provisioned"):
+    image = _resolve_image_from_tag(tag)
+
+    if not deployment.dockerContainerExists(CONTAINER):
+        print(f"Container {CONTAINER} not created.")
+        return 2
+
+    return deployment.runWithProgress(
+        f"Committing container {CONTAINER} into {image}",
+        deployment.dockerCommitContainer,
+        "error while committing the requested container.",
+        CONTAINER,
+        image,
+    )
+
+
+def save_container(imgfile, tag="provisioned"):
+    image = _resolve_image_from_tag(tag)
+
     if not deployment.dockerContainerExists(CONTAINER):
         print(f"Container {CONTAINER} not created.")
         return 2
@@ -315,6 +325,16 @@ def _parse_args():
             help="image .tar filename",
         )
 
+    def add_tag(p):
+        p.add_argument(
+            "--tag",
+            default=None,
+            help=(
+                "image tag to use. "
+                "If not provided: provisioned if available, latest otherwise"
+            ),
+        )
+
     p = subparsers.add_parser("build")
     _bind_command(p, build_image)
 
@@ -325,9 +345,14 @@ def _parse_args():
     add_imgfile(p)
     _bind_command(p, load_image, "imgfile")
 
+    p = subparsers.add_parser("commit")
+    add_tag(p)
+    _bind_command(p, commit_container, "tag")
+
     p = subparsers.add_parser("save")
     add_imgfile(p)
-    _bind_command(p, save_container, "imgfile")
+    add_tag(p)
+    _bind_command(p, save_container, "imgfile", "tag")
 
     p = subparsers.add_parser("status")
     add_inventory(p)
@@ -356,16 +381,8 @@ def _parse_args():
         default=SUBNET,
         help=f"Docker subnet to use (default: {SUBNET})",
     )
-    p.add_argument(
-        "--image",
-        choices=["latest", "provisioned"],
-        default=None,
-        help=(
-            "image to use for create: latest or provisioned "
-            "(default: provisioned if available, otherwise latest)"
-        ),
-    )
-    _bind_command(p, create_container, "inventory", "image", "network", "subnet")
+    add_tag(p)
+    _bind_command(p, create_container, "inventory", "tag", "network", "subnet")
 
     p = subparsers.add_parser("destroy")
     _bind_command(p, destroy_container)
