@@ -54,7 +54,7 @@ make() {
 
 # Variables to export
 # ===================
-export QTDIR={{ qt_dir }}
+export QTDIR=/usr/lib64/qt4
 export QTLIB=$QTDIR/lib
 export QTINC=/usr/include/Qt
 export qt_prefix=$QTLIB

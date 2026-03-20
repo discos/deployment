@@ -23,8 +23,9 @@ import deployment
 
 CONTAINER = "manager"
 IMAGE = "discos-centos-7.9"
+BASE_IMAGE = IMAGE + ":base"
 LATEST_IMAGE = IMAGE + ":latest"
-PROVISIONED_IMAGE = IMAGE + ":provisioned"
+GHCR_ORG = "ghcr.io/discos"
 NETWORK = "discos_net"
 SUBNET = "192.168.56.0/24"
 DEFAULT_INVENTORY = "development"
@@ -57,9 +58,9 @@ def _ensure_docker_available():
 
 def _resolve_image_from_tag(tag=None):
     if tag is None:
-        if deployment.dockerImageExists(PROVISIONED_IMAGE):
-            return PROVISIONED_IMAGE
-        return LATEST_IMAGE
+        if deployment.dockerImageExists(LATEST_IMAGE):
+            return LATEST_IMAGE
+        return BASE_IMAGE
 
     if ":" in tag:
         return tag
@@ -67,7 +68,13 @@ def _resolve_image_from_tag(tag=None):
     return f"{IMAGE}:{tag}"
 
 
-def build_image(image=LATEST_IMAGE):
+def _resolve_ghcr_image_from_tag(tag="latest"):
+    local_image = _resolve_image_from_tag(tag)
+    image_name, image_tag = local_image.rsplit(":", 1)
+    return f"{GHCR_ORG}/{image_name}:{image_tag}"
+
+
+def build_image(image=BASE_IMAGE):
     if deployment.dockerImageExists(image):
         print(f"Image {image} already exists.")
         return 0
@@ -80,7 +87,7 @@ def build_image(image=LATEST_IMAGE):
     )
 
 
-def remove_image(image=PROVISIONED_IMAGE):
+def remove_image(image=LATEST_IMAGE):
     if not deployment.dockerImageExists(image):
         print(f"Image {image} not found.")
         return 1
@@ -103,6 +110,71 @@ def load_image(imgfile):
     )
 
 
+def push_image(tag="latest"):
+    local_image = _resolve_image_from_tag(tag)
+    remote_image = _resolve_ghcr_image_from_tag(tag)
+
+    if not deployment.dockerImageExists(local_image):
+        print(f"Image {local_image} not found.")
+        return 1
+
+    rc = deployment.runWithProgress(
+        f"Tagging image {local_image} as {remote_image}",
+        deployment.dockerTagImage,
+        "error while tagging the requested image.",
+        local_image,
+        remote_image,
+    )
+    if rc != 0:
+        return rc
+
+    return deployment.runWithProgress(
+        f"Pushing image {remote_image}",
+        deployment.dockerPushImage,
+        "error while pushing the requested image.",
+        remote_image,
+    )
+
+
+def pull_image(tag="latest"):
+    local_image = _resolve_image_from_tag(tag)
+    remote_image = _resolve_ghcr_image_from_tag(tag)
+
+    rc = deployment.runWithProgress(
+        f"Pulling image {remote_image}",
+        deployment.dockerPullImage,
+        "error while pulling the requested image.",
+        remote_image,
+    )
+    if rc != 0:
+        return rc
+
+    return deployment.runWithProgress(
+        f"Tagging image {remote_image} as {local_image}",
+        deployment.dockerTagImage,
+        "error while tagging the pulled image locally.",
+        remote_image,
+        local_image,
+    )
+
+
+def tag_image(source_tag, target_tag):
+    source_image = _resolve_image_from_tag(source_tag)
+    target_image = _resolve_image_from_tag(target_tag)
+
+    if not deployment.dockerImageExists(source_image):
+        print(f"Image {source_image} not found.")
+        return 1
+
+    return deployment.runWithProgress(
+        f"Tagging image {source_image} as {target_image}",
+        deployment.dockerTagImage,
+        "error while tagging the requeste image.",
+        source_image,
+        target_image
+    )
+
+
 def status_container(inventory=DEFAULT_INVENTORY):
     print("Container:")
     print("----------")
@@ -120,15 +192,15 @@ def status_container(inventory=DEFAULT_INVENTORY):
     print("Images:")
     print("-------")
 
+    if deployment.dockerImageExists(BASE_IMAGE):
+        print(f"{BASE_IMAGE}: present")
+    else:
+        print(f"{BASE_IMAGE}: missing")
+
     if deployment.dockerImageExists(LATEST_IMAGE):
         print(f"{LATEST_IMAGE}: present")
     else:
         print(f"{LATEST_IMAGE}: missing")
-
-    if deployment.dockerImageExists(PROVISIONED_IMAGE):
-        print(f"{PROVISIONED_IMAGE}: present")
-    else:
-        print(f"{PROVISIONED_IMAGE}: missing")
 
     return 0
 
@@ -221,35 +293,17 @@ def restart_container(inventory=DEFAULT_INVENTORY):
     )
 
 
-def destroy_container():
+def destroy_container(force=False):
     if not deployment.dockerContainerExists(CONTAINER):
         print(f"Container {CONTAINER} not created.")
-        return 2
+        return 0
 
-    valid = {"yes": True, "y": True, "ye": True, "no": False, "n": False}
-    prompted = 0
-
-    while True:
-        if prompted == 3:
-            print("Aborted.")
-            return 0
-
-        prompted += 1
-        sys.stdout.write(
-            f"Are you sure you want to destroy container {CONTAINER}? [y/N]: "
-        )
-        sys.stdout.flush()
+    if not force:
+        print(f"Are you sure you want to destroy container {CONTAINER}? [y/N]: ", end="")
         choice = input().strip().lower()
-
-        if choice == "":
+        if choice not in ("y", "yes"):
             print("Aborted.")
-            return 0
-
-        if choice in valid:
-            if not valid[choice]:
-                print("Aborted.")
-                return 0
-            break
+            return 1
 
     return deployment.runWithProgress(
         f"Destroying container {CONTAINER}",
@@ -259,7 +313,7 @@ def destroy_container():
     )
 
 
-def commit_container(tag="provisioned"):
+def commit_container(tag="latest"):
     image = _resolve_image_from_tag(tag)
 
     if not deployment.dockerContainerExists(CONTAINER):
@@ -275,7 +329,7 @@ def commit_container(tag="provisioned"):
     )
 
 
-def save_container(imgfile, tag="provisioned"):
+def save_container(imgfile, tag="latest"):
     image = _resolve_image_from_tag(tag)
 
     if not deployment.dockerContainerExists(CONTAINER):
@@ -291,6 +345,35 @@ def save_container(imgfile, tag="provisioned"):
         CONTAINER,
         image,
         str(imgfile),
+    )
+
+
+def checkpoint_container(tag="latest", inventory=DEFAULT_INVENTORY, network=NETWORK, subnet=SUBNET):
+    image = _resolve_image_from_tag(tag)
+
+    if not deployment.dockerContainerExists(CONTAINER):
+        print(f"Container {CONTAINER} not created.")
+        return 2
+
+    rc = deployment.runWithProgress(
+        f"Committing container {CONTAINER} into {image}",
+        deployment.dockerCommitContainer,
+        "error while committing the requested container.",
+        CONTAINER,
+        image,
+    )
+    if rc != 0:
+        return rc
+
+    rc = destroy_container(force=True)
+    if rc != 0:
+        return rc
+
+    return create_container(
+        inventory=inventory,
+        tag=tag,
+        network=network,
+        subnet=subnet,
     )
 
 
@@ -325,14 +408,26 @@ def _parse_args():
             help="image .tar filename",
         )
 
-    def add_tag(p):
+    def add_tag(p, default=None):
         p.add_argument(
             "--tag",
-            default=None,
+            default=default,
             help=(
                 "image tag to use. "
-                "If not provided: provisioned if available, latest otherwise"
+                "If not provided: latest if available, base otherwise"
             ),
+        )
+
+    def add_network(p):
+        p.add_argument(
+            "--network",
+            default=NETWORK,
+            help=f"Docker network to use (default: {NETWORK})",
+        )
+        p.add_argument(
+            "--subnet",
+            default=SUBNET,
+            help=f"Docker subnet to use (default: {SUBNET})",
         )
 
     p = subparsers.add_parser("build")
@@ -371,21 +466,31 @@ def _parse_args():
 
     p = subparsers.add_parser("create")
     add_inventory(p)
-    p.add_argument(
-        "--network",
-        default=NETWORK,
-        help=f"Docker network to use (default: {NETWORK})",
-    )
-    p.add_argument(
-        "--subnet",
-        default=SUBNET,
-        help=f"Docker subnet to use (default: {SUBNET})",
-    )
+    add_network(p)
     add_tag(p)
     _bind_command(p, create_container, "inventory", "tag", "network", "subnet")
 
+    p = subparsers.add_parser("checkpoint")
+    add_inventory(p)
+    add_network(p)
+    add_tag(p, default="latest")
+    _bind_command(p, checkpoint_container, "inventory", "tag", "network", "subnet")
+
     p = subparsers.add_parser("destroy")
     _bind_command(p, destroy_container)
+
+    p = subparsers.add_parser("push")
+    add_tag(p, default="latest")
+    _bind_command(p, push_image, "tag")
+
+    p = subparsers.add_parser("pull")
+    add_tag(p, default="latest")
+    _bind_command(p, pull_image, "tag")
+
+    p = subparsers.add_parser("tag")
+    p.add_argument("source_tag")
+    p.add_argument("target_tag")
+    _bind_command(p, tag_image, "source_tag", "target_tag")
 
     return parser.parse_args()
 

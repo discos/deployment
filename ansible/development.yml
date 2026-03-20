@@ -111,12 +111,58 @@
         loop_var: username
 
 
-- name: Apply ACS configuration to ACS nodes
+- name: Commit current container checkpoint
+  tags: provision
+  hosts: manager
+  tasks:
+    - name: Commit current container checkpoint
+      ansible.builtin.command: "discos-container checkpoint"
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+      when: ansible_virtualization_type == "docker"
+
+
+- name: Prepare for ACS setup
   tags: provision
   hosts: manager
   remote_user: root
   roles:
-    - acs
+    - acs_prepare
+    - acs_environment
+
+
+- name: Commit current container checkpoint
+  tags: provision
+  hosts: manager
+  tasks:
+    - name: Commit current container checkpoint
+      ansible.builtin.command: "discos-container checkpoint"
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+      when: ansible_virtualization_type == "docker"
+
+
+- name: Install ACS
+  tags: provision
+  hosts: manager
+  remote_user: root
+  roles:
+    - acs_install
+    - discos_dependencies
+
+
+- name: Commit current container checkpoint
+  tags: provision
+  hosts: manager
+  tasks:
+    - name: Commit current container checkpoint
+      ansible.builtin.command: "discos-container checkpoint"
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+      when: ansible_virtualization_type == "docker"
 
 
 - name: Configure the manager machine
@@ -181,6 +227,18 @@
   remote_user: root
   roles:
     - vnc
+
+
+- name: Commit current container checkpoint
+  tags: provision
+  hosts: manager
+  tasks:
+    - name: Commit current container checkpoint
+      ansible.builtin.command: "discos-container checkpoint"
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+      when: ansible_virtualization_type == "docker"
 
 
 - name: Deploy DISCOS

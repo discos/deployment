@@ -158,11 +158,3 @@
         fi
   no_log: true
   with_dict: "{{ users }}"
-
-
-- name: Source scl_source
-  ansible.builtin.lineinfile:
-    dest: "{{ item }}"
-    line: 'source scl_source enable devtoolset-{{ devtoolset_release }}'
-  with_items:
-    - "/etc/bashrc"
