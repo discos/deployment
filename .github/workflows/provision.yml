@@ -9,14 +9,15 @@ on:
   schedule:
     - cron: '0 6 * * 1'
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   provision:
+    runs-on: ubuntu-latest
     env:
       REPOSITORY_TOKEN: "${{ secrets.DEPENDENCIES_TOKEN }}"
-      GH_TOKEN: "${{ secrets.GH_WORKFLOWS_TOKEN }}"
-      GOOGLE_DRIVE_TOKEN: "${{ secrets.GOOGLE_DRIVE_TOKEN }}"
-      PROVISIONED_CONTAINER_GDRIVE_ID: "${{ secrets.PROVISIONED_CONTAINER_GDRIVE_ID }}"
-    runs-on: ubuntu-latest
     steps:
       - name: Free up space
         uses: jlumbroso/free-disk-space@main
@@ -44,16 +45,21 @@ jobs:
           else
             discos-deploy manager:development --docker --default-passwords
           fi
-      - name: Save provisioned image as tar artifact
+      - name: Login to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag and push images to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          discos-container save discos_manager.tar
-        working-directory: /home/runner
+          IMAGE_TAG="${GITHUB_REF_NAME}-${GITHUB_SHA::7}"
+          discos-container tag latest "${IMAGE_TAG}"
+          discos-container push --tag latest
+          discos-container push --tag "${IMAGE_TAG}"
       - name: Shutdown the container
         if: always()
         run: |
           discos-container stop || true
-      - name: Upload the Docker image to Google Drive
-        run: |
-          pip install -r .github/utils/gdrive_requirements.txt
-          python .github/utils/upload_to_gdrive.py
-          gh secret set GOOGLE_DRIVE_TOKEN --org discos --visibility selected --repos discos,deployment < token.json

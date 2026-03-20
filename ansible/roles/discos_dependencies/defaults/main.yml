@@ -1,0 +1,24 @@
+---
+
+cfitsio: { file: 'cfitsio3370.tar.gz', build_dir: 'cfitsio' }
+ccfits: { file: 'CCfits-2.4.tar.gz', build_dir: 'CCfits' }
+fv: { file: 'fv5.4_pc_linux64.tar.gz' }
+modbus: { file: 'libmodbus-3.0.6.tar.gz', build_dir: 'libmodbus-3.0.6' }
+f2c: { file: 'f2c.zip'}
+
+googletest_repo: "447d58b4ee8ea96b4757a5bb5f0b3be75af6c2a1"
+googletest_build_dir: "googletest-{{ googletest_repo }}"
+googletest_file: "{{ googletest_build_dir }}.zip"
+gmock_build: "{{ remote_build_path }}/{{ googletest_build_dir }}/googlemock"
+gtest_build: "{{ remote_build_path }}/{{ googletest_build_dir }}/googletest"
+
+sip_build_dir: sip-4.19.2
+sip_file: "{{ sip_build_dir }}.tar.gz"
+
+pyqt_build_dir: PyQt4_gpl_x11-4.12
+pyqt_file: "{{ pyqt_build_dir }}.tar.gz"
+
+pyqtqwt_build_dir: PyQt-Qwt
+pyqtqwt_file: "{{ pyqtqwt_build_dir }}.zip"
+
+slalibrary_file: "SlaLibrary.tar.gz"

@@ -1,25 +1,5 @@
 ---
 
-- name: Check in which path Java is installed
-  ansible.builtin.shell: "readlink -f $(which java)"
-  register: java_home
-  changed_when: false
-
-
-- name: Make sure /usr/java directory exists
-  ansible.builtin.file:
-    path: "/usr/java"
-    state: directory
-    mode: "0755"
-
-
-- name: Create a symlink to the correct Java home path, needed by ACS
-  ansible.builtin.file:
-    src: "/usr/lib/jvm/java-openjdk"
-    dest: "/usr/java/default"
-    state: link
-
-
 - name: Create the /alma directory
   ansible.builtin.file:
     path: "/alma"

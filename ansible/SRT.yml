@@ -123,12 +123,22 @@
         - sardara_remote_directory is defined
 
 
-- name: Apply ACS configuration to ACS nodes
+- name: Prepare for ACS setup
   tags: provision
   hosts: acs_meta
   remote_user: root
   roles:
-    - acs
+    - acs_prepare
+    - acs_environment
+
+
+- name: Install ACS
+  tags: provision
+  hosts: acs_meta
+  remote_user: root
+  roles:
+    - acs_install
+    - discos_dependencies
 
 
 - name: Configure the manager machine

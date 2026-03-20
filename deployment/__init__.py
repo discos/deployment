@@ -521,7 +521,7 @@ def _docker_output(args, cwd=DEPLOYMENT_DIR, stdout=None, stderr=None, text=True
 def dockerImageExists(image):
     return _docker(["image", "inspect", image]) == 0
 
-def dockerBuild(image='discos-centos-7.9:latest'):
+def dockerBuild(image='discos-centos-7.9:base'):
     """Build the docker image from ~/.deployment/Dockerfile using ~/.deployment as context."""
     dockerfile_path = os.path.join(DEPLOYMENT_DIR, 'Dockerfile')
     if not os.path.exists(dockerfile_path):
@@ -547,7 +547,7 @@ def dockerContainerRunning(name):
 def dockerEnsureContainer(
     name,
     ip,
-    image='discos-centos-7.9:latest',
+    image='discos-centos-7.9:base',
     network='discos_net'
 ):
     """Create container if missing, otherwise start it."""
@@ -686,3 +686,15 @@ def dockerLoadImage(imgfile):
     if not os.path.exists(imgfile):
         error(f"Image archive not found: {imgfile}")
     return _docker(['load', '-i', imgfile])
+
+def dockerTagImage(source_image, target_image):
+    """Tag a local Docker image with another name."""
+    return _docker(['tag', source_image, target_image])
+
+def dockerPullImage(image):
+    """Pull a Docker image from a registry"""
+    return _docker(['pull', image])
+
+def dockerPushImage(image):
+    """Push a Docker image to a registry."""
+    return _docker(['push', image])
