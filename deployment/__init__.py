@@ -11,6 +11,7 @@ STDERR = sys.stderr
 DEPLOYMENT_DIR = os.path.join(os.environ.get('HOME'), '.deployment')
 ANSIBLE_DIR = os.path.join(DEPLOYMENT_DIR, 'ansible')
 INVENTORIES_DIR = os.path.join(ANSIBLE_DIR, 'inventories')
+DOCKER_AUTH_REQUIRED_RC = 100
 os.environ['ANSIBLE_CONFIG'] = os.path.join(ANSIBLE_DIR, 'ansible.cfg')
 
 def error(msg, choices=(), name='', code=1):
@@ -636,7 +637,7 @@ rm -f /tmp/id_rsa.pub
     return _docker(['exec', container, '/bin/bash', '-lc', script])
 
 def runWithProgress(message, worker, error_message, *args, interval=1, **kwargs):
-    sys.stdout.write(message)
+    sys.stdout.write(f"{message}...")
     sys.stdout.flush()
 
     result = {'done': False, 'rc': 1}
@@ -698,3 +699,63 @@ def dockerPullImage(image):
 def dockerPushImage(image):
     """Push a Docker image to a registry."""
     return _docker(['push', image])
+
+def dockerLogin(registry, username, password):
+    sp = subprocess.run(
+        ["docker", "login", registry, "-u", username, "--password-stdin"],
+        input=password,
+        text=True,
+        stdout=STDOUT,
+        stderr=STDERR,
+    )
+    return sp.returncode
+
+def dockerLogout(registry):
+    return _docker(["logout", registry])
+
+
+def dockerPullImageWithOutput(image):
+    """Pull a Docker image from a registry and capture combined output."""
+    return subprocess.run(
+        ['docker', 'pull', image],
+        cwd=DEPLOYMENT_DIR,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True
+    )
+
+
+def dockerPullAuthError(output):
+    """Return True if docker pull output looks like an authentication error."""
+    if not output:
+        return False
+
+    output = output.lower()
+    patterns = (
+        'authentication required',
+        'unauthorized',
+        'denied',
+        'pull access denied',
+        'requested access to the resource is denied',
+        'no basic auth credentials',
+    )
+    return any(pattern in output for pattern in patterns)
+
+
+def dockerPullImageMaybeAuth(image):
+    """
+    Pull a Docker image from a registry.
+
+    Returns:
+      0 if successful
+      DOCKER_AUTH_REQUIRED_RC if authentication is likely required
+      otherwise the docker pull return code
+    """
+    sp = dockerPullImageWithOutput(image)
+    if sp.returncode == 0:
+        return 0
+
+    if dockerPullAuthError(sp.stdout):
+        return DOCKER_AUTH_REQUIRED_RC
+
+    return sp.returncode

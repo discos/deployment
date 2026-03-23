@@ -17,6 +17,7 @@ import argparse
 import os
 import subprocess
 import sys
+import getpass
 from pathlib import Path
 
 import deployment
@@ -142,11 +143,31 @@ def pull_image(tag="latest"):
 
     rc = deployment.runWithProgress(
         f"Pulling image {remote_image}",
-        deployment.dockerPullImage,
+        deployment.dockerPullImageMaybeAuth,
         "error while pulling the requested image.",
         remote_image,
     )
-    if rc != 0:
+
+    if rc == deployment.DOCKER_AUTH_REQUIRED_RC:
+        if not sys.stdin.isatty():
+            print("Authentication is required, but no interactive terminal is available.")
+            return 1
+
+        print(f"Authentication required to pull {remote_image}.")
+        rc = login_registry()
+        if rc != 0:
+            return rc
+
+        rc = deployment.runWithProgress(
+            f"Pulling image {remote_image}",
+            deployment.dockerPullImageMaybeAuth,
+            "error while pulling the requested image.",
+            remote_image,
+        )
+        if rc != 0:
+            return rc
+
+    elif rc != 0:
         return rc
 
     return deployment.runWithProgress(
@@ -169,7 +190,7 @@ def tag_image(source_tag, target_tag):
     return deployment.runWithProgress(
         f"Tagging image {source_image} as {target_image}",
         deployment.dockerTagImage,
-        "error while tagging the requeste image.",
+        "error while tagging the requested image.",
         source_image,
         target_image
     )
@@ -377,6 +398,36 @@ def checkpoint_container(tag="latest", inventory=DEFAULT_INVENTORY, network=NETW
     )
 
 
+def login_registry(registry="ghcr.io"):
+    username = input("GitHub username: ").strip()
+    if not username:
+        print("Username required.")
+        return 1
+
+    token = getpass.getpass("GitHub PAT (classic, read:packages): ")
+    if not token:
+        print("Token required.")
+        return 1
+
+    return deployment.runWithProgress(
+        f"Logging in to {registry} as {username}",
+        deployment.dockerLogin,
+        "error while logging in to the registry.",
+        registry,
+        username,
+        token,
+    )
+
+
+def logout_registry(registry="ghcr.io"):
+    return deployment.runWithProgress(
+        f"Logging out from {registry}",
+        deployment.dockerLogout,
+        "error while logging out from the registry.",
+        registry,
+    )
+
+
 def _bind_command(parser, func, *arg_names):
     parser.set_defaults(func=func, arg_names=arg_names)
 
@@ -491,6 +542,12 @@ def _parse_args():
     p.add_argument("source_tag")
     p.add_argument("target_tag")
     _bind_command(p, tag_image, "source_tag", "target_tag")
+
+    p = subparsers.add_parser("login")
+    _bind_command(p, login_registry)
+
+    p = subparsers.add_parser("logout")
+    _bind_command(p, logout_registry)
 
     return parser.parse_args()
 
