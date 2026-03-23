@@ -265,3 +265,15 @@
   remote_user: root
   roles:
     - finalize
+
+
+- name: Commit final container image
+  tags: provision
+  hosts: manager
+  tasks:
+    - name: Commit final container image
+      ansible.builtin.command: "discos-container commit --tag latest"
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+      when: ansible_virtualization_type == "docker"

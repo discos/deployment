@@ -88,10 +88,17 @@ def build_image(image=BASE_IMAGE):
     )
 
 
-def remove_image(image=LATEST_IMAGE):
+def remove_image(image=LATEST_IMAGE, force=False):
     if not deployment.dockerImageExists(image):
         print(f"Image {image} not found.")
         return 1
+
+    if not force:
+        print(f"Are you sure you want to remove image {image}? [y/N]: ", end="")
+        choice = input().strip().lower()
+        if choice not in ("y", "yes"):
+            print("Aborted.")
+            return 1
 
     return deployment.runWithProgress(
         f"Removing image {image}",
@@ -485,7 +492,8 @@ def _parse_args():
     _bind_command(p, build_image)
 
     p = subparsers.add_parser("remove")
-    _bind_command(p, remove_image)
+    p.add_argument("--force", action="store_true")
+    _bind_command(p, remove_image, "force")
 
     p = subparsers.add_parser("load")
     add_imgfile(p)
@@ -528,7 +536,8 @@ def _parse_args():
     _bind_command(p, checkpoint_container, "inventory", "tag", "network", "subnet")
 
     p = subparsers.add_parser("destroy")
-    _bind_command(p, destroy_container)
+    p.add_argument("--force", action="store_true")
+    _bind_command(p, destroy_container, "force")
 
     p = subparsers.add_parser("push")
     add_tag(p, default="latest")
