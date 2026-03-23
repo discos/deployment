@@ -3,7 +3,15 @@ name: DISCOS provisioning and deployment on Docker container
 on:
   workflow_dispatch:
   pull_request:
+    paths:
+      - "ansible/"
+      - "Dockerfile"
+      - ".github/workflows/provision.yml"
   push:
+    paths:
+      - "ansible/"
+      - "Dockerfile"
+      - ".github/workflows/provision.yml"
   schedule:
     - cron: '0 6 * * 1'
 
