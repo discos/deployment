@@ -5,3 +5,6 @@
 
 - name: Configure the discos_telemetry_proxy.service
   ansible.builtin.include_tasks: telemetry_proxy.yml
+
+- name: Configure the discos_rpc_proxy.service
+  ansible.builtin.include_tasks: rpc_proxy.yml

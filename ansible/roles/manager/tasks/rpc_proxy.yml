@@ -1,0 +1,65 @@
+---
+
+- name: Create the RPC proxy server directories
+  ansible.builtin.file:
+    path: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/rpc/{{ item }}"
+    state: directory
+    mode: "0700"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  with_items:
+    - "server"
+    - "server/authorized"
+    - "server/authorized/admin"
+    - "server/authorized/user"
+
+
+- name: Check if the RPC proxy key pair is present
+  ansible.builtin.stat:
+    path: ".config/discos/rpc/server/identity.key_secret"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  register: proxy_key_present
+
+
+- name: Generate the RPC proxy Curve key pair
+  ansible.builtin.command: >
+    python -c "from zmq.auth import create_certificates;
+    create_certificates('.config/discos/rpc/server', 'identity')"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+  changed_when: true
+  when: not proxy_key_present.stat.exists
+
+
+- name: Set the proxy Curve key pair permissions
+  ansible.builtin.file:
+    path: "/{{ discos_sw_dir }}/{{ user.name }}/.config/discos/rpc/server/{{ item }}"
+    mode: "0600"
+    state: file
+  with_items:
+    - "identity.key"
+    - "identity.key_secret"
+  become: true
+  become_user: "{{ user.name }}"
+  become_flags: "-i"
+
+
+- name: Copy the discos_rpc_proxy.service unit file
+  ansible.builtin.template:
+    src: discos_rpc_proxy.service
+    dest: /usr/lib/systemd/system/discos_rpc_proxy.service
+    mode: "0644"
+    force: true
+
+
+- name: Enable the discos_rpc_proxy service
+  ansible.builtin.service:
+    name: "discos_rpc_proxy.service"
+    state: restarted
+    enabled: true
+    use: systemd
+  failed_when: false
