@@ -117,11 +117,15 @@ def sshLogin(ip, user='root'):
     sp = subprocess.run(
         [
             'timeout',
-            '2',
+            '15',
             'ssh',
             f'{user}@{ip}',
             '-o',
             'PasswordAuthentication=false',
+            '-o',
+            'BatchMode=yes',
+            '-o',
+            'ConnectTimeout=5',
             '"exit"'
         ],
         stdout=STDOUT,
@@ -553,9 +557,11 @@ def dockerEnsureContainer(
 ):
     """Create container if missing, otherwise start it."""
     if dockerContainerExists(name):
-        if dockerContainerRunning(name):
-            return 0
-        return dockerStartContainer(name, ip=ip)
+        if not dockerContainerRunning(name):
+            rc = dockerStartContainer(name, ip=ip)
+            if rc != 0:
+                return rc
+        return dockerInjectRSAKey(name)
 
     rc = _docker([
         'run', '-d',

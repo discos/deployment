@@ -30,7 +30,7 @@
         hostvars[item.0][item.1]
         ~ ' '
         ~ (
-            lookup('pipe', 'ssh-keyscan -T 5 -t ecdsa ' ~ hostvars[item.0].ansible_host).split()[1:] | join(' ')
+            lookup('pipe', 'ssh-keyscan -q -T 5 -t ecdsa ' ~ hostvars[item.0].ansible_host).split()[1:3] | join(' ')
           )
       }}
   with_nested:
