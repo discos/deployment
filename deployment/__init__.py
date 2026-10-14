@@ -549,6 +549,15 @@ def dockerContainerRunning(name):
     sp = _docker_output(['inspect', '-f', '{{.State.Running}}', name])
     return sp.returncode == 0 and sp.stdout.strip() == 'true'
 
+def dockerMachineList(inventory='development'):
+    """Return the inventory machines that exist as Docker containers."""
+    try:
+        hosts, _, _ = parseInventory(inventory)
+        return [m for m in hosts if dockerContainerExists(m)]
+    except OSError:
+        # Docker not installed
+        return []
+
 def dockerEnsureContainer(
     name,
     ip,

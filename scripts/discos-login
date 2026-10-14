@@ -15,10 +15,17 @@ parser.add_argument(
     required=False,
     default='discos'
 )
-parser.add_argument('machine', choices=deployment.machineList())
+vms = list(deployment.machineList())
+containers = [m for m in deployment.dockerMachineList() if m not in vms]
+parser.add_argument('machine', choices=vms + containers)
 args = parser.parse_args()
 
-if deployment.isRunning(args.machine):
+if args.machine in containers:
+    running = deployment.ping(deployment.getIp(args.machine))
+else:
+    running = deployment.isRunning(args.machine)
+
+if running:
     try:
         subprocess.call([
             'ssh',
