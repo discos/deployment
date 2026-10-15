@@ -417,7 +417,7 @@ def machineList(inventory='development'):
     return machines
 
 def isRunning(name, inventory='development'):
-    if name not in machineList():
+    if name not in machineList() and name not in dockerMachineList(inventory):
         error(f'Machine {name} unknown!')
     return ping(getIp(name, inventory))
 

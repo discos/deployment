@@ -17,7 +17,8 @@ users = {
     'discos': 1,
     'observer': 2
 }
-machines = deployment.machineList()
+machines = list(deployment.machineList())
+machines += [m for m in deployment.dockerMachineList() if m not in machines]
 try:
     machines.remove('storage')
 except:
