@@ -6,6 +6,7 @@
   $ discos-vnc -u observer console
 """
 import os
+import shutil
 import subprocess
 from multiprocessing import Process
 from argparse import ArgumentParser
@@ -60,6 +61,12 @@ def detach(vnc_command, ssh_command):
     subprocess.call(
         pkill_command,
         shell=True
+    )
+
+if not shutil.which('vncviewer'):
+    deployment.error(
+        'vncviewer not found, install a TigerVNC viewer '
+        '(e.g. "sudo apt install tigervnc-viewer").'
     )
 
 if deployment.isRunning(args.machine):
