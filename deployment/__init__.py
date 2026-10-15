@@ -390,6 +390,10 @@ def _vagrantList():
     return [m.decode().strip().replace('discos_', '') for m in machines]
 
 def _vboxList():
+    import shutil
+    if not shutil.which('vboxmanage'):
+        # VirtualBox not installed, e.g. Docker-only hosts
+        return []
     cmd = subprocess.Popen(
         "vboxmanage list vms | awk '{print $1}' | sed 's/\"//g'",
         shell=True,
