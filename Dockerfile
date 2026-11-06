@@ -12,6 +12,9 @@ RUN rm -f /etc/machine-id /var/lib/dbus/machine-id && \
     ln -sf /etc/machine-id /var/lib/dbus/machine-id
 
 RUN ssh-keygen -A
+RUN sed -i -e 's/^#\?UseDNS .*/UseDNS no/' \
+           -e 's/^#\?GSSAPIAuthentication .*/GSSAPIAuthentication no/' \
+           /etc/ssh/sshd_config
 RUN echo 'root:rootpwd' | chpasswd
 
 COPY third-party/docker-systemctl-replacement/systemctl3.py /usr/local/bin/systemctl
