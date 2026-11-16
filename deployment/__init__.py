@@ -122,6 +122,10 @@ def sshLogin(ip, user='root'):
             f'{user}@{ip}',
             '-o',
             'PasswordAuthentication=false',
+            '-o',
+            'BatchMode=yes',
+            '-o',
+            'ConnectTimeout=5',
             '"exit"'
         ],
         stdout=STDOUT,
@@ -386,6 +390,10 @@ def _vagrantList():
     return [m.decode().strip().replace('discos_', '') for m in machines]
 
 def _vboxList():
+    import shutil
+    if not shutil.which('vboxmanage'):
+        # VirtualBox not installed, e.g. Docker-only hosts
+        return []
     cmd = subprocess.Popen(
         "vboxmanage list vms | awk '{print $1}' | sed 's/\"//g'",
         shell=True,
@@ -409,7 +417,7 @@ def machineList(inventory='development'):
     return machines
 
 def isRunning(name, inventory='development'):
-    if name not in machineList():
+    if name not in machineList() and name not in dockerMachineList(inventory):
         error(f'Machine {name} unknown!')
     return ping(getIp(name, inventory))
 
@@ -545,6 +553,15 @@ def dockerContainerRunning(name):
     sp = _docker_output(['inspect', '-f', '{{.State.Running}}', name])
     return sp.returncode == 0 and sp.stdout.strip() == 'true'
 
+def dockerMachineList(inventory='development'):
+    """Return the inventory machines that exist as Docker containers."""
+    try:
+        hosts, _, _ = parseInventory(inventory)
+        return [m for m in hosts if dockerContainerExists(m)]
+    except OSError:
+        # Docker not installed
+        return []
+
 def dockerEnsureContainer(
     name,
     ip,
@@ -553,9 +570,11 @@ def dockerEnsureContainer(
 ):
     """Create container if missing, otherwise start it."""
     if dockerContainerExists(name):
-        if dockerContainerRunning(name):
-            return 0
-        return dockerStartContainer(name, ip=ip)
+        if not dockerContainerRunning(name):
+            rc = dockerStartContainer(name, ip=ip)
+            if rc != 0:
+                return rc
+        return dockerInjectRSAKey(name)
 
     rc = _docker([
         'run', '-d',
